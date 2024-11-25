@@ -15,6 +15,7 @@ chmod +x viralflow_GUI_sc2
 chmod +x scripts/viralflow_GUI_sc2.py
 chmod +x viralflow_GUI_sc2
 
+code_path=$(pwd)
 
 # Download and set up Micromamba
 cd $HOME
@@ -41,10 +42,7 @@ sudo ln -s /usr/bin/unsquashfs /usr/local/bin/unsquashfs
 viralflow -build_containers
 
 ###################
-#Instalação das bibliotecas para gerar os arquivos e relatorios
+#Instalar bibliotecas adicionais para gerar os arquivos e relatorios
 #COMO ENTRAR NA PASTA ESPECIFICA DE INSTALAÇÃO?????
-conda create -n report_generator
-conda activate report_generator
-conda env update -n report_generator --file envs/env.yml
 
-
+pip install -r $(code_path)/envs/env.yml

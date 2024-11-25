@@ -21,18 +21,18 @@ class ViralFlowGUI(QWidget):
 
         # Define labels and input fields
         self.fields = [
-            ("Primers BED File", "primersBED"),
-            ("Input Directory", "inDir"),
-            ("Output Directory", "outDir"),
-            ("Metadata file", "metadata"),
-            ("Config file", "config_file")
+            ("Primers BED File", "primersBED", True),  # True indicates a file should be chosen
+            ("Input Directory", "inDir", False),      # False indicates a folder should be chosen
+            ("Output Directory", "outDir", False),
+            ("Metadata File", "metadata", True),
+            ("Config File", "config_file", True),
         ]
 
         # Create a dictionary to store the QLineEdit widgets for each field
         self.entries = {}
 
         # Create input fields and browse buttons for each field
-        for label_text, field_name in self.fields:
+        for label_text, field_name, is_file in self.fields:
             row_layout = QHBoxLayout()
 
             # Create and add label
@@ -44,11 +44,10 @@ class ViralFlowGUI(QWidget):
             row_layout.addWidget(entry)
 
             # Create the "Browse" button to open the file/folder dialog
-            if field_name == "primersBED":
-                browse_button = QPushButton("Browse", self)
+            browse_button = QPushButton("Browse", self)
+            if is_file:
                 browse_button.clicked.connect(lambda checked, e=entry: self.select_file(e))
             else:
-                browse_button = QPushButton("Browse", self)
                 browse_button.clicked.connect(lambda checked, e=entry: self.select_folder(e))
 
             row_layout.addWidget(browse_button)
@@ -56,6 +55,9 @@ class ViralFlowGUI(QWidget):
             # Add the row layout to the main layout
             layout.addLayout(row_layout)
             self.entries[field_name] = entry
+
+        self.setLayout(layout)
+
 
         # Create and add the "Run Command" button
         run_button = QPushButton("Run Command", self)
@@ -65,17 +67,17 @@ class ViralFlowGUI(QWidget):
         # Set the layout of the window
         self.setLayout(layout)
 
-    def select_folder(self, entry_field):
-        """Open a dialog to select a folder and set the path in the entry field."""
-        folder_selected = QFileDialog.getExistingDirectory(self, "Select Folder")
-        if folder_selected:
-            entry_field.setText(folder_selected)
+    def select_file(self, entry):
+        # Open file dialog to select a file
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select a File")
+        if file_path:
+            entry.setText(file_path)
 
-    def select_file(self, entry_field):
-        """Open a dialog to select a file and set the path in the entry field."""
-        file_selected, _ = QFileDialog.getOpenFileName(self, "Select File")
-        if file_selected:
-            entry_field.setText(file_selected)
+    def select_folder(self, entry):
+        # Open folder dialog to select a directory
+        folder_path = QFileDialog.getExistingDirectory(self, "Select a Directory")
+        if folder_path:
+            entry.setText(folder_path)
 
     def run_command(self):
         """Construct and run the command with the parameters from the GUI."""
@@ -91,16 +93,14 @@ class ViralFlowGUI(QWidget):
                 f"--fastp_threads 12 --bwa_threads 12 --mafft_threads 12 -resume"
 
         #command_conda_report = f"./report_generator_env.sh"
-        command_report_generator = f"python scripts/report_generator_sc2.py {params['outDir']} {params['metadata']} {params['config_file']}  "
+        command_report_generator = f"python scripts/report_generator_sc2.py {params['outDir']}/COMPILED_OUTPUT/ {params['metadata']} {params['config_file']}  "
 
         # Run the command using subprocess
         try:
-            subprocess.run(command_viralflow, shell=True, check=True)
-            #subprocess.run("conda init bash")
-            #os.system(, "source ~/miniconda3/bin/activate")
-            #os.system("conda activate report_generator")
-            #os.system("conda activate report_generator")
-            print("Command executed successfully!")
+            #subprocess.run(command_viralflow, shell=True, check=True)
+            #print("ViralFlow executed successfully!")
+            subprocess.run(command_report_generator, shell=True, check=True)
+            print("Reports generated successfully!")
         except subprocess.CalledProcessError as e:
             print(f"Error executing command: {e}")
 

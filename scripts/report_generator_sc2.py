@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 #Carregar todas as lib usadas ao longo de todo script
-from locale import locale_encoding_alias
-from xml.dom.minidom import TypeInfo
 import pandas as pd
 import numpy as np
 import subprocess
@@ -10,18 +8,15 @@ from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 from matplotlib.cm import viridis 
 import matplotlib.image as mpimg
-import geobr
 from Bio import SeqIO
 from Bio.SeqIO import FastaIO
 import csv
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import openpyxl
 import os
 import sys
-import seaborn as sns
-import colorcet as cc
 import shutil
 import yaml
+from unidecode import unidecode
+import seaborn as sns
 
 ## Função que carrega o arquivo yaml e armazena em um dicionario
 def load_config(config_path):
@@ -33,8 +28,8 @@ def input_folder(folder):
 
     print("input_folder")
 
-    # Construct the file path for the CSV file
-    metadata_path = os.path.join(sys.argv[2], "data.csv")
+    #Caminho do Arquivo do GAL
+    metadata_path = sys.argv[2]
 
     # #OBS: VERIFICAR QUAL CAMPO SEPARADOR NO ARQUIVO GAL
     metadata = pd.read_csv(metadata_path, sep =';', encoding='latin-1', on_bad_lines='skip')
@@ -98,7 +93,7 @@ def mod_pasta():
     if os.path.exists(output_path):
         shutil.rmtree(output_path)
     
-    # Cria a pasta 'RNSG_REPORT' dentro de nome_pasta
+    # Cria a pasta 'RNSG_REPORT' dentro da pasta de saida do viralflow
     os.mkdir(output_path)
   
  
@@ -131,12 +126,12 @@ def planilha_results(metadata, reads, coverage, lineage):
     # Juntar todas as planilhas
     resultado_df_1 = pd.merge(pd.merge(reads, coverage_update, on='cod'), lineage, on='cod')
     resultado_df_1['cod'] = resultado_df_1['cod'].astype(str)
-    metadata_GAL_update.loc[:,'Código_da_Amostra'] = metadata_GAL_update['Código_da_Amostra'].astype(str)
-    metadata_GAL_update.loc[:,'Requisição'] = metadata_GAL_update['Requisição'].astype(str)
+    metadata_GAL_update.loc[:,'Código_da_Amostra'] = metadata_GAL_update['Código_da_Amostra'].astype(str, errors='ignore')
+    metadata_GAL_update.loc[:,'Requisição'] = metadata_GAL_update['Requisição'].astype(str, errors='ignore')
 
+    #Junta os resultados do viralflow (resultado_df_1) e os dados do GAL (metadata_GAL_update)
     resultado_df = pd.merge(resultado_df_1, metadata_GAL_update, left_on="cod", right_on="Código_da_Amostra")
 
-    #print(metadata_GAL_update)
 
     # Mudar nomes da coluna
     resultado_df = resultado_df.rename(columns={'cod': 'Código Amostra', 'mepf_reads_aligned': 'Reads', 'PCT_10X': 'Coverage', 'MEAN_COVERAGE': 'Depth of Coverage', 'lineage': 'Lineage',
@@ -158,6 +153,7 @@ def planilha_results(metadata, reads, coverage, lineage):
 
     resultado_df = resultado_df.set_index('Requisição')
 
+    #Salva os dados em um arquivo temporario
     resultado_df.to_csv(os.path.join(sys.argv[1], "tabela_resultados.csv"))
 
     return resultado_df
@@ -197,7 +193,7 @@ def planilha_resultado(covv_virus_name, resultado_df):
 
 
 
-#A função 'filter_depth' gera um arquivo intermediário 'tabela_resultados_filt.csv' com informações apenas das amostras com cobertua > 80%
+#A função 'filter_depth' gera um arquivo intermediário 'tabela_resultados_filt.csv' com informações apenas das amostras com cobertua > 90%
 def filter_depth(resultado_df):
 
     resultado_df_filt = resultado_df.loc[resultado_df['Coverage'] >= 90]
