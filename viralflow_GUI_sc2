@@ -17,5 +17,5 @@ echo 'Atualização do Pangolin concluída!';
 echo '';
 echo '####################################';
 echo '################## Iniciando a interface gráfica ##################';
-python3 ViralFlow_GUI/viralflow_GUI_sc2.py;
+python3 scripts/viralflow_GUI_sc2.py;
 exec bash"
