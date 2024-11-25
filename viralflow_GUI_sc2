@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Inicializa o shell para micromamba
+eval "$(micromamba shell hook --shell bash)"
+
+# Ativa o ambiente
+micromamba activate viralflow
+
+# Atualiza o Pangolin e suas bases de dados
+gnome-terminal -- bash -c "
+echo '####################################';
+echo 'Iniciando atualização do Pangolin...';
+echo '####################################';
+echo '';
+viralflow -update_pangolin && viralflow -update_pangolin_data;
+echo 'Atualização do Pangolin concluída!';
+echo '';
+echo '####################################';
+echo '################## Iniciando a interface gráfica ##################';
+python3 ViralFlow_GUI/viralflow_GUI_sc2.py;
+exec bash"

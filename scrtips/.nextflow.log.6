@@ -1,0 +1,290 @@
+nov-25 11:31:12.255 [main] DEBUG nextflow.cli.Launcher - $> nextflow run /home/kato/ViralFlow//vfnext/main.nf --primersBED /home/kato/Documents/geo_data/script/viralflow_facility/test_file/SARS-CoV-2_artic_5.3.2.bed --outDir /home/kato/Documents/geo_data/script/viralflow_facility/test_file/output --inDir /home/kato/Documents/geo_data/script/viralflow_facility/test_file/input --virus sars-cov2 --runSnpEff true --writeMappedReads true --minLen 75 --depth 10 --minDpIntrahost 100 --trimLen 0 --refGenomeCode null --referenceGFF null --referenceGenome null --nextflowSimCalls 12 --fastp_threads 12 --bwa_threads 12 --mafft_threads 12 -resume
+nov-25 11:31:12.323 [main] INFO  nextflow.cli.CmdRun - N E X T F L O W  ~  version 22.04.0
+nov-25 11:31:12.338 [main] DEBUG nextflow.config.ConfigBuilder - Found config base: /home/kato/ViralFlow/vfnext/nextflow.config
+nov-25 11:31:12.339 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /home/kato/ViralFlow/vfnext/nextflow.config
+nov-25 11:31:12.360 [main] DEBUG nextflow.config.ConfigBuilder - Applying config profile: `standard`
+nov-25 11:31:13.240 [main] INFO  nextflow.cli.CmdRun - Launching `/home/kato/ViralFlow/vfnext/main.nf` [distraught_colden] DSL2 - revision: 8bcd2171a9
+nov-25 11:31:13.250 [main] DEBUG nextflow.plugin.PluginsFacade - Setting up plugin manager > mode=prod; plugins-dir=/home/kato/.nextflow/plugins; core-plugins: nf-amazon@1.7.1,nf-azure@0.13.1,nf-console@1.0.3,nf-ga4gh@1.0.3,nf-google@1.1.4,nf-sqldb@0.4.0,nf-tower@1.4.0
+nov-25 11:31:13.250 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins default=[]
+nov-25 11:31:13.258 [main] INFO  org.pf4j.DefaultPluginStatusProvider - Enabled plugins: []
+nov-25 11:31:13.259 [main] INFO  org.pf4j.DefaultPluginStatusProvider - Disabled plugins: []
+nov-25 11:31:13.261 [main] INFO  org.pf4j.DefaultPluginManager - PF4J version 3.4.1 in 'deployment' mode
+nov-25 11:31:13.268 [main] INFO  org.pf4j.AbstractPluginManager - No plugins
+nov-25 11:31:13.306 [main] DEBUG nextflow.Session - Session uuid: da9d15ea-178d-460d-9da7-c35c979b76cc
+nov-25 11:31:13.307 [main] DEBUG nextflow.Session - Run name: distraught_colden
+nov-25 11:31:13.307 [main] DEBUG nextflow.Session - Executor pool size: 16
+nov-25 11:31:13.317 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 22.04.0 build 5697
+  Created: 23-04-2022 18:00 UTC (15:00 BRST)
+  System: Linux 5.15.0-125-generic
+  Runtime: Groovy 3.0.10 on OpenJDK 64-Bit Server VM 1.8.0_92-b15
+  Encoding: UTF-8 (UTF-8)
+  Process: 100825@geovaniribeiro [127.0.1.1]
+  CPUs: 16 - Mem: 62.6 GB (23.4 GB) - Swap: 16 MB (16 MB)
+nov-25 11:31:13.335 [main] DEBUG nextflow.Session - Work-dir: /home/kato/Documents/geo_data/script/viralflow_facility/ViralFlow_GUI/work [ext2/ext3]
+nov-25 11:31:13.348 [main] DEBUG nextflow.executor.ExecutorFactory - Extension executors providers=[]
+nov-25 11:31:13.357 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+nov-25 11:31:13.390 [main] DEBUG nextflow.cache.CacheFactory - Using Nextflow cache factory: nextflow.cache.DefaultCacheFactory
+nov-25 11:31:13.407 [main] DEBUG nextflow.util.CustomThreadPool - Creating default thread pool > poolSize: 17; maxThreads: 1000
+nov-25 11:31:14.542 [main] DEBUG nextflow.Session - Session start invoked
+nov-25 11:31:14.873 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+nov-25 11:31:15.946 [main] INFO  nextflow.Nextflow - 
+===========================================
+VFNEXT v1.2.0
+parameters:
+-------------------------------------------
+--inDir            : /home/kato/Documents/geo_data/script/viralflow_facility/test_file/input
+--outDir           : /home/kato/Documents/geo_data/script/viralflow_facility/test_file/output
+--virus            : sars-cov2
+--refGenomeCode   *: null
+--referenceGenome *: null
+--referenceGFF    *: null
+--primersBED       : /home/kato/Documents/geo_data/script/viralflow_facility/test_file/SARS-CoV-2_artic_5.3.2.bed
+--minLen           : 75
+--depth            : 10
+--minDpIntrahost   : 100
+--trimLen          : 0
+--databaseDir      : /home/kato/ViralFlow/vfnext/databases/
+--runSnpEff        : true
+--writeMappedReads : true
+--nextflowSimCalls : 12
+--fastp_threads    : 12
+--dedup            : false
+--ndedup           : 3
+--bwa_threads      : 12
+--mafft_threads    : 12
+--mapping_quality  : 30
+--base_quality     : 30
+--minBamSize       : 500
+
+
+* Only required for "custom" virus
+Runtime data:
+-------------------------------------------
+Running with profile:   [1;32mstandard[0m
+Run container:          [1;32m[:][0m
+Running as user:        [1;32mkato[0m
+Launch dir:             [1;32m/home/kato/Documents/geo_data/script/viralflow_facility/ViralFlow_GUI[0m
+Base dir:               [1;32m/home/kato/ViralFlow/vfnext[0m
+------------------------------------------
+
+nov-25 11:31:15.958 [main] WARN  nextflow.Nextflow - The valid virus tag (sars-cov2) was provided, ingnoring the provided referenceGFF (null)
+nov-25 11:31:15.959 [main] WARN  nextflow.Nextflow - The valid virus tag (sars-cov2) was provided, ingnoring the provided referenceGenome (null)
+nov-25 11:31:15.960 [main] WARN  nextflow.Nextflow - The valid virus tag (sars-cov2) was provided, ingnoring the provided refGenomeCode (null)
+nov-25 11:31:16.070 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:prepareDatabase` matches process processInputs:prepareDatabase
+nov-25 11:31:16.084 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.084 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.087 [main] DEBUG nextflow.executor.Executor - [warm up] executor > local
+nov-25 11:31:16.091 [main] DEBUG n.processor.LocalPollingMonitor - Creating local task monitor for executor 'local' > cpus=12; memory=62.6 GB; capacity=16; pollInterval=100ms; dumpInterval=5m
+nov-25 11:31:16.213 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:indexReferenceBWA` matches process indexReferenceBWA
+nov-25 11:31:16.214 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.357 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.364 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:genFaIdx` matches process genFaIdx
+nov-25 11:31:16.365 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.365 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.381 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:runFastp` matches process runFastp
+nov-25 11:31:16.382 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.382 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.404 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:align2ref` matches process align2ref
+nov-25 11:31:16.405 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.405 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.415 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:coveragePlot` matches process coveragePlot
+nov-25 11:31:16.416 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.416 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.420 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:getMappedReads` matches process getMappedReads
+nov-25 11:31:16.421 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.421 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.425 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:getUnmappedReads` matches process getUnmappedReads
+nov-25 11:31:16.426 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.426 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.428 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:bamToFastq` matches process bamToFastq
+nov-25 11:31:16.429 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.429 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.432 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:runIvar` matches process runIvar
+nov-25 11:31:16.433 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.433 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.436 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:runReadCounts` matches process runReadCounts
+nov-25 11:31:16.437 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.437 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.439 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:checkSnpEffDB` matches process checkSnpEffDB
+nov-25 11:31:16.440 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.440 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.445 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:runSnpEff` matches process runSnpEff
+nov-25 11:31:16.445 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.445 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.450 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:runVfReport` matches process runVfReport
+nov-25 11:31:16.450 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.450 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.454 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:alignConsensus2Ref` matches process alignConsensus2Ref
+nov-25 11:31:16.454 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.454 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.457 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:snpPlot` matches process snpPlot
+nov-25 11:31:16.457 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.457 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.461 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:runPicard` matches process runPicard
+nov-25 11:31:16.461 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.461 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.467 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.467 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.470 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.470 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.474 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:runPangolin` matches process runPangolin
+nov-25 11:31:16.475 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.475 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.476 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:runNextClade` matches process runNextClade
+nov-25 11:31:16.477 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.477 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.480 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:compileOutputs` matches process compileOutputs_SC2
+nov-25 11:31:16.480 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+nov-25 11:31:16.480 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+nov-25 11:31:16.482 [main] DEBUG nextflow.Session - Workflow process names [dsl2]: align2ref, indexReferenceBWA, fixWGS, bamToFastq, snpPlot, runPangolin, prepareDatabase, checkSnpEffDB, processInputs:prepareDatabase, runVfReport, runSnpEff, getUnmappedReads, compileOutputs_SC2, runFastp, runIvar, runReadCounts, coveragePlot, runIntraHostScript, genFaIdx, runNextClade, compileOutputs, runPicard, alignConsensus2Ref, getMappedReads
+nov-25 11:31:16.483 [main] DEBUG nextflow.Session - Ignite dataflow network (24)
+nov-25 11:31:16.484 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > processInputs:prepareDatabase
+nov-25 11:31:16.491 [PathVisitor-1] DEBUG nextflow.file.PathVisitor - files for syntax: glob; folder: /home/kato/Documents/geo_data/script/viralflow_facility/test_file/input/; pattern: *_R{1,2}*.fq.gz; options: [:]
+nov-25 11:31:16.491 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > indexReferenceBWA
+nov-25 11:31:16.491 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > genFaIdx
+nov-25 11:31:16.492 [PathVisitor-2] DEBUG nextflow.file.PathVisitor - files for syntax: glob; folder: /home/kato/Documents/geo_data/script/viralflow_facility/test_file/input/; pattern: *_R{1,2}*.fastq.gz; options: [:]
+nov-25 11:31:16.493 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > runFastp
+nov-25 11:31:16.493 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > align2ref
+nov-25 11:31:16.493 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > coveragePlot
+nov-25 11:31:16.494 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > getMappedReads
+nov-25 11:31:16.495 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > getUnmappedReads
+nov-25 11:31:16.495 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > bamToFastq
+nov-25 11:31:16.496 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > runIvar
+nov-25 11:31:16.496 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > runReadCounts
+nov-25 11:31:16.497 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > checkSnpEffDB
+nov-25 11:31:16.498 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > runSnpEff
+nov-25 11:31:16.498 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > runVfReport
+nov-25 11:31:16.498 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > alignConsensus2Ref
+nov-25 11:31:16.498 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > snpPlot
+nov-25 11:31:16.499 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > runPicard
+nov-25 11:31:16.500 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > fixWGS
+nov-25 11:31:16.500 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > runIntraHostScript
+nov-25 11:31:16.500 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > runPangolin
+nov-25 11:31:16.500 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > runNextClade
+nov-25 11:31:16.500 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > compileOutputs_SC2
+nov-25 11:31:16.500 [main] DEBUG nextflow.script.ScriptRunner - > Await termination 
+nov-25 11:31:16.500 [main] DEBUG nextflow.Session - Session await
+nov-25 11:31:16.683 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+nov-25 11:31:16.686 [Task submitter] INFO  nextflow.Session - [b5/858a80] Submitted process > runFastp (1)
+nov-25 11:31:16.693 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+nov-25 11:31:16.694 [Task submitter] INFO  nextflow.Session - [22/d6116b] Submitted process > checkSnpEffDB
+nov-25 11:31:16.699 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+nov-25 11:31:16.699 [Task submitter] INFO  nextflow.Session - [cc/938bc8] Submitted process > processInputs:prepareDatabase
+nov-25 11:31:17.440 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 2; name: checkSnpEffDB; status: COMPLETED; exit: 0; error: -; workDir: /home/kato/Documents/geo_data/script/viralflow_facility/ViralFlow_GUI/work/22/d6116b0e4c88963df36e67408e2127]
+nov-25 11:31:17.454 [Task monitor] DEBUG nextflow.util.ThreadPoolBuilder - Creating thread pool 'FileTransfer' minSize=4; maxSize=4; workQueue=LinkedBlockingQueue[10000]; allowCoreThreadTimeout=false
+nov-25 11:31:22.317 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 1; name: processInputs:prepareDatabase; status: COMPLETED; exit: 0; error: -; workDir: /home/kato/Documents/geo_data/script/viralflow_facility/ViralFlow_GUI/work/cc/938bc816f0c4c11c1bde0964e8bb02]
+nov-25 11:31:22.324 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+nov-25 11:31:22.325 [Task submitter] INFO  nextflow.Session - [4f/39470f] Submitted process > genFaIdx
+nov-25 11:31:22.330 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+nov-25 11:31:22.331 [Task submitter] INFO  nextflow.Session - [b1/10735b] Submitted process > indexReferenceBWA
+nov-25 11:31:24.031 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 5; name: genFaIdx; status: COMPLETED; exit: 0; error: -; workDir: /home/kato/Documents/geo_data/script/viralflow_facility/ViralFlow_GUI/work/4f/39470f0c49b1a424b72ae6494568da]
+nov-25 11:31:30.628 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 4; name: indexReferenceBWA; status: COMPLETED; exit: 0; error: -; workDir: /home/kato/Documents/geo_data/script/viralflow_facility/ViralFlow_GUI/work/b1/10735b2cbdf10f32fc87960e68956b]
+nov-25 11:31:38.417 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 3; name: runFastp (1); status: COMPLETED; exit: 0; error: -; workDir: /home/kato/Documents/geo_data/script/viralflow_facility/ViralFlow_GUI/work/b5/858a80c1c6537cc46f5ce9821b354a]
+nov-25 11:31:38.438 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+nov-25 11:31:38.439 [Task submitter] INFO  nextflow.Session - [b6/7f385c] Submitted process > align2ref (1)
+nov-25 11:31:54.855 [SIGINT handler] DEBUG nextflow.Session - Session aborted -- Cause: SIGINT
+nov-25 11:31:54.868 [SIGINT handler] DEBUG nextflow.Session - The following nodes are still active:
+[process] coveragePlot
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (value) bound ; channel: genome_code
+  port 2: (cntrl) -     ; channel: $
+
+[process] getMappedReads
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] getUnmappedReads
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] bamToFastq
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] runIvar
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (value) bound ; channel: ref_fa
+  port 2: (cntrl) -     ; channel: $
+
+[process] runReadCounts
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (value) bound ; channel: ref_fa
+  port 2: (cntrl) -     ; channel: $
+
+[process] runSnpEff
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (value) bound ; channel: genome_code
+  port 2: (value) bound ; channel: refGenomeFasta
+  port 3: (value) bound ; channel: refIndexFiles
+  port 4: (value) bound ; channel: entry_found_file
+  port 5: (cntrl) -     ; channel: $
+
+[process] runVfReport
+  status=ACTIVE
+  port 0: (value) bound ; channel: fastp_htmls
+  port 1: (value) OPEN  ; channel: snpeff_htmls
+  port 2: (cntrl) -     ; channel: $
+
+[process] alignConsensus2Ref
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (value) bound ; channel: ref_fa
+  port 2: (cntrl) -     ; channel: $
+
+[process] snpPlot
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] runPicard
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (value) bound ; channel: ref_fa
+  port 2: (cntrl) -     ; channel: $
+
+[process] fixWGS
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] runIntraHostScript
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (value) bound ; channel: ref_gff
+  port 2: (cntrl) -     ; channel: $
+
+[process] runPangolin
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] runNextClade
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (value) bound ; channel: ref_fa
+  port 2: (cntrl) -     ; channel: $
+
+[process] compileOutputs_SC2
+  status=ACTIVE
+  port 0: (value) OPEN  ; channel: go
+  port 1: (value) bound ; channel: virus_tag
+  port 2: (cntrl) -     ; channel: $
+
+nov-25 11:31:54.869 [main] DEBUG nextflow.Session - Session await > all process finished
+nov-25 11:31:54.869 [main] DEBUG nextflow.Session - Session await > all barriers passed
+nov-25 11:31:54.873 [main] INFO  nextflow.Nextflow - 
+===========================================
+[1;31mFinished with errors![0m
+
+nov-25 11:31:54.876 [main] WARN  n.processor.TaskPollingMonitor - Killing running tasks (1)
+nov-25 11:31:54.883 [main] DEBUG nextflow.trace.WorkflowStatsObserver - Workflow completed > WorkflowStats[succeededCount=5; failedCount=0; ignoredCount=0; cachedCount=0; pendingCount=0; submittedCount=0; runningCount=0; retriesCount=0; abortedCount=1; succeedDuration=37.8s; failedDuration=0ms; cachedDuration=0ms;loadCpus=0; loadMemory=0; peakRunning=3; peakCpus=3; peakMemory=0; ]
+nov-25 11:31:55.012 [main] DEBUG nextflow.cache.CacheDB - Closing CacheDB done
+nov-25 11:31:55.019 [main] DEBUG nextflow.script.ScriptRunner - > Execution complete -- Goodbye
