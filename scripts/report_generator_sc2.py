@@ -14,17 +14,10 @@ import geobr
 from Bio import SeqIO
 from Bio.SeqIO import FastaIO
 import csv
-from docxtpl import DocxTemplate
-from docxtpl import InlineImage
-import docx
-from docx import Document
-from docx.shared import Inches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import openpyxl
-from unidecode import unidecode
 import os
 import sys
-import geopandas as gpd
 import seaborn as sns
 import colorcet as cc
 import shutil
@@ -207,158 +200,12 @@ def planilha_resultado(covv_virus_name, resultado_df):
 #A função 'filter_depth' gera um arquivo intermediário 'tabela_resultados_filt.csv' com informações apenas das amostras com cobertua > 80%
 def filter_depth(resultado_df):
 
-    resultado_df_filt = resultado_df.loc[resultado_df['Coverage'] >= 80]
+    resultado_df_filt = resultado_df.loc[resultado_df['Coverage'] >= 90]
 
     resultado_df_filt.to_csv(os.path.join(sys.argv[1], "tabela_resultados_filt.csv"))
 
     return resultado_df_filt
 
-
-#Função para criar um gráfico de barras com o numero total de cada linhagem identificada
-def freq_graph(resultado_df_filt):
-
-    print("freq_graph")
-
-    df_combine = resultado_df_filt
-
-    df_combine['Lineage'].value_counts().plot(kind="bar")
-
-    #plt.title("Mince Pie Consumption Study Results")
-    plt.xlabel("Linhagens encontradas")
-    plt.ylabel("Números de genomas")
-
-    #Export figure para pasta
-    plt.tight_layout()
-    plt.savefig(os.path.join(sys.argv[1], "RNSG_REPORT/Grafico_frequencia_linhagem.png"), format='png', dpi=200)
-
-
-#Função para criar um grafico de barras agrupados indicando a proporção de cada linhagem por mês
-def grafico_bar_agrupado(resultado_df_filt):
-
-    print("grafico_bar_agrupado")
-
-    df_combine = resultado_df_filt
-
-    df_combine.rename(columns = {'Data Coleta':'Data'}, inplace = True)
-
-    #convert colum to date format
-    df_combine['Data'] = pd.to_datetime(df_combine['Data'], format="%d-%m-%Y")
-
-    #Ordernar as linhas pela ordem da data
-    df_combine = df_combine.sort_values(by='Data')
-
-    #Converter a data para o padrão mes/ano
-    df_combine['Data'] = pd.to_datetime(df_combine['Data']).dt.strftime('%m-%Y')
-
-    #Create a list of timeserie orderd
-    df_combine_list = df_combine['Data'].unique()
-
-    series = pd.Series(df_combine_list)
-    lst = series.to_list()
-
-    # Create cross-tabulation tables
-    cross_tab = pd.crosstab(df_combine.Data, df_combine.Lineage).reindex(lst)
-    cross_tab_prop = pd.crosstab(df_combine.Data, df_combine.Lineage, normalize="index").reindex(lst)
-
-    # Create subplots
-    fig, axs = plt.subplots(2, 1)
-    axs = axs.flatten()
-
-    # Define a color palette using Seaborn
-    colors = sns.color_palette("tab20c", 20)
-
-    # Create stacked bar plots
-    cross_tab.plot(kind='bar', stacked=True, ax=axs[0], color = colors)
-    cross_tab_prop.plot(kind='bar', stacked=True, ax=axs[1], color = colors)
-
-    # Set ylabels
-    axs[0].set_ylabel('Genomas (n)', fontsize=14)
-    axs[1].set_ylabel('Genomas (%)', fontsize=14)
-
-    # Set x-axis font size
-    plt.xticks(fontsize=10)
-
-    # Set y-axis font size
-    axs[0].tick_params(axis='y', labelsize=10)
-    axs[1].tick_params(axis='y', labelsize=10)
-
-    # Set xlabels
-    axs[0].set(xlabel=None)
-    axs[0].get_xaxis().set_visible(False)
-    axs[1].set_xlabel('Data de coleta (Mês-Ano)', fontsize=14)
-
-    # Set legend location
-    axs[0].get_legend().remove()
-    #axs[1].legend(bbox_to_anchor=(1, 1), fontsize="10")
-    axs[1].legend(bbox_to_anchor=(1, 1))
-
-    # Export figure to the specified output file
-    plt.tight_layout()
-    plt.savefig(os.path.join(sys.argv[1],"RNSG_REPORT/Freq_lineage.png"), format='png', dpi=200)
-    
-    pass
-
-
-#Função para cria um mapa de calor com o numero de genomas sequenciados (>80% cobertura) por município SOLICITANTE
-def mapa(metadata, resultado_df_filt):
-    
-    print("mapa")
-
-    # Sigla do LACEN
-    SIGLA_LACEN = metadata[['Estado_do_Solicitante']].iloc[1,:].to_string(header=False, index=False)
-
-    # Lista de Municipios do estado
-    state = geobr.read_municipality(code_muni=SIGLA_LACEN, year=2019)
-
-    # Remove accents from words in the 'name_muni' column
-    state['name_muni'] = state['name_muni'].apply(unidecode)
-
-    counts = resultado_df_filt['Município'].value_counts()
-
-    # create new dataframe with row names and counts
-    municipio_genoma = counts.reset_index()
-    municipio_genoma.columns = ['Município', 'Genomas']
-
-    def capitalize_two_words(name):
-        split_name = name.split(' ')
-        capitalized_words = [word.capitalize() for word in split_name]
-        return ' '.join(capitalized_words)
-
-    municipio_genoma['Município'] = municipio_genoma['Município'].apply(capitalize_two_words)
-
-    municipio_genoma_state = state.merge(municipio_genoma, right_on="Município", left_on="name_muni", how='outer')
-
-    municipio_genoma_state['Genomas'] = municipio_genoma_state['Genomas'].fillna(0)
-
-    fig, ax = plt.subplots(figsize=(5, 5), dpi=200)
-
-    ax.axis("off")
-
-    divider = make_axes_locatable(ax)
-
-    # create `cax` for the colorbar
-    cax = divider.append_axes("bottom", size="3%", pad=0.01, alpha=0.1)
-
-    # Plots 'No Data' layer
-    municipio_genoma_state.plot(ax=ax, color='#DEDEDE', edgecolor='#ECECEC', label='No Data',
-                                legend_kwds={"shrink": 0.1})
-
-    # Plots data layer
-    municipio_genoma_state.dropna().plot(ax=ax, column='Genomas', cmap='viridis', legend=True, cax=cax, alpha=0.6,
-                                         legend_kwds={"label": "Número de Genomas", "orientation": "horizontal",
-                                                      "shrink": 0.3})
-
-    # Plotar nome dos municipios
-    municipio_genoma_state.dropna().apply(lambda x: ax.annotate(text=x.name_muni, xy=x.geometry.centroid.coords[0],
-                                                               ha='left', color="black"), axis=1)
-
-    # Export figure para pasta
-    plt.tight_layout()
-    plt.savefig(os.path.join(sys.argv[1], "RNSG_REPORT/Mapa_genomas.png"), format='png', dpi=200)
-
-    pass
-
-    #plt.show()
 
 
 #Função para gerar o arquivo fasta para ser submetido ao Gisaid
@@ -863,12 +710,6 @@ if __name__ == "__main__":
     filter_depth(resultado_df)
 
     resultado_df_filt = pd.read_csv(os.path.join(sys.argv[1], "tabela_resultados_filt.csv"))
-
-    freq_graph(resultado_df_filt)
-
-    grafico_bar_agrupado(resultado_df_filt)
-
-    mapa(metadata, resultado_df_filt)
 
   #  gerar_relatorio(input_folder_path, metadata, resultado_df)
 

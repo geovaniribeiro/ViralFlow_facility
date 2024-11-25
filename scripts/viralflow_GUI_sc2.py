@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QFileDialog, QPlainTextEdit)
@@ -22,8 +23,9 @@ class ViralFlowGUI(QWidget):
         self.fields = [
             ("Primers BED File", "primersBED"),
             ("Input Directory", "inDir"),
-            ("Output Directory", "outDir")
-            
+            ("Output Directory", "outDir"),
+            ("Metadata file", "metadata"),
+            ("Config file", "config_file")
         ]
 
         # Create a dictionary to store the QLineEdit widgets for each field
@@ -81,17 +83,23 @@ class ViralFlowGUI(QWidget):
         params = {key: entry.text() for key, entry in self.entries.items()}
 
     # Construct the command string with parameters
-        command = f"NXF_VER=22.04.0 nextflow run ~/ViralFlow//vfnext/main.nf --primersBED {params['primersBED']} " \
+        command_viralflow = f"NXF_VER=22.04.0 nextflow run ~/ViralFlow//vfnext/main.nf --primersBED {params['primersBED']} " \
                 f"--outDir {params['outDir']} --inDir {params['inDir']} " \
                 f"--virus sars-cov2 --runSnpEff true --writeMappedReads true --minLen 75 " \
                 f"--depth 10 --minDpIntrahost 100 --trimLen 0 --refGenomeCode null " \
                 f"--referenceGFF null --referenceGenome null --nextflowSimCalls 12 " \
                 f"--fastp_threads 12 --bwa_threads 12 --mafft_threads 12 -resume"
 
+        #command_conda_report = f"./report_generator_env.sh"
+        command_report_generator = f"python scripts/report_generator_sc2.py {params['outDir']} {params['metadata']} {params['config_file']}  "
 
         # Run the command using subprocess
         try:
-            subprocess.run(command, shell=True, check=True)
+            subprocess.run(command_viralflow, shell=True, check=True)
+            #subprocess.run("conda init bash")
+            #os.system(, "source ~/miniconda3/bin/activate")
+            #os.system("conda activate report_generator")
+            #os.system("conda activate report_generator")
             print("Command executed successfully!")
         except subprocess.CalledProcessError as e:
             print(f"Error executing command: {e}")

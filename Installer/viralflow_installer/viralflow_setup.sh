@@ -11,9 +11,9 @@ pip install pyqt5
 sudo apt install python3 python3-tk
 
 #deixar os scripts executaveis
-chmod +u viralflow_GUI_sc2
-chmod +u scripts/viralflow_GUI_sc2.py
-chmod +u viralflow_GUI_sc2
+chmod +x viralflow_GUI_sc2
+chmod +x scripts/viralflow_GUI_sc2.py
+chmod +x viralflow_GUI_sc2
 
 
 # Download and set up Micromamba
@@ -39,4 +39,12 @@ sudo ln -s /usr/bin/unsquashfs /usr/local/bin/unsquashfs
 
 # Build containers
 viralflow -build_containers
+
+###################
+#Instalação das bibliotecas para gerar os arquivos e relatorios
+#COMO ENTRAR NA PASTA ESPECIFICA DE INSTALAÇÃO?????
+conda create -n report_generator
+conda activate report_generator
+conda env update -n report_generator --file envs/env.yml
+
 
