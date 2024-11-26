@@ -1,8 +1,10 @@
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox
 import subprocess
+import os
 import sys
 from assembly_sc2 import ViralFlowGUI  # Importa o script para configuração do pipeline
 from update_database import atualizar_banco_dados  # Função para atualizar banco de dados
+from update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
 
 
 class MenuInicial(QWidget):
@@ -21,13 +23,19 @@ class MenuInicial(QWidget):
         layout.addWidget(label)
 
         # Botão para atualizar banco de dados
-        update_button = QPushButton("Atualizar banco de dados")
+        update_button = QPushButton("Atualizar ViralFlow")
+        update_button.clicked.connect(self.atualizar_viralflow)
+        layout.addWidget(update_button)
+
+        # Botão para atualizar banco de dados
+        update_button = QPushButton("Atualizar Banco de dados")
         update_button.clicked.connect(self.atualizar_banco_dados)
         layout.addWidget(update_button)
 
+
         # Botão para abrir a tela de Montagem Sars-CoV2
-        assembly_button = QPushButton("Montagem Sars-CoV2")
-        assembly_button.clicked.connect(self.abrir_tela_assembly)
+        assembly_button = QPushButton("Montagem SARS-CoV-2")
+        assembly_button.clicked.connect(self.abrir_tela_assembly_sc2)
         layout.addWidget(assembly_button)
 
         # Botão para sair
@@ -36,6 +44,21 @@ class MenuInicial(QWidget):
         layout.addWidget(exit_button)
 
         self.setLayout(layout)
+
+
+
+    def atualizar_viralflow(self):
+        # Pergunta de confirmação antes de rodar o script
+        confirm = QMessageBox.question(
+            self,
+            "Confirmação",
+            "Você deseja atualizar o ViralFlow?\nIsso pode levar algum tempo.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if confirm == QMessageBox.Yes:
+            atualizar_viralflow()
+
 
     def atualizar_banco_dados(self):
         # Pergunta de confirmação antes de rodar o script
@@ -49,7 +72,10 @@ class MenuInicial(QWidget):
         if confirm == QMessageBox.Yes:
             atualizar_banco_dados()
 
-    def abrir_tela_assembly(self):
+
+
+ 
+    def abrir_tela_assembly_sc2(self):
         # Fecha o menu inicial e abre a interface de configuração
         self.close()
         self.tela_assembly = ViralFlowGUI()
@@ -65,6 +91,7 @@ class MenuInicial(QWidget):
         )
 
         if confirm == QMessageBox.Yes:
+            subprocess.run("exit", shell=True, check=True)
             QApplication.quit()
 
 if __name__ == "__main__":

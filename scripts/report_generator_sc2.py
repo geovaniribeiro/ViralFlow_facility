@@ -26,7 +26,7 @@ def load_config(config_path):
 #faz algumas mudancas em alguns nomes (deixar apenas o codigo de amostra)
 def input_folder(folder):
 
-    print("input_folder")
+    #print("input_folder")
 
     #Caminho do Arquivo do GAL
     metadata_path = sys.argv[2]
@@ -165,7 +165,7 @@ def planilha_results(metadata, reads, coverage, lineage):
 
 def planilha_resultado(covv_virus_name, resultado_df):
 
-    print("planilha_resultado")
+    #print("planilha_resultado")
 
     result_table = covv_virus_name[['id','covv_virus_name']]
 
@@ -207,7 +207,7 @@ def filter_depth(resultado_df):
 #Função para gerar o arquivo fasta para ser submetido ao Gisaid
 def gerar_arquivo_fasta(metadata, resultado_df):
 
-    print("gerar_arquivo_fasta")
+    #print("gerar_arquivo_fasta")
 
     # Convert Column ID name to string
     metadata['Código_da_Amostra'] = metadata['Código_da_Amostra'].astype(str)
@@ -287,7 +287,7 @@ def gerar_arquivo_fasta(metadata, resultado_df):
 #Função para gerar o arquivo EpiCov para ser submetido ao Gisaid
 def arquivo_epicov(metadata, df_combine_sequence):
     
-    print("arquivo_epicov")
+    #print("arquivo_epicov")
     
     #Columnas que serão inseridas manualmente
     #Nickname do submitter no gisaid
@@ -587,7 +587,7 @@ def arquivo_epicov(metadata, df_combine_sequence):
 #Função para criar um grafico com métricas gerais da corrida, para aferição de controle de qualidade
 def Quality_monitor(folder):
 
-    print("QualityCheck")
+    #print("QualityCheck")
 
     coverage['PCT_10X'] = coverage['PCT_10X']*100
 
