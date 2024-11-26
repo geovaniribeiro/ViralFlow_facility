@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Inicializa o shell para micromamba
+eval "$(micromamba shell hook --shell bash)"
+
+# Ativa o ambiente
+micromamba activate viralflow
+
+# Atualiza o Pangolin e suas bases de dados
+gnome-terminal -- bash -c "
+echo '###################################################################';
+echo '################## Iniciando a interface gráfica ##################';
+echo '###################################################################';
+python3 scripts/main.py;
+exec bash"

@@ -97,8 +97,10 @@ class ViralFlowGUI(QWidget):
 
         # Run the command using subprocess
         try:
-            #subprocess.run(command_viralflow, shell=True, check=True)
-            #print("ViralFlow executed successfully!")
+            subprocess.run(command_viralflow, shell=True, check=True)
+            print("ViralFlow executed successfully!")
+            print("ViralFlow executed successfully!")
+            print("ViralFlow executed successfully!")
             subprocess.run(command_report_generator, shell=True, check=True)
             print("Reports generated successfully!")
         except subprocess.CalledProcessError as e:
