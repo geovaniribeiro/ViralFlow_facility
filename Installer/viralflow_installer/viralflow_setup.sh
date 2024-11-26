@@ -24,7 +24,7 @@ curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/1.5.7 | tar -xvj bin/mic
 source ~/.bashrc
 micromamba activate
 
-#Remove previously viraflow instalation
+#Remove previous viraflow instalation
 rm -r ViralFlow/
 micromamba env remove -n viralflow
 
@@ -43,6 +43,4 @@ viralflow -build_containers
 
 ###################
 #Instalar bibliotecas adicionais para gerar os arquivos e relatorios
-#COMO ENTRAR NA PASTA ESPECIFICA DE INSTALAÇÃO?????
-
-pip install -r $(code_path)/envs/env.yml
+pip install -r $code_path/envs/env.yml
