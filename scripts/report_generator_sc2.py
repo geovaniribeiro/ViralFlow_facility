@@ -562,7 +562,7 @@ def arquivo_epicov(metadata, df_combine_sequence):
             'Gender', 'Patient age', 'Patient status', 'Specimen source', 'Outbreak', 'Last vaccinated', 'Treatment',
             'Sequencing technology', 'Assembly method', 'Coverage', 'Originating lab', 'Address',
             'Sample ID given by originating laboratory', 'Submitting lab', 'Address',
-            'Sample ID given by the submitting laboratory', 'Sequencing consortium', 'Authors']
+            'Sample ID given by the submitting laboratory', 'Authors']
 
 
     # Crie um novo DataFrame com as colunas desejadas
