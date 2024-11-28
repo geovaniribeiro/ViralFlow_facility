@@ -548,14 +548,8 @@ def arquivo_epicov(metadata, df_combine_sequence):
     #Insert covv_subm_sample_id column
     gisaid_temp.insert(27, 'covv_subm_sample_id','')
 
-
-    #Insert covv_subm_sample_id column
-    gisaid_temp.insert(28, 'covv_consortium','')
-    gisaid_temp.loc[:, 'covv_consortium'] = 'Rede Nacional de Sequenciamento Genetico'
-
-
     #Insert covv_authors column
-    gisaid_temp.insert(29, 'covv_authors','')
+    gisaid_temp.insert(28, 'covv_authors','')
     gisaid_temp.loc[:, 'covv_authors'] = covv_authors
 
     df_insumos = gisaid_temp
