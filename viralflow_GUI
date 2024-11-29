@@ -3,6 +3,8 @@
 # Inicializa o shell para micromamba
 eval "$(micromamba shell hook --shell bash)"
 
+echo "test simples"
+
 # Ativa o ambiente
 micromamba activate viralflow
 
