@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import (
 
 import subprocess
 
+from report_generator_sc2 import generate_report
+
 class ViralFlowGUI(QWidget):
     def __init__(self):
         super().__init__()
@@ -21,8 +23,8 @@ class ViralFlowGUI(QWidget):
 
         # Define labels and input fields
         self.fields = [
-            ("Arquivo bed (Primers)", "primersBED", True),  # True indicates a file should be chosen
-            ("Pasta de entrada", "inDir", False),      # False indicates a folder should be chosen
+            ("Arquivo bed (Primers)", "primersBED", True),
+            ("Pasta de entrada", "inDir", False),
             ("Pasta de saida", "outDir", False),
             ("Arquivo metadados (.csv)", "metadata", True),
             ("Arquivo configuração (.yaml)", "config_file", True),
@@ -72,13 +74,11 @@ class ViralFlowGUI(QWidget):
         self.setLayout(layout)
 
     def select_file(self, entry):
-        # Open file dialog to select a file
         file_path, _ = QFileDialog.getOpenFileName(self, "Selecione um arquivo")
         if file_path:
             entry.setText(file_path)
 
     def select_folder(self, entry):
-        # Open folder dialog to select a directory
         folder_path = QFileDialog.getExistingDirectory(self, "Selecione uma pasta")
         if folder_path:
             entry.setText(folder_path)
@@ -95,27 +95,30 @@ class ViralFlowGUI(QWidget):
                 f"--depth 10 --minDpIntrahost 100 --trimLen 0 --refGenomeCode null " \
                 f"--referenceGFF null --referenceGenome null --nextflowSimCalls 12 " \
                 f"--fastp_threads 12 --bwa_threads 12 --mafft_threads 12 -resume"
-
-        #command_conda_report = f"./report_generator_env.sh"
-        command_report_generator = f"python scripts/report_generator_sc2.py {params['outDir']}/COMPILED_OUTPUT/ {params['metadata']} {params['config_file']}  "
-
-        # Run the command using subprocess
+        
         try:
             subprocess.run(command_viralflow, shell=True, check=True)
             print("ViralFlow executado com sucesso!")
             print(" ")
             print(" ")
-            subprocess.run(command_report_generator, shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error executing command: {e}")
+
+        try:
+            generate_report(
+                output_folder=os.path.join(params['outDir'], "COMPILED_OUTPUT"),
+                metadata_path=params['metadata'],
+                config_path=params['config_file']
+            )
             print("Relatorio e arquivos gerados com sucesso!")
             print(" ")
             print(" ")
             print("O terminal pode ser fechado ;)")
             print(" ")
-        except subprocess.CalledProcessError as e:
-            print(f"Error executing command: {e}")
+        except Exception as report_error:
+            print(f"Failed to generate the report: {report_error}")
 
     def sair(self):
-        # Confirmação antes de sair
         confirm = QMessageBox.question(
             self,
             "Confirmação",

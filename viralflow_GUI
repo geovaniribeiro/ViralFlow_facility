@@ -1,17 +1,18 @@
 #!/bin/bash
 
+# Caminho absoluto do diretório atual
+path=$(realpath "$(dirname "$0")")
+
 # Inicializa o shell para micromamba
 eval "$(micromamba shell hook --shell bash)"
-
-echo "test simples"
 
 # Ativa o ambiente
 micromamba activate viralflow
 
-# Atualiza o Pangolin e suas bases de dados
+# Atualiza o Pangolin e inicia a interface gráfica
 gnome-terminal -- bash -c "
 echo '###################################################################';
 echo '################## Iniciando a interface gráfica ##################';
 echo '###################################################################';
-python3 scripts/main.py;
+python3 ${path}/scripts/main.py;
 exec bash"
