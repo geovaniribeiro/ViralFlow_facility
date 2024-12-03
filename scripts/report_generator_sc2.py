@@ -24,12 +24,13 @@ def load_config(config_path):
         return yaml.safe_load(file)
 
 #faz algumas mudancas em alguns nomes (deixar apenas o codigo de amostra)
-def input_folder(folder):
+def input_folder(output_folder, metadata_path):
 
     #print("input_folder")
 
-    #Caminho do Arquivo do GAL
-    metadata_path = sys.argv[2]
+    # Load metadata
+    metadata = pd.read_csv(metadata_path, sep=';', encoding='latin-1', on_bad_lines='skip')
+
 
     # #OBS: VERIFICAR QUAL CAMPO SEPARADOR NO ARQUIVO GAL
     metadata = pd.read_csv(metadata_path, sep =';', encoding='latin-1', on_bad_lines='skip')
@@ -41,7 +42,7 @@ def input_folder(folder):
     #Certificar se o cabelho das sequencias possuem apenas o codigo da amostra.
 
     # Construct the file path for the CSV file
-    sequence_path = os.path.join(folder, "seqbatch.fa")
+    sequence_path = os.path.join(output_folder, "seqbatch.fa")
 
     sequence = open(sequence_path)
 
@@ -52,7 +53,7 @@ def input_folder(folder):
     #Carregar os seguintes arquivos do ViralFlow
 
     # Construct the file path for the CSV file
-    reads_path = os.path.join(folder, "reads_count.csv")
+    reads_path = os.path.join(output_folder, "reads_count.csv")
 
     reads = pd.read_csv(reads_path, sep =',')
 
@@ -64,7 +65,7 @@ def input_folder(folder):
 
 
     # Construct the file path for the CSV file
-    lineage_path = os.path.join(folder, "major_summary.csv")
+    lineage_path = os.path.join(output_folder, "major_summary.csv")
 
     lineage = pd.read_csv(lineage_path, sep =',')
 
@@ -72,7 +73,7 @@ def input_folder(folder):
 
     #wgs
     # Construct the file path for the CSV file
-    coverage_path = os.path.join(folder, 'wgs.csv')
+    coverage_path = os.path.join(output_folder, 'wgs.csv')
 
     coverage = pd.read_csv(coverage_path, sep =',')
     coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
@@ -83,9 +84,9 @@ def input_folder(folder):
 
 #Adiciona a pasta de RNSG_REPORT, a qual serao a adiciona os graficos, planilha, e outros
 # Adiciona a pasta de output no caminho informado
-def mod_pasta():
+def mod_pasta(output_folder):
     # O caminho informado no argumento $1
-    nome_pasta = sys.argv[1]
+    nome_pasta = output_folder
 
     # Verifica se a pasta 'RNSG_REPORT' já existe, se sim, a remove
     output_path = os.path.join(nome_pasta, 'RNSG_REPORT')
@@ -95,7 +96,7 @@ def mod_pasta():
     
     # Cria a pasta 'RNSG_REPORT' dentro da pasta de saida do viralflow
     os.mkdir(output_path)
-  
+
  
 #Função 'planilha_results' cria um arquivo intermediário 'tabela_resultados.csv' que irá conter informações necessárias para as etapas seguintes, e realiza as seguintes tarefas:
 ##Altera nome de algumas colunas, 
@@ -105,7 +106,7 @@ def mod_pasta():
 ### Tipo Amostra,	Município, Data Coleta, Sexo, Reads, Coverage, Depth of Coverage,
 ### Lineage
     
-def planilha_results(metadata, reads, coverage, lineage):
+def planilha_results(metadata, reads, coverage, lineage, output_folder):
 
     # Mudar o SEXO de nome para sigla
     sexo = {'MASCULINO': 'M', 'FEMININO': 'F'}
@@ -154,7 +155,7 @@ def planilha_results(metadata, reads, coverage, lineage):
     resultado_df = resultado_df.set_index('Requisição')
 
     #Salva os dados em um arquivo temporario
-    resultado_df.to_csv(os.path.join(sys.argv[1], "tabela_resultados.csv"))
+    resultado_df.to_csv(os.path.join(output_folder, "tabela_resultados.csv"))
 
     return resultado_df
 
@@ -163,7 +164,7 @@ def planilha_results(metadata, reads, coverage, lineage):
 ##Contem as seguintes colunas: Barcode	N Barcode, Gal Sequenciamento, Código Amostra, Nome da Sequencia, CT, Tipo Amostra, Município,
     #Data Coleta, Sexo, Reads, Cobertura, Profundidade Média, Linhagem
 
-def planilha_resultado(covv_virus_name, resultado_df):
+def planilha_resultado(covv_virus_name, resultado_df, output_folder):
 
     #print("planilha_resultado")
 
@@ -189,23 +190,23 @@ def planilha_resultado(covv_virus_name, resultado_df):
                                                 'Depth of Coverage': 'Profundidade Média'})
 
     # Salve o DataFrame resultante em um arquivo Excel
-    result_table.to_excel(os.path.join(sys.argv[1], 'RNSG_REPORT/Planilha_de_Resultado.xlsx'), index=False)
+    result_table.to_excel(os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx'), index=False)
 
 
 
 #A função 'filter_depth' gera um arquivo intermediário 'tabela_resultados_filt.csv' com informações apenas das amostras com cobertua > 90%
-def filter_depth(resultado_df):
+def filter_depth(resultado_df, output_folder):
 
     resultado_df_filt = resultado_df.loc[resultado_df['Coverage'] >= 90]
 
-    resultado_df_filt.to_csv(os.path.join(sys.argv[1], "tabela_resultados_filt.csv"))
+    resultado_df_filt.to_csv(os.path.join(output_folder, "tabela_resultados_filt.csv"))
 
     return resultado_df_filt
 
 
 
 #Função para gerar o arquivo fasta para ser submetido ao Gisaid
-def gerar_arquivo_fasta(metadata, resultado_df):
+def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
 
     #print("gerar_arquivo_fasta")
 
@@ -270,10 +271,10 @@ def gerar_arquivo_fasta(metadata, resultado_df):
     df_combine_sequence['ANO_SEMANA_EPIDEMIOLOGICA'] = df_combine_sequence['Data_da_Coleta'].dt.strftime('%Y')
         
     #Cria um arquivo chamado 'seq_df.csv' para ser usado na geração do fasta
-    df_combine_sequence.to_csv(os.path.join(sys.argv[1], 'seq_df.csv'), sep = ',')
+    df_combine_sequence.to_csv(os.path.join(output_folder, 'seq_df.csv'), sep = ',')
 
     # Convert DataFrame df_combine_sequence to a fasta file with the required header format
-    with open(os.path.join(sys.argv[1], 'seq_df.csv')) as csvfile, open(os.path.join(sys.argv[1],'RNSG_REPORT/LACEN_seq.fasta'), 'w') as outfile:
+    with open(os.path.join(output_folder, 'seq_df.csv')) as csvfile, open(os.path.join(output_folder,'RNSG_REPORT/LACEN_seq.fasta'), 'w') as outfile:
         reader = csv.reader(csvfile, delimiter=',')
         first_line = csvfile.readline()
         for row in reader:
@@ -285,7 +286,7 @@ def gerar_arquivo_fasta(metadata, resultado_df):
 
 
 #Função para gerar o arquivo EpiCov para ser submetido ao Gisaid
-def arquivo_epicov(metadata, df_combine_sequence):
+def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     
     #print("arquivo_epicov")
     
@@ -387,7 +388,7 @@ def arquivo_epicov(metadata, df_combine_sequence):
 
     covv_virus_name.loc[:, 'covv_passage'] = 'Original'
 
-    covv_virus_name.to_excel(os.path.join(sys.argv[1],'RNSG_REPORT/Planilha_de_Resultado.xlsx'), index=False)
+    covv_virus_name.to_excel(os.path.join(output_folder,'RNSG_REPORT/Planilha_de_Resultado.xlsx'), index=False)
 
     #Collection date
     covv_collection_date = df_combine_sequence[['id','Data_da_Coleta']]
@@ -573,13 +574,13 @@ def arquivo_epicov(metadata, df_combine_sequence):
 
     gisaid_temp = gisaid_temp.set_index('submitter')
 
-    gisaid_temp.to_csv(os.path.join(sys.argv[1], 'RNSG_REPORT/EpiCov.csv'))
+    gisaid_temp.to_csv(os.path.join(output_folder, 'RNSG_REPORT/EpiCov.csv'))
 
     pass
 
 
 #Função para criar um grafico com métricas gerais da corrida, para aferição de controle de qualidade
-def Quality_monitor(folder):
+def Quality_monitor(coverage, reads, resultado_df, output_folder):
 
     #print("QualityCheck")
 
@@ -656,13 +657,13 @@ def Quality_monitor(folder):
 
     # save the plot as SVG file
     plt.tight_layout()
-    plt.savefig(os.path.join(sys.argv[1], "RNSG_REPORT/Quality_ckeck.png"), format='png', dpi = 300)
+    plt.savefig(os.path.join(output_folder, "RNSG_REPORT/Quality_ckeck.png"), format='png', dpi = 300)
 
 
 #Função para remover os arquivos intermediários
-def remover_csv():
+def remover_csv(output_folder):
     # Caminho informado ao executar o script ($1)
-    caminho = sys.argv[1]
+    caminho = output_folder
 
     # Arquivos específicos que queremos remover
     arquivos_para_remover = ['seq_df.csv', 'tabela_resultados.csv', 'tabela_resultados_filt.csv']
@@ -678,42 +679,57 @@ def remover_csv():
 
 
 
-if __name__ == "__main__":
-    #if len(sys.argv) != 2:
-     #   print("Usage: python3 script.py <config_path>")
-      #  sys.exit(1)
+def generate_report(metadata_path, config_path, output_folder):
 
-    mod_pasta()
-
-    # Caminho do arquivo de configuração (YAML)
-    config_path = sys.argv[3]
-    
-    # Carregar configurações do YAML
+    # Carregar configurações
     config = load_config(config_path)
     
-    metadata, sequence, records, reads, lineage, coverage = input_folder(sys.argv[1])
+    mod_pasta(output_folder)
     
-    df_combine_sequence = planilha_results(metadata, reads, coverage, lineage)
+    # Processar os arquivos na pasta de entrada
+    metadata, sequence, records, reads, lineage, coverage = input_folder(output_folder, metadata_path)
+    df_combine_sequence = planilha_results(metadata, reads, coverage, lineage, output_folder)
 
-    resultado_df = pd.read_csv(os.path.join(sys.argv[1], "tabela_resultados.csv"))
-    
-    filter_depth(resultado_df)
+    # Trabalhar com arquivos de resultados
+    resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
+    if os.path.exists(resultado_file):
+        resultado_df = pd.read_csv(resultado_file)
+        filter_depth(resultado_df, output_folder)
+    else:
+        raise FileNotFoundError(f"Arquivo {resultado_file} não encontrado!")
 
-    resultado_df_filt = pd.read_csv(os.path.join(sys.argv[1], "tabela_resultados_filt.csv"))
+    resultado_filt_file = os.path.join(output_folder, "tabela_resultados_filt.csv")
+    if os.path.exists(resultado_filt_file):
+        resultado_df_filt = pd.read_csv(resultado_filt_file)
+    else:
+        raise FileNotFoundError(f"Arquivo {resultado_filt_file} não encontrado!")
 
-  #  gerar_relatorio(input_folder_path, metadata, resultado_df)
+    # Gerar arquivos auxiliares
+    gerar_arquivo_fasta(records, metadata, resultado_df, output_folder)
 
-    gerar_arquivo_fasta(metadata, resultado_df)
+    seq_file = os.path.join(output_folder, "seq_df.csv")
+    if os.path.exists(seq_file):
+        df_combine_sequence = pd.read_csv(seq_file)
+        arquivo_epicov(config, metadata, df_combine_sequence, output_folder)
+    else:
+        raise FileNotFoundError(f"Arquivo {seq_file} não encontrado!")
 
-    df_combine_sequence = pd.read_csv(os.path.join(sys.argv[1], "seq_df.csv"))
-    arquivo_epicov(metadata, df_combine_sequence)
+    covv_virus_name_file = os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx')
+    if os.path.exists(covv_virus_name_file):
+        covv_virus_name = pd.read_excel(covv_virus_name_file)
+        planilha_resultado(covv_virus_name, resultado_df, output_folder)
+    else:
+        raise FileNotFoundError(f"Arquivo {covv_virus_name_file} não encontrado!")
 
-    covv_virus_name = pd.read_excel(os.path.join(sys.argv[1], 'RNSG_REPORT/Planilha_de_Resultado.xlsx'))
+    # Limpar arquivos temporários e monitorar qualidade
 
-    planilha_resultado(covv_virus_name, resultado_df)
+    Quality_monitor(coverage, reads, resultado_df, output_folder)
 
-    remover_csv()
+    #remover_csv(output_folder)
 
-    Quality_monitor(resultado_df)
-
-
+# Mantém a funcionalidade standalone
+if __name__ == "__main__":
+    output_folder = sys.argv[1]
+    metadata_path = sys.argv[2]
+    config_path = sys.argv[3]
+    generate_report(output_folder, metadata_path, config_path)

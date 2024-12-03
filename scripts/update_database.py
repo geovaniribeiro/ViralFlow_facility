@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import subprocess
 from PyQt5.QtWidgets import QMessageBox
 

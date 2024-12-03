@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=ViralFlow Setup
+Exec=gnome-terminal -- bash -c "./viralflow_setup.sh; exec bash"
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;
