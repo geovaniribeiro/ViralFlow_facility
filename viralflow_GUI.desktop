@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=ViralFlow GUI
-Comment=Execute the ViralFlow pipeline
-Exec=/home/kato/Documents/geo_data/script/ViralFlow_facility/viralflow_GUI
-Icon=/home/kato/Documents/geo_data/script/ViralFlow_facility/envs/viralflow_logo.png
-Terminal=true
-Categories=Science;Biology;
