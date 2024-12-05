@@ -8,5 +8,7 @@ work/*
 scripts/__pycache__
 
 #Arquivos que serao criado durante a instalação
-viralflow_GUI
 viralflow_GUI.desktop
+
+#Pasta devop
+devop/*

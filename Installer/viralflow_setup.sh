@@ -3,6 +3,7 @@
 # Update and install necessary packages
 #sudo apt update -y && \
 #sudo apt upgrade -y && \
+sudo apt install curl git python3-pip uidmap -y
 
 code_path=$(pwd)
 
@@ -37,7 +38,7 @@ micromamba activate viralflow
 
 #Instalar os 
 pip install -e .
-vira
+
 # Create symbolic link for unsquashfs
 sudo ln -s /usr/bin/unsquashfs /usr/local/bin/unsquashfs
 
@@ -49,7 +50,7 @@ viralflow -build_containers
 pip install -r $code_path/../envs/env.yml
 
 #Create .desktop file
-./create_desktop_file.sh
+$code_path/create_desktop_file.sh
 
 echo ""
 echo ""

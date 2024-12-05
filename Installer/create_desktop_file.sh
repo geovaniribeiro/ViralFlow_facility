@@ -10,7 +10,7 @@ ICON_FULL_PATH=$(realpath "$ICON_PATH")
 
 # Verificar se os arquivos existem
 if [[ ! -f "$SCRIPT_SH_PATH" ]]; then
-    echo "Erro: Arquivo viralflow_GUI.sh não encontrado em $SCRIPT_SH_PATH"
+    echo "Erro: Arquivo viralflow_GUI não encontrado em $SCRIPT_SH_PATH"
     exit 1
 fi
 
