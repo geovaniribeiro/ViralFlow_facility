@@ -47,6 +47,9 @@ viralflow -build_containers
 
 ###################
 #Instalar bibliotecas adicionais para gerar os arquivos e relatorios
+
+cd $code_path
+
 pip install -r $code_path/../envs/env.yml
 
 #Create .desktop file
