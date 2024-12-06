@@ -12,3 +12,7 @@ viralflow_GUI.desktop
 
 #Pasta devop
 devop/*
+
+scripts/__pycache__
+scripts/analysis/__pycache__
+scripts/utilities/__pycache__
