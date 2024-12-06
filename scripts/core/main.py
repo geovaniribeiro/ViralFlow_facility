@@ -20,7 +20,7 @@ class MenuInicial(QWidget):
 
         # Configurações da janela
         self.setWindowTitle("Menu Inicial - ViralFlow GUI")
-        self.setGeometry(100, 100, 400, 200)
+        self.setGeometry(200, 200, 600, 200)
 
         # Layout principal
         layout = QVBoxLayout()

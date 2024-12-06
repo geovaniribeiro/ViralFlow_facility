@@ -225,8 +225,10 @@ class ViralFlowGUI(QWidget):
         try:
             subprocess.run(command_viralflow, shell=True, check=True)
             print("ViralFlow executado com sucesso!")
+            print(" ")
+            print(" ")
         except subprocess.CalledProcessError as e:
-            print(f"Erro ao executar o comando: {e}")
+            print(f"Error executing command: {e}")
 
         try:
             generate_report(
@@ -234,9 +236,14 @@ class ViralFlowGUI(QWidget):
                 metadata_path=params['metadata'],
                 config_path=params['config_file']
             )
-            print("Relatório e arquivos gerados com sucesso!")
+            print("Relatorio e arquivos gerados com sucesso!")
+            print(" ")
+            print(" ")
+            print("O terminal pode ser fechado ;)")
+            print(" ")
         except Exception as report_error:
-            print(f"Erro ao gerar o relatório: {report_error}")
+            print(f"Failed to generate the report: {report_error}")
+
 
     def sair(self):
         confirm = QMessageBox.question(
