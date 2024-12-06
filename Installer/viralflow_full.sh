@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Update and install necessary packages
+# Atualizar e instalar pacotes necessários
 #sudo apt update -y && \
 #sudo apt upgrade -y && \
 sudo apt install curl git python3-pip uidmap -y
 
 code_path=$(pwd)
 
-# Download and set up Micromamba
+# Download e configuração do Micromamba
 cd $HOME
 curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/1.5.7 | tar -xvj bin/micromamba
 ./bin/micromamba shell init -s bash -p ~/micromamba
@@ -26,37 +26,35 @@ unset __mamba_setup
 
 micromamba activate
 
-#Remove previous viraflow instalation
-sudo rm -r ViralFlow/
+# Remover instalação anterior do ViralFlow
+sudo rm -rf ViralFlow/
 
-# Clone ViralFlow repository and set up the environment
+# Clonar repositório do ViralFlow e configurar o ambiente
 git clone -b develop_fixMicromambaOnPangolin https://github.com/WallauBioinfo/ViralFlow
 cd ViralFlow/
-micromamba env create -f envs/env.yml
+yes | micromamba env create -f envs/env.yml --yes
 micromamba activate viralflow
 
-#Instalar os 
+# Instalar o ViralFlow no modo de desenvolvimento
 pip install -e .
 
-# Create symbolic link for unsquashfs
-sudo ln -s /usr/bin/unsquashfs /usr/local/bin/unsquashfs
+# Criar link simbólico para unsquashfs
+sudo ln -sf /usr/bin/unsquashfs /usr/local/bin/unsquashfs
 
-# Download image and Build containers
-viralflow -build_containers
+# Baixar imagem e construir os containers
+yes | viralflow -build_containers
 
-###################
-#Instalar bibliotecas adicionais para gerar os arquivos e relatorios
-
+# Instalar bibliotecas adicionais para relatórios
 cd $code_path
 
 pip install -r $code_path/../envs/env.yml
 
-#Create .desktop file
+# Criar arquivo .desktop
 $code_path/create_desktop_file.sh
 
 echo ""
 echo ""
-echo '##########################################################################';
-echo '########################## ViralFlow Instalado! ##########################';
-echo '##################### Esse terminal pode ser fechado #####################';
-echo '##########################################################################';
+echo '##########################################################################'
+echo '########################## ViralFlow Instalado! ##########################'
+echo '##################### Esse terminal pode ser fechado #####################'
+echo '##########################################################################'
