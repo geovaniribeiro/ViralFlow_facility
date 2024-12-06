@@ -14,5 +14,5 @@ gnome-terminal -- bash -c "
 echo '###################################################################';
 echo '################## Iniciando a interface gráfica ##################';
 echo '###################################################################';
-python3 ${path}/scripts/main.py;
+python3 ${path}/scripts/core/main.py;
 exec bash"

@@ -4,9 +4,14 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QLabel, QPushButton, QWid
 import subprocess
 import os
 import sys
-from assembly_sc2 import ViralFlowGUI  # Importa o script para configuração do pipeline
-from update_database import atualizar_banco_dados  # Função para atualizar banco de dados
-from update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
+
+# Adiciona o diretório raiz do projeto ao PYTHONPATH
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from scripts.analysis.assembly_sc2 import ViralFlowGUI  # Importa o script para configuração do pipeline
+from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
+from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
+
 
 
 class MenuInicial(QWidget):

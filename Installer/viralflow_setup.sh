@@ -28,7 +28,6 @@ micromamba activate
 
 #Remove previous viraflow instalation
 sudo rm -r ViralFlow/
-#micromamba env remove -n viralflow
 
 # Clone ViralFlow repository and set up the environment
 git clone -b develop_fixMicromambaOnPangolin https://github.com/WallauBioinfo/ViralFlow
