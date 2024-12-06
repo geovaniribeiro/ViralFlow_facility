@@ -8,7 +8,10 @@ from PyQt5.QtWidgets import (
 
 import subprocess
 
-from report_generator_sc2 import generate_report
+# Adiciona o diretório raiz do projeto ao PYTHONPATH
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from scripts.analysis.report_generator_sc2 import generate_report
 
 class ViralFlowGUI(QWidget):
     def __init__(self):
