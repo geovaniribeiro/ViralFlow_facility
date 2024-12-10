@@ -725,7 +725,7 @@ def generate_report(metadata_path, config_path, output_folder):
 
     Quality_monitor(coverage, reads, resultado_df, output_folder)
 
-    #remover_csv(output_folder)
+    remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone
 if __name__ == "__main__":
