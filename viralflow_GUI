@@ -3,13 +3,24 @@
 # Caminho absoluto do diretório atual
 path=$(realpath "$(dirname "$0")")
 
-# Inicializa o shell para micromamba
-eval "$(micromamba shell hook --shell bash)"
+
+# Carregar manualmente as alterações feitas no ~/.bashrc no ambiente atual
+export MAMBA_EXE="$HOME/bin/micromamba"
+export MAMBA_ROOT_PREFIX="$HOME/micromamba"
+__mamba_setup="$("$MAMBA_EXE" shell hook --shell bash --root-prefix "$MAMBA_ROOT_PREFIX" 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__mamba_setup"
+else
+    alias micromamba="$MAMBA_EXE"  # Fallback para ativar manualmente, se necessário
+fi
+unset __mamba_setup
+
+micromamba activate
 
 # Ativa o ambiente
 micromamba activate viralflow
 
-# Atualiza o Pangolin e inicia a interface gráfica
+
 gnome-terminal -- bash -c "
 echo '###################################################################';
 echo '################## Iniciando a interface gráfica ##################';
