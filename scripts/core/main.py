@@ -9,9 +9,9 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from scripts.analysis.assembly_sc2 import ViralFlowGUI  # Importa o script para configuração do pipeline
+from scripts.analysis.assembly_custom import ViralFlowGUI  # Importa o script para configuração do pipeline
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
-
 
 
 class MenuInicial(QWidget):
@@ -79,9 +79,6 @@ class MenuInicial(QWidget):
         if confirm == QMessageBox.Yes:
             atualizar_banco_dados()
 
-
-
- 
     def abrir_tela_assembly_sc2(self):
         # Fecha o menu inicial e abre a interface de configuração
         self.close()
