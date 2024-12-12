@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QRadioButton
 import subprocess
 import os
 import sys
@@ -8,10 +8,11 @@ import sys
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from scripts.analysis.assembly_sc2 import ViralFlowGUI  # Importa o script para configuração do pipeline
-from scripts.analysis.assembly_custom import ViralFlowGUI  # Importa o script para configuração do pipeline
+#from scripts.analysis.assembly_custom import ViralFlowGUI as ViralFlowGUI_SC2 # Importa o script para configuração do pipeline
+#from scripts.analysis.assembly_sc2 import ViralFlowGUI as ViralFlowGUI_custom # Importa o script para configuração do pipeline
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
+
 
 
 class MenuInicial(QWidget):
@@ -40,10 +41,16 @@ class MenuInicial(QWidget):
         layout.addWidget(update_button)
 
 
-        # Botão para abrir a tela de Montagem Sars-CoV2
-        assembly_button = QPushButton("Montagem SARS-CoV-2")
-        assembly_button.clicked.connect(self.abrir_tela_assembly_sc2)
-        layout.addWidget(assembly_button)
+        # Grupo de botões de seleção
+        self.radio_sc2 = QRadioButton("SARS-CoV-2")
+        self.radio_custom = QRadioButton("DENV")
+        layout.addWidget(self.radio_sc2)
+        layout.addWidget(self.radio_custom)
+
+        # Botão para confirmar
+        confirm_button = QPushButton("Iniciar Montagem")
+        confirm_button.clicked.connect(self.executar_montagem)
+        layout.addWidget(confirm_button)
 
         # Botão para sair
         exit_button = QPushButton("Sair")
@@ -79,12 +86,20 @@ class MenuInicial(QWidget):
         if confirm == QMessageBox.Yes:
             atualizar_banco_dados()
 
-    def abrir_tela_assembly_sc2(self):
-        # Fecha o menu inicial e abre a interface de configuração
-        self.close()
-        self.tela_assembly = ViralFlowGUI()
-        self.tela_assembly.show()
 
+    def executar_montagem(self):
+        if self.radio_sc2.isChecked():
+            from scripts.analysis.assembly_sc2 import ViralFlowGUI
+            self.close()
+            self.tela_assembly = ViralFlowGUI()
+            self.tela_assembly.show()
+       
+        elif self.radio_custom.isChecked():
+            from scripts.analysis.assembly_custom import ViralFlowGUI
+            self.close()
+            self.tela_assembly = ViralFlowGUI()
+            self.tela_assembly.show()
+            
     def sair(self):
         # Confirmação antes de sair
         confirm = QMessageBox.question(
