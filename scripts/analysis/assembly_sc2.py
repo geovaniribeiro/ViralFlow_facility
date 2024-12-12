@@ -6,6 +6,11 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QFileDialog, QMessageBox, QDialog, QCheckBox, QSpinBox
 )
+
+
+from PyQt5.QtCore import QThread, pyqtSignal
+
+
 import subprocess
 
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
@@ -114,6 +119,69 @@ class ParametersDialog(QDialog):
             "mafft_threads": self.mafft_threads.value(),
         }
 
+class ParametersManager:
+    def __init__(self):
+        # Valores padrão
+        self.parameters = {
+            "run_snp_eff": True,
+            "write_mapped_reads": True,
+            "min_len": 75,
+            "depth": 10,
+            "min_dp_intrahost": 100,
+            "nextflow_sim_calls": 12,
+            "fastp_threads": 12,
+            "bwa_threads": 12,
+            "mafft_threads": 12,
+        }
+
+    def configure_parameters(self, parent=None):
+        dialog = ParametersDialog(parent)
+        if dialog.exec_() == QDialog.Accepted:
+            self.parameters = dialog.get_parameters()
+
+
+# Classe para executar o processo em um thread separado
+class ProcessThread(QThread):
+    process_started = pyqtSignal(str)
+    process_finished = pyqtSignal(str)
+
+    def __init__(self, command_viralflow, output_folder, metadata_path, config_path):
+        super().__init__()
+        self.command_viralflow = command_viralflow
+        self.output_folder = output_folder
+        self.metadata_path = metadata_path
+        self.config_path = config_path
+
+    def run(self):
+        try:
+            self.process_started.emit("Executando ViralFlow...")
+            self.process_started.emit(" ")
+            subprocess.run(self.command_viralflow, shell=True, check=True)
+            self.process_started.emit("ViralFlow executado com sucesso!")
+            self.process_started.emit(" ")
+            self.process_started.emit(" ")
+
+            # Gerar o relatório após a execução dos comandos
+            self.process_started.emit("Gerando o relatório...")
+            self.process_started.emit(" ")
+            self.process_started.emit(" ")
+
+            generate_report(output_folder=self.output_folder, 
+                            metadata_path=self.metadata_path, 
+                            config_path=self.config_path)
+            self.process_started.emit("Relatório gerado com sucesso!")
+            self.process_started.emit(" ")
+            self.process_started.emit(" ")
+
+            self.process_finished.emit("Processo concluído com sucesso!")
+            self.process_started.emit(" ")
+            self.process_started.emit(" ")
+
+        except subprocess.CalledProcessError as e:
+            self.process_finished.emit(f"Erro ao executar o comando: {e}")
+        except Exception as e:
+            self.process_finished.emit(f"Erro ao gerar o relatório: {e}")
+
 class ViralFlowGUI(QWidget):
     def __init__(self):
         super().__init__()
@@ -121,6 +189,9 @@ class ViralFlowGUI(QWidget):
         # Inicializar a janela
         self.setWindowTitle("ViralFlow GUI")
         self.setGeometry(100, 100, 500, 250)
+
+        # Gerenciar os parâmetros
+        self.param_manager = ParametersManager()
 
         # Criar o layout principal
         layout = QVBoxLayout()
@@ -161,10 +232,11 @@ class ViralFlowGUI(QWidget):
             layout.addLayout(row_layout)
             self.entries[field_name] = entry
 
-        # Botão para configurar os parâmetros adicionais
-        params_button = QPushButton("Configurar Parâmetros", self)
-        params_button.clicked.connect(self.configure_parameters)
+        # Botão de parâmetros
+        params_button = QPushButton("Configurar Parâmetros")
+        params_button.clicked.connect(lambda: self.param_manager.configure_parameters(self))
         layout.addWidget(params_button)
+
 
         # Botão para executar o comando
         run_button = QPushButton("Executar ViralFlow", self)
@@ -177,15 +249,6 @@ class ViralFlowGUI(QWidget):
         layout.addWidget(exit_button)
 
         self.setLayout(layout)
-
-        # Inicializar parâmetros padrão
-        self.parameters = {
-            "run_snp_eff": True,
-            "write_mapped_reads": True,
-            "min_len": 75,
-            "depth": 10,
-            "min_dp_intrahost": 100,
-        }
 
     def select_file(self, entry):
         file_path, _ = QFileDialog.getOpenFileName(self, "Selecione um arquivo")
@@ -203,46 +266,45 @@ class ViralFlowGUI(QWidget):
             self.parameters = dialog.get_parameters()
 
     def run_command(self):
-        """Constrói e executa o comando com os parâmetros da GUI."""
+        """Constrói e executa o comando com os parâmetros configurados na GUI."""
         params = {key: entry.text() for key, entry in self.entries.items()}
 
-        # Construir o comando
+        # Acessar parâmetros do ParametersManager
         command_viralflow = (
-            f"NXF_VER=22.04.0 nextflow run ~/ViralFlow//vfnext/main.nf --primersBED {params['primersBED']} "
-            f"--outDir {params['outDir']} --inDir {params['inDir']} --virus sars-cov2 "
-            f"--runSnpEff {'true' if self.parameters['run_snp_eff'] else 'false'} "
-            f"--writeMappedReads {'true' if self.parameters['write_mapped_reads'] else 'false'} "
-            f"--minLen {self.parameters['min_len']} --depth {self.parameters['depth']} "
-            f"--minDpIntrahost {self.parameters['min_dp_intrahost']} "
-            f"--nextflowSimCalls {self.parameters['nextflow_sim_calls']} "
-            f"--fastp_threads {self.parameters['fastp_threads']} "
-            f"--bwa_threads {self.parameters['bwa_threads']} "
-            f"--mafft_threads {self.parameters['mafft_threads']} "
+            f"nextflow run ~/ViralFlow/vfnext/main.nf "
+            f"--primersBED {params['primersBED']} "
+            f"--outDir {params['outDir']} "
+            f"--inDir {params['inDir']} "
+            f"--virus sars-cov2 "
+            f"--runSnpEff {'true' if self.param_manager.parameters['run_snp_eff'] else 'false'} "
+            f"--writeMappedReads {'true' if self.param_manager.parameters['write_mapped_reads'] else 'false'} "
+            f"--minLen {self.param_manager.parameters['min_len']} "
+            f"--depth {self.param_manager.parameters['depth']} "
+            f"--minDpIntrahost {self.param_manager.parameters['min_dp_intrahost']} "
+            f"--nextflowSimCalls {self.param_manager.parameters['nextflow_sim_calls']} "
+            f"--fastp_threads {self.param_manager.parameters['fastp_threads']} "
+            f"--bwa_threads {self.param_manager.parameters['bwa_threads']} "
+            f"--mafft_threads {self.param_manager.parameters['mafft_threads']} "
             f"--trimLen 0 --refGenomeCode null --referenceGFF null "
             f"--referenceGenome null -resume"
         )
 
-        try:
-            subprocess.run(command_viralflow, shell=True, check=True)
-            print("ViralFlow executado com sucesso!")
-            print(" ")
-            print(" ")
-        except subprocess.CalledProcessError as e:
-            print(f"Error executing command: {e}")
+        # Iniciar o thread para executar o processo
+        self.thread = ProcessThread(command_viralflow,
+                                    os.path.join(params['outDir'], "COMPILED_OUTPUT"),
+                                    metadata_path=params['metadata'],
+                                    config_path=params['config_file'])
+        
+        # Conectar os sinais do thread com as funções da GUI
+        self.thread.process_started.connect(self.update_status)
+        self.thread.process_finished.connect(self.update_status)
 
-        try:
-            generate_report(
-                output_folder=os.path.join(params['outDir'], "COMPILED_OUTPUT"),
-                metadata_path=params['metadata'],
-                config_path=params['config_file']
-            )
-            print("Relatorio e arquivos gerados com sucesso!")
-            print(" ")
-            print(" ")
-            print("O terminal pode ser fechado ;)")
-            print(" ")
-        except Exception as report_error:
-            print(f"Failed to generate the report: {report_error}")
+        # Iniciar o thread
+        self.thread.start()
+
+    def update_status(self, message):
+        """Atualiza a interface com as mensagens do processo."""
+        print(message)
 
 
     def sair(self):
