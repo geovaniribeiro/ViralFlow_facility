@@ -9,14 +9,14 @@ from PyQt5.QtWidgets import (
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
-
+import pandas as pd
 import subprocess
 
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-#from scripts.analysis.report_generator_sc2 import generate_report
-
+#from scripts.analysis.report_generator_denv import generate_report_denv
+from scripts.analysis.DenvProcessor import DenvProcessor
 
 class ParametersDialog(QDialog):
     def __init__(self, parent=None):
@@ -144,13 +144,15 @@ class ProcessThread(QThread):
     process_started = pyqtSignal(str)
     process_finished = pyqtSignal(str)
 
-    def __init__(self, snpeff_custom, command_viralflow, output_folder, metadata_path, config_path):
+    def __init__(self, snpeff_custom, command_viralflow,
+                 output_folder, metadata_path, config_path):
         super().__init__()
         self.snpeff_custom = snpeff_custom
         self.command_viralflow = command_viralflow
         self.output_folder = output_folder
         self.metadata_path = metadata_path
         self.config_path = config_path
+        self.run_pipeline = None  # Método de pipeline opcional
 
     def run(self):
         try:
@@ -169,17 +171,21 @@ class ProcessThread(QThread):
             self.process_started.emit(" ")
             self.process_started.emit(" ")
 
-            # Gerar o relatório após a execução dos comandos
-            self.process_started.emit("Gerando o relatório...")
-            self.process_started.emit(" ")
-            self.process_started.emit(" ")
 
-            generate_report(output_folder=self.output_folder, 
-                            metadata_path=self.metadata_path, 
-                            config_path=self.config_path)
-            self.process_started.emit("Relatório gerado com sucesso!")
-            self.process_started.emit(" ")
-            self.process_started.emit(" ")
+            self.run_pipeline()
+
+            #subprocess.run(self.processor, shell=True, check=True)
+            
+            # Gerar o relatório após a execução dos comandos
+            # self.process_started.emit("Gerando o relatório...")
+            # self.process_started.emit(" ")
+            # self.process_started.emit(" ")
+            # generate_report_denv(output_folder=self.output_folder, 
+            #                 metadata_path=self.metadata_path, 
+            #                 config_path=self.config_path)
+            # self.process_started.emit("Relatório gerado com sucesso!")
+            # self.process_started.emit(" ")
+            # self.process_started.emit(" ")
 
             self.process_finished.emit("Processo concluído com sucesso!")
             self.process_started.emit(" ")
@@ -311,18 +317,30 @@ class ViralFlowGUI(QWidget):
         )
         
 
+        # Criar uma instância da classe
+        processor = DenvProcessor(params['outDir'])
+
+        
+
         # Iniciar o thread para executar o processo
         self.thread = ProcessThread(snpeff_custom, command_viralflow,
                                     os.path.join(params['outDir'], "COMPILED_OUTPUT"),
                                     metadata_path=params['metadata'],
                                     config_path=params['config_file'])
-        
+
+
+            # Adicionar uma referência ao método de execução no thread
+        self.thread.run_pipeline = processor.execute_pipeline
+
+
         # Conectar os sinais do thread com as funções da GUI
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
 
         # Iniciar o thread
         self.thread.start()
+
+
 
     def update_status(self, message):
         """Atualiza a interface com as mensagens do processo."""
