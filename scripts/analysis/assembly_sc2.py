@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QFileDialog, QMessageBox, QDialog, QCheckBox, QSpinBox
 )
 
-
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QThread, pyqtSignal
 
 
@@ -25,6 +25,8 @@ class ParametersDialog(QDialog):
 
         self.setWindowTitle("Configurar Parâmetros")
         self.setGeometry(100, 100, 400, 400)
+
+        self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))
 
         layout = QVBoxLayout()
 
@@ -192,6 +194,8 @@ class ViralFlowGUI(QWidget):
 
         # Gerenciar os parâmetros
         self.param_manager = ParametersManager()
+
+        self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))
 
         # Criar o layout principal
         layout = QVBoxLayout()
