@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QRadioButton
+from PyQt5.QtGui import QIcon
 import subprocess
 import os
 import sys
@@ -8,11 +9,10 @@ import sys
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from scripts.analysis.assembly_sc2 import ViralFlowGUI as ViralFlowGUI_SC2 # Importa o script para configuração do pipeline
-from scripts.analysis.assembly_custom import ViralFlowGUI as ViralFlowGUI_custom # Importa o script para configuração do pipeline
+from scripts.analysis.assembly_sc2 import ViralFlowGUI as ViralFlowGUI_SC2  # Importa o script para configuração do pipeline
+from scripts.analysis.assembly_custom import ViralFlowGUI as ViralFlowGUI_custom  # Importa o script para configuração do pipeline
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
-
 
 
 class MenuInicial(QWidget):
@@ -22,6 +22,9 @@ class MenuInicial(QWidget):
         # Configurações da janela
         self.setWindowTitle("Menu Inicial - ViralFlow GUI")
         self.setGeometry(200, 200, 600, 200)
+
+        # Define o ícone da janela
+        self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))  # Substitua pelo caminho do ícone
 
         # Layout principal
         layout = QVBoxLayout()
@@ -40,13 +43,11 @@ class MenuInicial(QWidget):
         update_button.clicked.connect(self.atualizar_banco_dados)
         layout.addWidget(update_button)
 
-
         # Grupo de botões de seleção
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_custom = QRadioButton("DENV")
         layout.addWidget(self.radio_sc2)
         layout.addWidget(self.radio_custom)
-
 
         # Botão para confirmar
         confirm_button = QPushButton("Iniciar Montagem")
@@ -60,60 +61,51 @@ class MenuInicial(QWidget):
 
         self.setLayout(layout)
 
-
-
     def atualizar_viralflow(self):
-        # Pergunta de confirmação antes de rodar o script
         confirm = QMessageBox.question(
             self,
             "Confirmação",
             "Você deseja atualizar o ViralFlow?\nIsso pode levar algum tempo.",
             QMessageBox.Yes | QMessageBox.No
         )
-
         if confirm == QMessageBox.Yes:
             atualizar_viralflow()
 
-
     def atualizar_banco_dados(self):
-        # Pergunta de confirmação antes de rodar o script
         confirm = QMessageBox.question(
             self,
             "Confirmação",
             "Você deseja atualizar o banco de dados?\nIsso pode levar algum tempo.",
             QMessageBox.Yes | QMessageBox.No
         )
-
         if confirm == QMessageBox.Yes:
             atualizar_banco_dados()
-
 
     def executar_montagem(self):
         if self.radio_sc2.isChecked():
             self.close()
             self.tela_assembly = ViralFlowGUI_SC2()
             self.tela_assembly.show()
-       
         elif self.radio_custom.isChecked():
             self.close()
             self.tela_assembly = ViralFlowGUI_custom()
             self.tela_assembly.show()
 
     def sair(self):
-        # Confirmação antes de sair
         confirm = QMessageBox.question(
             self,
             "Confirmação",
             "Tem certeza de que deseja sair?",
             QMessageBox.Yes | QMessageBox.No
         )
-
         if confirm == QMessageBox.Yes:
             subprocess.run("exit", shell=True, check=True)
             QApplication.quit()
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
     menu = MenuInicial()
     menu.show()
     sys.exit(app.exec_())
