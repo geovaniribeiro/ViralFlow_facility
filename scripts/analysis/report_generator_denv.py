@@ -28,16 +28,16 @@ def input_folder(output_folder, metadata_path):
 
     #print("input_folder")
 
-    # Load metadata
-    metadata = pd.read_csv(metadata_path, sep=';', encoding='latin-1', on_bad_lines='skip')
-
-
     # #OBS: VERIFICAR QUAL CAMPO SEPARADOR NO ARQUIVO GAL
-    metadata = pd.read_csv(metadata_path, sep =';', encoding='latin-1', on_bad_lines='skip')
+    metadata_redundante = pd.read_csv(metadata_path, sep =';', encoding='latin-1', on_bad_lines='skip', 
+                           low_memory=False)
     
+    # Remover duplicatas com base na coluna 'Requisição'
+    metadata = metadata_redundante.drop_duplicates(subset=['Requisição'])
+
     # #Substituir espaços por '_' entre palavras da coluns
     metadata.columns = metadata.columns.str.replace(' ', '_')
-    
+
     #Ler arquivo fasta
     #Certificar se o cabelho das sequencias possuem apenas o codigo da amostra.
 
@@ -63,14 +63,6 @@ def input_folder(output_folder, metadata_path):
     #coverage = pd.read_csv('/content/short_summary.csv', sep =',')
     #coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
 
-
-    # Construct the file path for the CSV file
-    lineage_path = os.path.join(output_folder, "XXXXXXXXXX.csv")
-
-    lineage = pd.read_csv(lineage_path, sep =',')
-
-    lineage['cod'] = lineage['cod'].replace(to_replace ='_.*', value = '', regex = True)
-
     #wgs
     # Construct the file path for the CSV file
     coverage_path = os.path.join(output_folder, 'wgs.csv')
@@ -78,8 +70,26 @@ def input_folder(output_folder, metadata_path):
     coverage = pd.read_csv(coverage_path, sep =',')
     coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
 
-    return metadata, sequence, records, reads, lineage, coverage
 
+    # Construct the file path for the serotype CSV file
+    serotype_path = os.path.join(output_folder, "serotype.csv")
+
+    serotype = pd.read_csv(serotype_path, sep =';')
+
+    serotype['seqName'] = serotype['seqName'].replace(to_replace ='_.*', value = '', regex = True)
+    serotype.rename(columns={'seqName': 'cod'}, inplace=True)
+
+
+    # Construct the file path for the genotype CSV file
+    genotype_path = os.path.join(output_folder, "genotype.csv")
+
+    genotype = pd.read_csv(genotype_path, sep =';')
+
+    genotype['seqName'] = genotype['seqName'].replace(to_replace ='_.*', value = '', regex = True)
+    genotype.rename(columns={'seqName': 'cod'}, inplace=True)
+
+
+    return metadata, sequence, records, reads, serotype, genotype, coverage
 
 
 #Adiciona a pasta de RNSG_REPORT, a qual serao a adiciona os graficos, planilha, e outros
@@ -98,7 +108,7 @@ def mod_pasta(output_folder):
     os.mkdir(output_path)
 
 
-def planilha_results(metadata, reads, coverage, serotype, output_folder):
+def planilha_results(metadata, reads, coverage, serotype, genotype, output_folder):
 
     #print("Gerando Planilhas resultados")
 
@@ -120,7 +130,7 @@ def planilha_results(metadata, reads, coverage, serotype, output_folder):
     coverage_update = coverage[['cod', 'PCT_10X', 'MEAN_COVERAGE']]
 
     # Juntar todas as planilhas
-    resultado_df_1 = pd.merge(pd.merge(reads, coverage_update, on='cod'), serotype, on='cod')
+    resultado_df_1 = pd.merge(pd.merge(pd.merge(reads, coverage_update, on='cod'), serotype, on='cod'), genotype, on='cod')
     #resultado_df_1 = pd.merge(reads, coverage_update, on='cod')
     resultado_df_1['cod'] = resultado_df_1['cod'].astype(str)
     metadata_GAL_update.loc[:,'Código_da_Amostra'] = metadata_GAL_update['Código_da_Amostra'].astype(str)
@@ -129,12 +139,14 @@ def planilha_results(metadata, reads, coverage, serotype, output_folder):
     resultado_df = pd.merge(resultado_df_1, metadata_GAL_update, left_on="cod", right_on="Código_da_Amostra")
 
     # Mudar nomes da coluna
-    resultado_df = resultado_df.rename(columns={'cod': 'Código Amostra', 'mepf_reads_aligned': 'Reads', 'PCT_10X': 'Coverage', 'MEAN_COVERAGE': 'Depth of Coverage', 'clade' : 'Genotipo',
-                                   'Requisição': 'Requisição', 'Material_Biológico': 'Tipo Amostra', 'Municipio_do_Solicitante': 'Município','Data_da_Coleta': 'Data Coleta',
-                                   'Sexo': 'Sexo'})
+    resultado_df = resultado_df.rename(columns={'cod': 'Código Amostra', 'mepf_reads_aligned': 'Reads', 'PCT_10X': 'Coverage', 
+                                                'MEAN_COVERAGE': 'Depth of Coverage', 'clade_x' : 'Sorotipo', 'clade_y' : 'Linhagem',
+                                                'Requisição': 'Requisição', 'Material_Biológico': 'Tipo Amostra', 
+                                                'Municipio_do_Solicitante': 'Município','Data_da_Coleta': 'Data Coleta', 'Sexo': 'Sexo'})
 
     # Mudar ordem das colunas
-    cols = ['Código Amostra', 'Requisição', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'Genotipo']
+    cols = ['Código Amostra', 'Requisição', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 'Reads', 'Coverage', 
+            'Depth of Coverage', 'Sorotipo', 'Linhagem']
     resultado_df = resultado_df[cols]
 
     # Convert Column ID name to string
@@ -165,7 +177,8 @@ def planilha_resultado(arbo_virus_name, resultado_df, output_folder):
     result_table.drop('Código Amostra', axis=1, inplace=True)
 
     #Change order header
-    result_table = result_table[[ 'Requisição','id','arbo_virus_name', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'Genotipo']]
+    result_table = result_table[[ 'Requisição','id','arbo_virus_name', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 
+                                 'Reads', 'Coverage', 'Depth of Coverage', 'Sorotipo', 'Linhagem']]
 
     # add an empty column named 'Barcode' at index 0
     result_table.insert(0, 'Barcode',None)
@@ -174,7 +187,8 @@ def planilha_resultado(arbo_virus_name, resultado_df, output_folder):
     result_table.insert(1, 'N Barcode',None)
 
     #Mudar nomes da coluna
-    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 'arbo_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
+    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 
+                                                'arbo_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
                                                 'Depth of Coverage': 'Profundidade Média'})
 
     # Salve o DataFrame resultante em um arquivo Excel
@@ -272,7 +286,7 @@ def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
     return df_combine_sequence
 
 #Função para gerar o arquivo EpiArbo para ser submetido ao Gisaid
-def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
+def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
 
     print("arquivo_epiarbo")
 
@@ -347,8 +361,8 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     arbo_patient_age = arbo_patient_age[['id','arbo_patient_age']]
 
     #Virus name
-    arbo_virus_name = df_combine_sequence[['Estado_do_Solicitante','id','ANO_SEMANA_EPIDEMIOLOGICA', 'Genotipo']].astype(str)
-    arbo_virus_name.loc[:,'arbo_virus_name'] = "h" + arbo_virus_name['Genotipo'] + "/Brazil/" + arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + arbo_virus_name['Estado_do_Solicitante'] + "-" + arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
+    arbo_virus_name = df_combine_sequence[['Estado_do_Solicitante','id','ANO_SEMANA_EPIDEMIOLOGICA', 'Sorotipo']].astype(str)
+    arbo_virus_name.loc[:,'arbo_virus_name'] = "h" + arbo_virus_name['Sorotipo'] + "/Brazil/" + arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + arbo_virus_name['Estado_do_Solicitante'] + "-" + arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
     arbo_virus_name = arbo_virus_name.replace('DENV', 'DenV')
     arbo_virus_name = arbo_virus_name[['id','arbo_virus_name']]
 
@@ -370,7 +384,7 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
 
     #Insert arbo_subtype column
     arbo_virus_name.insert(5, 'arbo_subtype', '')
-    arbo_virus_name.loc[:, 'arbo_subtype'] = df_combine_sequence['Genotipo']
+    arbo_virus_name.loc[:, 'arbo_subtype'] = df_combine_sequence['Sorotipo']
 
     #Insert arbo_passage column
     arbo_virus_name.insert(6, 'arbo_passage', '')
@@ -559,8 +573,6 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     gisaid_temp.insert(33, 'arbo_authors','')
     gisaid_temp.loc[:, 'arbo_authors'] = arbo_authors
 
-    df_insumos = gisaid_temp
-
     gisaid_temp = gisaid_temp.drop('id', axis=1)
 
     # # Define column names
@@ -581,7 +593,7 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
 
     gisaid_temp = gisaid_temp.set_index('submitter')
 
-    gisaid_temp.to_csv(os.path.join(output_folder, 'RNSG_REPORT/EpiCov.csv'))
+    gisaid_temp.to_csv(os.path.join(output_folder, 'RNSG_REPORT/EpiArbo.csv'))
 
     pass
 
@@ -763,7 +775,7 @@ def remover_csv(output_folder):
             os.remove(arquivo_path)
 
 
-def generate_report(metadata_path, config_path, output_folder):
+def generate_report_denv(metadata_path, config_path, output_folder):
 
     # Carregar configurações
     config = load_config(config_path)
@@ -771,8 +783,8 @@ def generate_report(metadata_path, config_path, output_folder):
     mod_pasta(output_folder)
     
     # Processar os arquivos na pasta de entrada
-    metadata, sequence, records, reads, lineage, coverage = input_folder(output_folder, metadata_path)
-    df_combine_sequence = planilha_results(metadata, reads, coverage, lineage, output_folder)
+    metadata, sequence, records, reads, serotype, genotype, coverage = input_folder(output_folder, metadata_path)
+    df_combine_sequence = planilha_results(metadata, reads, coverage, serotype, genotype, output_folder)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
@@ -794,7 +806,7 @@ def generate_report(metadata_path, config_path, output_folder):
     seq_file = os.path.join(output_folder, "seq_df.csv")
     if os.path.exists(seq_file):
         df_combine_sequence = pd.read_csv(seq_file)
-        arquivo_epicov(config, metadata, df_combine_sequence, output_folder)
+        arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder)
     else:
         raise FileNotFoundError(f"Arquivo {seq_file} não encontrado!")
 
@@ -809,11 +821,11 @@ def generate_report(metadata_path, config_path, output_folder):
 
     Quality_monitor(coverage, reads, resultado_df, output_folder)
 
-    remover_csv(output_folder)
+    #remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone
 if __name__ == "__main__":
     output_folder = sys.argv[1]
     metadata_path = sys.argv[2]
     config_path = sys.argv[3]
-    generate_report(output_folder, metadata_path, config_path)
+    generate_report_denv(output_folder, metadata_path, config_path)

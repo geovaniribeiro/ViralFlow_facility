@@ -15,7 +15,7 @@ import subprocess
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-#from scripts.analysis.report_generator_denv import generate_report_denv
+from scripts.analysis.report_generator_denv import generate_report_denv
 from scripts.analysis.DenvProcessor import DenvProcessor
 
 class ParametersDialog(QDialog):
@@ -174,18 +174,17 @@ class ProcessThread(QThread):
 
             self.run_pipeline()
 
-            #subprocess.run(self.processor, shell=True, check=True)
-            
+
             # Gerar o relatório após a execução dos comandos
-            # self.process_started.emit("Gerando o relatório...")
-            # self.process_started.emit(" ")
-            # self.process_started.emit(" ")
-            # generate_report_denv(output_folder=self.output_folder, 
-            #                 metadata_path=self.metadata_path, 
-            #                 config_path=self.config_path)
-            # self.process_started.emit("Relatório gerado com sucesso!")
-            # self.process_started.emit(" ")
-            # self.process_started.emit(" ")
+            self.process_started.emit("Gerando o relatório...")
+            self.process_started.emit(" ")
+            self.process_started.emit(" ")
+            generate_report_denv(output_folder=self.output_folder, 
+                            metadata_path=self.metadata_path, 
+                            config_path=self.config_path)
+            self.process_started.emit("Relatório gerado com sucesso!")
+            self.process_started.emit(" ")
+            self.process_started.emit(" ")
 
             self.process_finished.emit("Processo concluído com sucesso!")
             self.process_started.emit(" ")
