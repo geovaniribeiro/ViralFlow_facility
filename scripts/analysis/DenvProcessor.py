@@ -25,8 +25,7 @@ class DenvProcessor:
 
     def run_nextclade(self, dataset_name, output_csv, seqbatch_path):
         """Executa o comando Docker para o Nextclade."""
-        command = (f'docker run -it --rm --volume="{self.out_dir}:{self.out_dir}" "nextstrain/nextclade" '
-                   f'nextclade run --dataset-name="{dataset_name}" '
+        command = (f'nextclade run --dataset-name="{dataset_name}" '
                    f'--output-csv="{output_csv}" '
                    f'"{seqbatch_path}"'
         )
