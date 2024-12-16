@@ -44,21 +44,12 @@ sudo ln -sf /usr/bin/unsquashfs /usr/local/bin/unsquashfs
 # Baixar imagem e construir os containers
 yes | viralflow -build_containers
 
-# Instalar bibliotecas adicionais para relatórios
+#Instalar a versão GUI do viralflow
 cd $code_path
 
-pip install -r $code_path/../envs/env.yml
+chmod +x viralflow_GUI_setup.sh
 
-#Transform to executables files
-chmod +x ../viral_GUI
-chmod +x create_desktop_file.sh
-
-# Criar arquivo .desktop
-$code_path/create_desktop_file.sh
-
-#Install PyQt plugins requirements
-sudo apt-get install libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa
+$code_path/viral_GUI_setup.sh
 
 
 echo ""
