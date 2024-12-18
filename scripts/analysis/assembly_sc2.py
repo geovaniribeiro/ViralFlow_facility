@@ -275,7 +275,7 @@ class ViralFlowGUI(QWidget):
 
         # Acessar parâmetros do ParametersManager
         command_viralflow = (
-            f"nextflow run ~/ViralFlow/vfnext/main.nf "
+            f"NXF_VER=22.04.0 nextflow run ~/ViralFlow//vfnext/main.nf "
             f"--primersBED {params['primersBED']} "
             f"--outDir {params['outDir']} "
             f"--inDir {params['inDir']} "

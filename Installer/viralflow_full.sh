@@ -30,8 +30,13 @@ micromamba activate
 sudo rm -rf ViralFlow/
 
 # Clonar repositório do ViralFlow e configurar o ambiente
-git clone -b develop https://github.com/WallauBioinfo/ViralFlow
+#git clone -b develop https://github.com/WallauBioinfo/ViralFlow
+git clone https://github.com/WallauBioinfo/ViralFlow
 cd ViralFlow/
+
+#add container Singularity_pangolin modificado
+curl -o vfnext/containers/Singularity_pangolin https://raw.githubusercontent.com/WallauBioinfo/ViralFlow/develop/vfnext/containers/Singularity_pangolin
+
 yes | micromamba env create -f envs/env.yml --yes
 micromamba activate viralflow
 
@@ -49,7 +54,7 @@ cd $code_path
 
 chmod +x viralflow_GUI_setup.sh
 
-$code_path/viral_GUI_setup.sh
+$code_path/viralflow_GUI_setup.sh
 
 
 echo ""
