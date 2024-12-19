@@ -9,6 +9,8 @@ test_file/denv/*
 !test_file/denv/data.csv
 !test_file/denv/denv_1_primers.bed
 
+scripts/container
+
 *.nextflow*
 .nextflow
 work/*
