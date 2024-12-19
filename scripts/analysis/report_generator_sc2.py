@@ -335,9 +335,9 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     #Lista de autores CGLAB + LACEN
     covv_authors = config['user_info']['authors']
 
-    covv_orig_lab = " "
+    covv_orig_lab = config['user_info']['subm_lab']
 
-    covv_orig_lab_addr = " "
+    covv_orig_lab_addr = config['user_info']['subm_lab_addr']
 
     covv_subm_lab = config['user_info']['subm_lab']
 

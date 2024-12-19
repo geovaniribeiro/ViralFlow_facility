@@ -334,9 +334,9 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
     #Lista de autores CGLAB + LACEN
     arbo_authors = config['user_info']['authors']
 
-    arbo_orig_lab = " "
+    arbo_orig_lab = config['user_info']['subm_lab']
 
-    arbo_orig_lab_addr = " "
+    arbo_orig_lab_addr = config['user_info']['subm_lab_addr']
 
     arbo_subm_lab = config['user_info']['subm_lab']
 
