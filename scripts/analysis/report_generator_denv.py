@@ -275,13 +275,12 @@ def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
 
     # Convert DataFrame df_combine_sequence to a fasta file with the required header format
     with open(os.path.join(output_folder, 'seq_df.csv')) as csvfile, open(os.path.join(output_folder,'RNSG_REPORT/LACEN_seq.fasta'), 'w') as outfile:
-        reader = csv.reader(csvfile, delimiter=',')
-        first_line = csvfile.readline()
+        reader = csv.DictReader(csvfile, delimiter=',')
         for row in reader:
-            seq_id = f">h{row[130]}/Brazil/{row[12]}-LACEN{row[12]}-{row[1]}/{row[131]}"
-            seq_id = seq_id.replace('DENV','DenV')
-            seq = row[2]
-            outfile.write(f"{seq_id}\n{seq}\n")
+                seq_id = f">h{row['Sorotipo']}/Brazil/{row['Estado_do_Solicitante']}-LACEN{row['Estado_do_Solicitante']}-{row['id']}/{row['ANO_SEMANA_EPIDEMIOLOGICA']}"
+                seq_id = seq_id.replace('DENV', 'DenV')
+                seq = row['sequence']
+                outfile.write(f"{seq_id}\n{seq}\n")
     
     return df_combine_sequence
 
@@ -817,10 +816,11 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     else:
         raise FileNotFoundError(f"Arquivo {arbo_virus_name} não encontrado!")
 
-    # Limpar arquivos temporários e monitorar qualidade
+
 
     Quality_monitor(coverage, reads, resultado_df, output_folder)
 
+    # Limpar arquivos temporários e monitorar qualidade
     #remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone

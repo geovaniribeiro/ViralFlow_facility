@@ -275,11 +275,10 @@ def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
 
     # Convert DataFrame df_combine_sequence to a fasta file with the required header format
     with open(os.path.join(output_folder, 'seq_df.csv')) as csvfile, open(os.path.join(output_folder,'RNSG_REPORT/LACEN_seq.fasta'), 'w') as outfile:
-        reader = csv.reader(csvfile, delimiter=',')
-        first_line = csvfile.readline()
+        reader = csv.DictReader(csvfile, delimiter=',')
         for row in reader:
-            seq_id = f">hCoV-19/Brazil/{row[12]}-LACEN{row[12]}-{row[1]}/{row[119]}"
-            seq = row[2]
+            seq_id = f">hCoV-19/Brazil/{row['Estado_do_Solicitante']}-LACEN{row['Estado_do_Solicitante']}-{row['id']}/{row['ANO_SEMANA_EPIDEMIOLOGICA']}"
+            seq = row['sequence']
             outfile.write(f"{seq_id}\n{seq}\n")
     
     return df_combine_sequence
@@ -721,10 +720,9 @@ def generate_report(metadata_path, config_path, output_folder):
     else:
         raise FileNotFoundError(f"Arquivo {covv_virus_name_file} não encontrado!")
 
-    # Limpar arquivos temporários e monitorar qualidade
-
     Quality_monitor(coverage, reads, resultado_df, output_folder)
 
+    # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone
