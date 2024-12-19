@@ -247,6 +247,44 @@ def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
     # Change the Name of the state to SIGLA
     metadata['Estado_do_Solicitante'] = metadata['Estado_do_Solicitante'].replace(states)
 
+    # Dictionary to change the Name of the state to SIGLA
+    cnes_lacen = {
+        '2306352': 'AC',
+        '2009129': 'AL',
+        '2018764': 'AP',
+        '2019639': 'AM',
+        '4162': 'BA',
+        '2611678': 'CE',
+        '11371': 'DF',
+        '12424': 'ES',
+        '2338343': 'GO',
+        '2697718': 'MA',
+        '2604175': 'MT',
+        '9997': 'MS',
+        '2695294': 'MG',
+        '2333163': 'PA',
+        '2399350': 'PB',
+        '2795965': 'PR',
+        '2712075': 'PE',
+        '2551888': 'PI',
+        '2019639': 'RJ',
+        '2693615': 'RN',
+        '4066251': 'RS',
+        '2496860': 'RO',
+        '2476835': 'RR',
+        '3157237': 'SC',
+        '2091364': 'SP',
+        '3532259': 'SE',
+        '2494086': 'TO'
+    }
+
+    #convert column to string
+    metadata['CNES_Laboratório_responsável'] = metadata['CNES_Laboratório_responsável'].astype(str)
+
+    # Change the CNES of the executor LAB to SIGLA
+    metadata['CNES_Laboratório_responsável'] = metadata['CNES_Laboratório_responsável'].replace(cnes_lacen)
+
+
     # Extract the sequence and ID from each record and store in a dictionary
     data = {'id': [r.id for r in records], 'sequence': [str(r.seq) for r in records]}
 
@@ -277,7 +315,7 @@ def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
     with open(os.path.join(output_folder, 'seq_df.csv')) as csvfile, open(os.path.join(output_folder,'RNSG_REPORT/LACEN_seq.fasta'), 'w') as outfile:
         reader = csv.DictReader(csvfile, delimiter=',')
         for row in reader:
-                seq_id = f">h{row['Sorotipo']}/Brazil/{row['Estado_do_Solicitante']}-LACEN{row['Estado_do_Solicitante']}-{row['id']}/{row['ANO_SEMANA_EPIDEMIOLOGICA']}"
+                seq_id = f">h{row['Sorotipo']}/Brazil/{row['Estado_do_Solicitante']}-LACEN{row['CNES_Laboratório_responsável']}-{row['id']}/{row['ANO_SEMANA_EPIDEMIOLOGICA']}"
                 seq_id = seq_id.replace('DENV', 'DenV')
                 seq = row['sequence']
                 outfile.write(f"{seq_id}\n{seq}\n")
@@ -360,8 +398,8 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
     arbo_patient_age = arbo_patient_age[['id','arbo_patient_age']]
 
     #Virus name
-    arbo_virus_name = df_combine_sequence[['Estado_do_Solicitante','id','ANO_SEMANA_EPIDEMIOLOGICA', 'Sorotipo']].astype(str)
-    arbo_virus_name.loc[:,'arbo_virus_name'] = "h" + arbo_virus_name['Sorotipo'] + "/Brazil/" + arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + arbo_virus_name['Estado_do_Solicitante'] + "-" + arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
+    arbo_virus_name = df_combine_sequence[['Estado_do_Solicitante','CNES_Laboratório_responsável','id','ANO_SEMANA_EPIDEMIOLOGICA', 'Sorotipo']].astype(str)
+    arbo_virus_name.loc[:,'arbo_virus_name'] = "h" + arbo_virus_name['Sorotipo'] + "/Brazil/" + arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + arbo_virus_name['CNES_Laboratório_responsável'] + "-" + arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
     arbo_virus_name = arbo_virus_name.replace('DENV', 'DenV')
     arbo_virus_name = arbo_virus_name[['id','arbo_virus_name']]
 
@@ -821,7 +859,7 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     Quality_monitor(coverage, reads, resultado_df, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
-    #remover_csv(output_folder)
+    remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone
 if __name__ == "__main__":
