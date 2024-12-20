@@ -18,51 +18,10 @@ import yaml
 from unidecode import unidecode
 import seaborn as sns
 
-## Função que carrega o arquivo yaml e armazena em um dicionario
-def load_config(config_path):
-    with open(config_path, 'r') as file:
-        return yaml.safe_load(file)
-
-#faz algumas mudancas em alguns nomes (deixar apenas o codigo de amostra)
-def input_folder(output_folder, metadata_path):
-
-    #print("input_folder")
-
-    # Load metadata
-    metadata = pd.read_csv(metadata_path, sep=';', encoding='latin-1', on_bad_lines='skip')
+from scripts.modules.modules import load_config, mod_pasta, Quality_monitor, remover_csv, input_folder
 
 
-    # #OBS: VERIFICAR QUAL CAMPO SEPARADOR NO ARQUIVO GAL
-    metadata = pd.read_csv(metadata_path, sep =';', encoding='latin-1', on_bad_lines='skip')
-    
-    # #Substituir espaços por '_' entre palavras da coluns
-    metadata.columns = metadata.columns.str.replace(' ', '_')
-    
-    #Ler arquivo fasta
-    #Certificar se o cabelho das sequencias possuem apenas o codigo da amostra.
-
-    # Construct the file path for the CSV file
-    sequence_path = os.path.join(output_folder, "seqbatch.fa")
-
-    sequence = open(sequence_path)
-
-    #converter fasta to dataframe
-    ## Load the FASTA file into a list of SeqRecord objects
-    records = list(SeqIO.parse(sequence_path, "fasta"))
-
-    #Carregar os seguintes arquivos do ViralFlow
-
-    # Construct the file path for the CSV file
-    reads_path = os.path.join(output_folder, "reads_count.csv")
-
-    reads = pd.read_csv(reads_path, sep =',')
-
-    reads['cod'] = reads['cod'].replace(to_replace ='_.*', value = '', regex = True)
-
-    #short_summary.csv
-    #coverage = pd.read_csv('/content/short_summary.csv', sep =',')
-    #coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
-
+def lineage_sc2(output_folder):
 
     # Construct the file path for the CSV file
     lineage_path = os.path.join(output_folder, "major_summary.csv")
@@ -71,31 +30,8 @@ def input_folder(output_folder, metadata_path):
 
     lineage['cod'] = lineage['cod'].replace(to_replace ='_.*', value = '', regex = True)
 
-    #wgs
-    # Construct the file path for the CSV file
-    coverage_path = os.path.join(output_folder, 'wgs.csv')
+    return lineage
 
-    coverage = pd.read_csv(coverage_path, sep =',')
-    coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
-
-    return metadata, sequence, records, reads, lineage, coverage
-
-
-
-#Adiciona a pasta de RNSG_REPORT, a qual serao a adiciona os graficos, planilha, e outros
-# Adiciona a pasta de output no caminho informado
-def mod_pasta(output_folder):
-    # O caminho informado no argumento $1
-    nome_pasta = output_folder
-
-    # Verifica se a pasta 'RNSG_REPORT' já existe, se sim, a remove
-    output_path = os.path.join(nome_pasta, 'RNSG_REPORT')
-    
-    if os.path.exists(output_path):
-        shutil.rmtree(output_path)
-    
-    # Cria a pasta 'RNSG_REPORT' dentro da pasta de saida do viralflow
-    os.mkdir(output_path)
 
  
 #Função 'planilha_results' cria um arquivo intermediário 'tabela_resultados.csv' que irá conter informações necessárias para as etapas seguintes, e realiza as seguintes tarefas:
@@ -106,7 +42,7 @@ def mod_pasta(output_folder):
 ### Tipo Amostra,	Município, Data Coleta, Sexo, Reads, Coverage, Depth of Coverage,
 ### Lineage
     
-def planilha_results(metadata, reads, coverage, lineage, output_folder):
+def combine_data(metadata, reads, coverage, lineage, output_folder):
 
     # Mudar o SEXO de nome para sigla
     sexo = {'MASCULINO': 'M', 'FEMININO': 'F'}
@@ -161,7 +97,7 @@ def planilha_results(metadata, reads, coverage, lineage, output_folder):
 
 
 #A função 'planilha_resultado' cria um arquivo chamado 'Planilha_de_Resultado.xlsx' que contem os resultados em formato de planilha xlsx.
-##Contem as seguintes colunas: Barcode	N Barcode, Gal Sequenciamento, Código Amostra, Nome da Sequencia, CT, Tipo Amostra, Município,
+##Contem as seguintes colunas: Gal Sequenciamento, Código Amostra, Nome da Sequencia, CT, Tipo Amostra, Município,
     #Data Coleta, Sexo, Reads, Cobertura, Profundidade Média, Linhagem
 
 def planilha_resultado(covv_virus_name, resultado_df, output_folder):
@@ -178,12 +114,6 @@ def planilha_resultado(covv_virus_name, resultado_df, output_folder):
 
     #Change order header
     result_table = result_table[[ 'Requisição','id','covv_virus_name', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'Lineage']]
-
-    # add an empty column named 'Barcode' at index 0
-    result_table.insert(0, 'Barcode',None)
-
-    # add an empty column named 'N Barcode' at index 1
-    result_table.insert(1, 'N Barcode',None)
 
     #Mudar nomes da coluna
     result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 'covv_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
@@ -617,106 +547,6 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     pass
 
 
-#Função para criar um grafico com métricas gerais da corrida, para aferição de controle de qualidade
-def Quality_monitor(coverage, reads, resultado_df, output_folder):
-
-    #print("QualityCheck")
-
-    coverage['PCT_10X'] = coverage['PCT_10X']*100
-
-    #Criar os subplots e os seus respec. eixos x
-    fig = plt.figure()
-    #axs = axs.flatten()
-
-    gs = fig.add_gridspec(2,2)
-    ax1 = fig.add_subplot(gs[0, 0])
-    ax2 = fig.add_subplot(gs[0, 1])
-    ax3 = fig.add_subplot(gs[1, :])
-    #ax4 = fig.add_subplot(gs[2, :])
-
-
-    # Depth of Coverage (X)
-    sns.violinplot(y='MEAN_COVERAGE', data=coverage, 
-               inner="points", ax=ax1, cut= 0)
-    
-    sns.swarmplot(y='MEAN_COVERAGE', data=coverage, ax=ax1,
-                  color = 'black', size=3)
-
-    # Pinte a linha com 'CN' de outra cor (neste caso, vermelho)
-    linha_cn = coverage[coverage['cod'] == 'CN']
-
-    if not linha_cn.empty:
-            ax1.scatter(x=0, y=linha_cn['PCT_10X'], color='red', 
-                        marker='o', label='CN', s=20)
-
-            ax2.scatter(x=0, y=linha_cn['MEAN_COVERAGE'], color='red', 
-                        marker='o', label='CN', s=20)
-
-    # Coverage (%)
-    sns.violinplot(y='PCT_10X', data=coverage, ax=ax2, cut= 0)
-    
-
-    sns.swarmplot(y='PCT_10X', data=coverage, ax=ax2,
-                  color = 'black', size=3)
-
-
-    #Reads Mapeadas X reads unmapped
-    #Calcular o numero de redas unmmapped
-    reads['unmapped'] = reads['total_reads'] - reads['mepf_reads_aligned']
-
-    #select reads columns
-    reads_df = reads[['cod','mepf_reads_aligned','unmapped']]
-
-
-    # Define a color palette using Seaborn
-    colors = sns.color_palette("viridis")
-    #create stacked bar chart
-    reads_df.set_index('cod').plot(kind='bar', stacked=True, ax=ax3)
-    
-    #Gênero x Idade
-
-
-    #Depth X Coverage
-    #ax4.scatter(x=coverage['MEAN_COVERAGE'], y=coverage['PCT_10X'])
-
-
-
-    # Set ylabels
-    ax1.set_ylabel('Profundidade')
-    ax2.set_ylabel('Cobertura (%)')
-    ax3.set_ylabel('Leituras Geradas')
-    ax3.set_xlabel('Amostras')
-    #ax3.set_xticklabels(size=6)
-    ax3.tick_params(axis='x', labelsize=6)
-    ax3.legend(["Leituras mapeadas", "Leituras não-mapeadas"], bbox_to_anchor=(0.5, 1),
-               prop = { "size": 6})
-    #axs[3].set_ylabel('Reads Mapeadas vs não-mapeadas', fontsize=12)
-
-
-    # save the plot as SVG file
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_folder, "RNSG_REPORT/Quality_ckeck.png"), format='png', dpi = 300)
-
-
-#Função para remover os arquivos intermediários
-def remover_csv(output_folder):
-    # Caminho informado ao executar o script ($1)
-    caminho = output_folder
-
-    # Arquivos específicos que queremos remover
-    arquivos_para_remover = ['seq_df.csv', 'tabela_resultados.csv', 'tabela_resultados_filt.csv']
-
-    # Lista os arquivos no caminho informado
-    arquivos_no_caminho = os.listdir(caminho)
-
-    # Verifica e remove os arquivos específicos
-    for arquivo in arquivos_para_remover:
-        arquivo_path = os.path.join(caminho, arquivo)
-        if arquivo in arquivos_no_caminho:
-            os.remove(arquivo_path)
-
-
-
 def generate_report(metadata_path, config_path, output_folder):
 
     # Carregar configurações
@@ -725,8 +555,9 @@ def generate_report(metadata_path, config_path, output_folder):
     mod_pasta(output_folder)
     
     # Processar os arquivos na pasta de entrada
-    metadata, sequence, records, reads, lineage, coverage = input_folder(output_folder, metadata_path)
-    df_combine_sequence = planilha_results(metadata, reads, coverage, lineage, output_folder)
+    metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
+    lineage = lineage_sc2(output_folder)
+    df_combine_sequence = combine_data(metadata, reads, coverage, lineage, output_folder)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")

@@ -18,59 +18,11 @@ import yaml
 from unidecode import unidecode
 import seaborn as sns
 
-## Função que carrega o arquivo yaml e armazena em um dicionario
-def load_config(config_path):
-    with open(config_path, 'r') as file:
-        return yaml.safe_load(file)
+from scripts.modules.modules import load_config, mod_pasta, Quality_monitor, remover_csv, input_folder
+from scripts.modules.modules_EpiArbo import filter_depth, format_virus_name 
 
-#faz algumas mudancas em alguns nomes (deixar apenas o codigo de amostra)
-def input_folder(output_folder, metadata_path):
-
-    #print("input_folder")
-
-    # #OBS: VERIFICAR QUAL CAMPO SEPARADOR NO ARQUIVO GAL
-    metadata_redundante = pd.read_csv(metadata_path, sep =';', encoding='latin-1', on_bad_lines='skip', 
-                           low_memory=False)
-    
-    # Remover duplicatas com base na coluna 'Requisição'
-    metadata = metadata_redundante.drop_duplicates(subset=['Requisição'])
-
-    # #Substituir espaços por '_' entre palavras da coluns
-    metadata.columns = metadata.columns.str.replace(' ', '_')
-
-    #Ler arquivo fasta
-    #Certificar se o cabelho das sequencias possuem apenas o codigo da amostra.
-
-    # Construct the file path for the CSV file
-    sequence_path = os.path.join(output_folder, "seqbatch.fa")
-
-    sequence = open(sequence_path)
-
-    #converter fasta to dataframe
-    ## Load the FASTA file into a list of SeqRecord objects
-    records = list(SeqIO.parse(sequence_path, "fasta"))
-
-    #Carregar os seguintes arquivos do ViralFlow
-
-    # Construct the file path for the CSV file
-    reads_path = os.path.join(output_folder, "reads_count.csv")
-
-    reads = pd.read_csv(reads_path, sep =',')
-
-    reads['cod'] = reads['cod'].replace(to_replace ='_.*', value = '', regex = True)
-
-    #short_summary.csv
-    #coverage = pd.read_csv('/content/short_summary.csv', sep =',')
-    #coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
-
-    #wgs
-    # Construct the file path for the CSV file
-    coverage_path = os.path.join(output_folder, 'wgs.csv')
-
-    coverage = pd.read_csv(coverage_path, sep =',')
-    coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
-
-
+#Load serotype and genotype files
+def lineage_denv(output_folder):
     # Construct the file path for the serotype CSV file
     serotype_path = os.path.join(output_folder, "serotype.csv")
 
@@ -89,26 +41,10 @@ def input_folder(output_folder, metadata_path):
     genotype.rename(columns={'seqName': 'cod'}, inplace=True)
 
 
-    return metadata, sequence, records, reads, serotype, genotype, coverage
+    return serotype, genotype
 
 
-#Adiciona a pasta de RNSG_REPORT, a qual serao a adiciona os graficos, planilha, e outros
-# Adiciona a pasta de output no caminho informado
-def mod_pasta(output_folder):
-    # O caminho informado no argumento $1
-    nome_pasta = output_folder
-
-    # Verifica se a pasta 'RNSG_REPORT' já existe, se sim, a remove
-    output_path = os.path.join(nome_pasta, 'RNSG_REPORT')
-    
-    if os.path.exists(output_path):
-        shutil.rmtree(output_path)
-    
-    # Cria a pasta 'RNSG_REPORT' dentro da pasta de saida do viralflow
-    os.mkdir(output_path)
-
-
-def planilha_results(metadata, reads, coverage, serotype, genotype, output_folder):
+def combine_data(metadata, reads, coverage, serotype, genotype, output_folder):
 
     #print("Gerando Planilhas resultados")
 
@@ -179,13 +115,6 @@ def planilha_resultado(arbo_virus_name, resultado_df, output_folder):
     #Change order header
     result_table = result_table[[ 'Requisição','id','arbo_virus_name', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 
                                  'Reads', 'Coverage', 'Depth of Coverage', 'Sorotipo', 'Linhagem']]
-
-    # add an empty column named 'Barcode' at index 0
-    result_table.insert(0, 'Barcode',None)
-
-    # add an empty column named 'N Barcode' at index 1
-    result_table.insert(1, 'N Barcode',None)
-
     #Mudar nomes da coluna
     result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 
                                                 'arbo_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
@@ -193,16 +122,6 @@ def planilha_resultado(arbo_virus_name, resultado_df, output_folder):
 
     # Salve o DataFrame resultante em um arquivo Excel
     result_table.to_excel(os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx'), index=False)
-
-#A função 'filter_depth' gera um arquivo intermediário 'tabela_resultados_filt.csv' com informações apenas das amostras com cobertua > 60%
-def filter_depth(resultado_df, output_folder):
-
-    resultado_df_filt = resultado_df.loc[resultado_df['Coverage'] >= 60]
-
-    resultado_df_filt.to_csv(os.path.join(output_folder, "tabela_resultados_filt.csv"))
-
-    return resultado_df_filt
-
 
 
 #Função para gerar o arquivo fasta para ser submetido ao Gisaid
@@ -316,7 +235,7 @@ def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
         reader = csv.DictReader(csvfile, delimiter=',')
         for row in reader:
                 seq_id = f">h{row['Sorotipo']}/Brazil/{row['Estado_do_Solicitante']}-LACEN{row['CNES_Laboratório_responsável']}-{row['id']}/{row['ANO_SEMANA_EPIDEMIOLOGICA']}"
-                seq_id = seq_id.replace('DENV', 'DenV')
+                seq_id = format_virus_name(seq_id)
                 seq = row['sequence']
                 outfile.write(f"{seq_id}\n{seq}\n")
     
@@ -400,9 +319,9 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
     #Virus name
     arbo_virus_name = df_combine_sequence[['Estado_do_Solicitante','CNES_Laboratório_responsável','id','ANO_SEMANA_EPIDEMIOLOGICA', 'Sorotipo']].astype(str)
     arbo_virus_name.loc[:,'arbo_virus_name'] = "h" + arbo_virus_name['Sorotipo'] + "/Brazil/" + arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + arbo_virus_name['CNES_Laboratório_responsável'] + "-" + arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
-    arbo_virus_name = arbo_virus_name.replace('DENV', 'DenV')
-    arbo_virus_name = arbo_virus_name[['id','arbo_virus_name']]
-
+    # Converte nome 1º e Ultima Maiúscula
+    arbo_virus_name['arbo_virus_name'] = arbo_virus_name['arbo_virus_name'].apply(format_virus_name)
+    arbo_virus_name = arbo_virus_name[['id', 'arbo_virus_name']]
 
     #Insert submitter column
     arbo_virus_name.insert(0, 'submitter','')
@@ -634,183 +553,6 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
 
     pass
 
-#Função para criar um grafico com métricas gerais da corrida, para aferição de controle de qualidade
-def Quality_monitor(coverage, reads, resultado_df, output_folder):
-
-    print("QualityCheck")
-
-    coverage['PCT_10X'] = coverage['PCT_10X']*100
-
-    #Criar os subplots e os seus respec. eixos x
-    fig = plt.figure()
-    #axs = axs.flatten()
-
-    gs = fig.add_gridspec(2,2)
-    ax1 = fig.add_subplot(gs[0, 0])
-    ax2 = fig.add_subplot(gs[0, 1])
-    ax3 = fig.add_subplot(gs[1, :])
-    #ax4 = fig.add_subplot(gs[2, :])
-
-
-    # Depth of Coverage (X)
-    sns.violinplot(y='MEAN_COVERAGE', data=coverage, 
-               inner="points", ax=ax1, cut= 0)
-    
-    sns.swarmplot(y='MEAN_COVERAGE', data=coverage, ax=ax1,
-                  color = 'black', size=3)
-
-    # Pinte a linha com 'CN' de outra cor (neste caso, vermelho)
-    linha_cn = coverage[coverage['cod'] == 'CN']
-
-    if not linha_cn.empty:
-            ax1.scatter(x=0, y=linha_cn['PCT_10X'], color='red', 
-                        marker='o', label='CN', s=20)
-
-            ax2.scatter(x=0, y=linha_cn['MEAN_COVERAGE'], color='red', 
-                        marker='o', label='CN', s=20)
-
-    # Coverage (%)
-    sns.violinplot(y='PCT_10X', data=coverage, ax=ax2, cut= 0)
-    
-
-    sns.swarmplot(y='PCT_10X', data=coverage, ax=ax2,
-                  color = 'black', size=3)
-
-
-    #Reads Mapeadas X reads unmapped
-    #Calcular o numero de redas unmmapped
-    reads['unmapped'] = reads['total_reads'] - reads['mepf_reads_aligned']
-
-    #select reads columns
-    reads_df = reads[['cod','mepf_reads_aligned','unmapped']]
-
-
-    # Define a color palette using Seaborn
-    colors = sns.color_palette("viridis")
-    #create stacked bar chart
-    reads_df.set_index('cod').plot(kind='bar', stacked=True, ax=ax3)
-    
-    #Gênero x Idade
-
-
-    #Depth X Coverage
-    #ax4.scatter(x=coverage['MEAN_COVERAGE'], y=coverage['PCT_10X'])
-
-
-
-    # Set ylabels
-    ax1.set_ylabel('Profundidade')
-    ax2.set_ylabel('Cobertura (%)')
-    ax3.set_ylabel('Leituras Geradas')
-    ax3.set_xlabel('Amostras')
-    #ax3.set_xticklabels(size=6)
-    ax3.tick_params(axis='x', labelsize=6)
-    ax3.legend(["Leituras mapeadas", "Leituras não-mapeadas"], bbox_to_anchor=(0.5, 1),
-               prop = { "size": 6})
-    #axs[3].set_ylabel('Reads Mapeadas vs não-mapeadas', fontsize=12)
-
-
-    # save the plot as SVG file
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_folder, "RNSG_REPORT/Quality_ckeck.png"), format='png', dpi = 300)
-
-def Quality_monitor(coverage, reads, resultado_df, output_folder):
-
-    #print("QualityCheck")
-
-    coverage['PCT_10X'] = coverage['PCT_10X']*100
-
-    #Criar os subplots e os seus respec. eixos x
-    fig = plt.figure()
-    #axs = axs.flatten()
-
-    gs = fig.add_gridspec(2,2)
-    ax1 = fig.add_subplot(gs[0, 0])
-    ax2 = fig.add_subplot(gs[0, 1])
-    ax3 = fig.add_subplot(gs[1, :])
-    #ax4 = fig.add_subplot(gs[2, :])
-
-
-    # Depth of Coverage (X)
-    sns.violinplot(y='MEAN_COVERAGE', data=coverage, 
-               inner="points", ax=ax1, cut= 0)
-    
-    sns.swarmplot(y='MEAN_COVERAGE', data=coverage, ax=ax1,
-                  color = 'black', size=3)
-
-    # Pinte a linha com 'CN' de outra cor (neste caso, vermelho)
-    linha_cn = coverage[coverage['cod'] == 'CN']
-
-    if not linha_cn.empty:
-            ax1.scatter(x=0, y=linha_cn['PCT_10X'], color='red', 
-                        marker='o', label='CN', s=20)
-
-            ax2.scatter(x=0, y=linha_cn['MEAN_COVERAGE'], color='red', 
-                        marker='o', label='CN', s=20)
-
-    # Coverage (%)
-    sns.violinplot(y='PCT_10X', data=coverage, ax=ax2, cut= 0)
-    
-
-    sns.swarmplot(y='PCT_10X', data=coverage, ax=ax2,
-                  color = 'black', size=3)
-
-
-    #Reads Mapeadas X reads unmapped
-    #Calcular o numero de redas unmmapped
-    reads['unmapped'] = reads['total_reads'] - reads['mepf_reads_aligned']
-
-    #select reads columns
-    reads_df = reads[['cod','mepf_reads_aligned','unmapped']]
-
-
-    # Define a color palette using Seaborn
-    colors = sns.color_palette("viridis")
-    #create stacked bar chart
-    reads_df.set_index('cod').plot(kind='bar', stacked=True, ax=ax3)
-    
-    #Gênero x Idade
-
-
-    #Depth X Coverage
-    #ax4.scatter(x=coverage['MEAN_COVERAGE'], y=coverage['PCT_10X'])
-
-
-
-    # Set ylabels
-    ax1.set_ylabel('Profundidade')
-    ax2.set_ylabel('Cobertura (%)')
-    ax3.set_ylabel('Leituras Geradas')
-    ax3.set_xlabel('Amostras')
-    #ax3.set_xticklabels(size=6)
-    ax3.tick_params(axis='x', labelsize=6)
-    ax3.legend(["Leituras mapeadas", "Leituras não-mapeadas"], bbox_to_anchor=(0.5, 1),
-               prop = { "size": 6})
-    #axs[3].set_ylabel('Reads Mapeadas vs não-mapeadas', fontsize=12)
-
-
-    # save the plot as SVG file
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_folder, "RNSG_REPORT/Quality_ckeck.png"), format='png', dpi = 300)
-
-
-#Função para remover os arquivos intermediários
-def remover_csv(output_folder):
-    # Caminho informado ao executar o script ($1)
-    caminho = output_folder
-
-    # Arquivos específicos que queremos remover
-    arquivos_para_remover = ['seq_df.csv', 'tabela_resultados.csv', 'tabela_resultados_filt.csv']
-
-    # Lista os arquivos no caminho informado
-    arquivos_no_caminho = os.listdir(caminho)
-
-    # Verifica e remove os arquivos específicos
-    for arquivo in arquivos_para_remover:
-        arquivo_path = os.path.join(caminho, arquivo)
-        if arquivo in arquivos_no_caminho:
-            os.remove(arquivo_path)
-
 
 def generate_report_denv(metadata_path, config_path, output_folder):
 
@@ -820,8 +562,10 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     mod_pasta(output_folder)
     
     # Processar os arquivos na pasta de entrada
-    metadata, sequence, records, reads, serotype, genotype, coverage = input_folder(output_folder, metadata_path)
-    df_combine_sequence = planilha_results(metadata, reads, coverage, serotype, genotype, output_folder)
+    metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
+    serotype, genotype = lineage_denv(output_folder)
+
+    df_combine_sequence = combine_data(metadata, reads, coverage, serotype, genotype, output_folder)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
