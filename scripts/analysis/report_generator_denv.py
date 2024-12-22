@@ -18,96 +18,64 @@ import yaml
 from unidecode import unidecode
 import seaborn as sns
 
-from scripts.modules.modules import load_config, mod_pasta, Quality_monitor, remover_csv, input_folder
+from scripts.modules.modules import load_config, mod_pasta, Quality_monitor, \
+    remover_csv, input_folder,process_and_combine_data
 from scripts.modules.modules_EpiArbo import filter_depth, format_virus_name 
 
-#Load serotype and genotype files
+# Load serotype and genotype files
 def lineage_denv(output_folder):
     # Construct the file path for the serotype CSV file
     serotype_path = os.path.join(output_folder, "serotype.csv")
+    serotype = pd.read_csv(serotype_path, sep=';')
 
-    serotype = pd.read_csv(serotype_path, sep =';')
-
-    serotype['seqName'] = serotype['seqName'].replace(to_replace ='_.*', value = '', regex = True)
-    serotype.rename(columns={'seqName': 'cod'}, inplace=True)
-
+    # Process serotype DataFrame
+    serotype['seqName'] = serotype['seqName'].replace(to_replace='_.*', value='', regex=True)
+    serotype.rename(columns={'seqName': 'cod', 'clade': 'serotype'}, inplace=True)
+    serotype_filtered = serotype[['cod', 'serotype']]
 
     # Construct the file path for the genotype CSV file
     genotype_path = os.path.join(output_folder, "genotype.csv")
+    genotype = pd.read_csv(genotype_path, sep=';')
 
-    genotype = pd.read_csv(genotype_path, sep =';')
+    # Process genotype DataFrame
+    genotype['seqName'] = genotype['seqName'].replace(to_replace='_.*', value='', regex=True)
+    genotype.rename(columns={'seqName': 'cod', 'clade': 'lineage'}, inplace=True)
+    genotype_filtered = genotype[['cod', 'lineage']]
 
-    genotype['seqName'] = genotype['seqName'].replace(to_replace ='_.*', value = '', regex = True)
-    genotype.rename(columns={'seqName': 'cod'}, inplace=True)
+    # Combine serotype and genotype filtered DataFrames
+    lineage = pd.merge(serotype_filtered, genotype_filtered, on='cod', how='outer')
 
+    return lineage
 
-    return serotype, genotype
+#Define as colunas do dataframe a serem renomeadas
+rename_columns = {
+        'cod': 'Código Amostra',
+        'mepf_reads_aligned': 'Reads',
+        'PCT_10X': 'Coverage',
+        'MEAN_COVERAGE': 'Depth of Coverage',
+        'serotype': 'Sorotipo',
+        'lineage': 'Linhagem',
+        'Requisição': 'Requisição',
+        'Material_Biológico': 'Tipo Amostra',
+        'Municipio_do_Solicitante': 'Município',
+        'Data_da_Coleta': 'Data Coleta',
+        'Sexo': 'Sexo'
+    }
 
+#Definir ordem das colunas
+result_cols = [
+        'Código Amostra', 'Requisição', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 
+        'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'Sorotipo', 'Linhagem'
+    ]
 
-def combine_data(metadata, reads, coverage, serotype, genotype, output_folder):
-
-    #print("Gerando Planilhas resultados")
-
-    # Mudar o SEXO de nome para sigla
-    sexo = {'MASCULINO': 'M', 'FEMININO': 'F'}
-    metadata['Sexo'] = metadata['Sexo'].replace(sexo)
-
-
-    # Remover redundância nome Tipo de Amotra
-    metadata['Material_Biológico'] = metadata['Material_Biológico'].replace(to_replace=' .*', value='', regex=True)
-
-    # Extrair as informações de cada dataset
-    metadata_GAL_update = metadata[['Código_da_Amostra', 'Requisição', 'CT', 'Material_Biológico', 'Municipio_do_Solicitante', 'Data_da_Coleta', 'Sexo']]
-    metadata_GAL_update.loc[:,'Data_da_Coleta'] = pd.to_datetime(metadata_GAL_update['Data_da_Coleta'], format="%d-%m-%Y").dt.strftime('%d-%m-%Y')
-
-    #reads_update = reads[['cod', 'total_reads']]
-
-    # DEFINIR A PROFUNDIDADE MÍNIMA USADA PARA MONTAGEM
-    coverage_update = coverage[['cod', 'PCT_10X', 'MEAN_COVERAGE']]
-
-    # Juntar todas as planilhas
-    resultado_df_1 = pd.merge(pd.merge(pd.merge(reads, coverage_update, on='cod'), serotype, on='cod'), genotype, on='cod')
-    #resultado_df_1 = pd.merge(reads, coverage_update, on='cod')
-    resultado_df_1['cod'] = resultado_df_1['cod'].astype(str)
-    metadata_GAL_update.loc[:,'Código_da_Amostra'] = metadata_GAL_update['Código_da_Amostra'].astype(str)
-    metadata_GAL_update.loc[:,'Requisição'] = metadata_GAL_update['Requisição'].astype(str)
-
-    resultado_df = pd.merge(resultado_df_1, metadata_GAL_update, left_on="cod", right_on="Código_da_Amostra")
-
-    # Mudar nomes da coluna
-    resultado_df = resultado_df.rename(columns={'cod': 'Código Amostra', 'mepf_reads_aligned': 'Reads', 'PCT_10X': 'Coverage', 
-                                                'MEAN_COVERAGE': 'Depth of Coverage', 'clade_x' : 'Sorotipo', 'clade_y' : 'Linhagem',
-                                                'Requisição': 'Requisição', 'Material_Biológico': 'Tipo Amostra', 
-                                                'Municipio_do_Solicitante': 'Município','Data_da_Coleta': 'Data Coleta', 'Sexo': 'Sexo'})
-
-    # Mudar ordem das colunas
-    cols = ['Código Amostra', 'Requisição', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 'Reads', 'Coverage', 
-            'Depth of Coverage', 'Sorotipo', 'Linhagem']
-    resultado_df = resultado_df[cols]
-
-    # Convert Column ID name to string
-    resultado_df['Coverage'] = resultado_df['Coverage'].astype(float)
-
-    # Converter valor de coverage para porcentagem
-    resultado_df['Coverage'] = resultado_df['Coverage'].multiply(100).round(2)
-
-    # Convert Column ID name to string
-    resultado_df['Depth of Coverage'] = resultado_df['Depth of Coverage'].astype(float).round(2)
-
-    resultado_df = resultado_df.set_index('Requisição')
-
-    resultado_df.to_csv(os.path.join(output_folder, "tabela_resultados.csv"))
-
-    return resultado_df
-
-def planilha_resultado(arbo_virus_name, resultado_df, output_folder):
+def planilha_resultado(arbo_virus_name, final_df, output_folder):
 
     print("planilha_resultado")
 
     result_table = arbo_virus_name[['id','arbo_virus_name']]
 
     #Merge df
-    result_table = pd.merge(result_table, resultado_df, left_on = 'id', right_on = 'Código Amostra', how='right')
+    result_table = pd.merge(result_table, final_df, left_on = 'id', right_on = 'Código Amostra', how='right')
 
     #drop team_name column
     result_table.drop('Código Amostra', axis=1, inplace=True)
@@ -125,7 +93,7 @@ def planilha_resultado(arbo_virus_name, resultado_df, output_folder):
 
 
 #Função para gerar o arquivo fasta para ser submetido ao Gisaid
-def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
+def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
 
     print("gerar_arquivo_fasta")
 
@@ -217,11 +185,11 @@ def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
     df_combine_sequence = pd.merge(df_sequence, metadata, left_on="id", right_on="Código_da_Amostra")
 
     #Controle de qualidade (cobertura)
-    resultado_df = resultado_df.loc[resultado_df['Coverage'] >= 60]
+    final_df = final_df.loc[final_df['Coverage'] >= 60]
 
-    resultado_df = resultado_df.astype(str)
+    final_df = final_df.astype(str)
 
-    df_combine_sequence = pd.merge(df_combine_sequence, resultado_df, left_on="id", right_on="Código Amostra")
+    df_combine_sequence = pd.merge(df_combine_sequence, final_df, left_on="id", right_on="Código Amostra")
 
     #Extract yerar collect date
     df_combine_sequence['Data_da_Coleta'] = pd.to_datetime(df_combine_sequence['Data_da_Coleta'], format="%d-%m-%Y")
@@ -563,26 +531,27 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     
     # Processar os arquivos na pasta de entrada
     metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
-    serotype, genotype = lineage_denv(output_folder)
+    lineage = lineage_denv(output_folder)
 
-    df_combine_sequence = combine_data(metadata, reads, coverage, serotype, genotype, output_folder)
+    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, lineage, 
+                                                   output_folder, rename_columns,result_cols)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
     if os.path.exists(resultado_file):
-        resultado_df = pd.read_csv(resultado_file)
-        filter_depth(resultado_df, output_folder)
+        final_df = pd.read_csv(resultado_file)
+        filter_depth(final_df, output_folder)
     else:
         raise FileNotFoundError(f"Arquivo {resultado_file} não encontrado!")
 
     resultado_filt_file = os.path.join(output_folder, "tabela_resultados_filt.csv")
     if os.path.exists(resultado_filt_file):
-        resultado_df_filt = pd.read_csv(resultado_filt_file)
+        final_df_filt = pd.read_csv(resultado_filt_file)
     else:
         raise FileNotFoundError(f"Arquivo {resultado_filt_file} não encontrado!")
 
     # Gerar arquivos auxiliares
-    gerar_arquivo_fasta(records, metadata, resultado_df, output_folder)
+    gerar_arquivo_fasta(records, metadata, final_df, output_folder)
 
     seq_file = os.path.join(output_folder, "seq_df.csv")
     if os.path.exists(seq_file):
@@ -594,13 +563,13 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     arbo_virus_name = os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx')
     if os.path.exists(arbo_virus_name):
         covv_virus_name = pd.read_excel(arbo_virus_name)
-        planilha_resultado(covv_virus_name, resultado_df, output_folder)
+        planilha_resultado(covv_virus_name, final_df, output_folder)
     else:
         raise FileNotFoundError(f"Arquivo {arbo_virus_name} não encontrado!")
 
 
 
-    Quality_monitor(coverage, reads, resultado_df, output_folder)
+    Quality_monitor(coverage, reads, final_df, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)

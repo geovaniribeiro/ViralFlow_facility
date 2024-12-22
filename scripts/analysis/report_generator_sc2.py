@@ -18,7 +18,8 @@ import yaml
 from unidecode import unidecode
 import seaborn as sns
 
-from scripts.modules.modules import load_config, mod_pasta, Quality_monitor, remover_csv, input_folder
+from scripts.modules.modules import load_config, mod_pasta, Quality_monitor, \
+    remover_csv, input_folder, process_and_combine_data
 
 
 def lineage_sc2(output_folder):
@@ -32,88 +33,45 @@ def lineage_sc2(output_folder):
 
     return lineage
 
+#Define as colunas do dataframe a serem renomeadas
+rename_columns = {
+        'cod': 'Código Amostra',
+        'mepf_reads_aligned': 'Reads',
+        'PCT_10X': 'Coverage',
+        'MEAN_COVERAGE': 'Depth of Coverage',
+        'lineage': 'linhagem',
+        'Requisição': 'Requisição',
+        'Material_Biológico': 'Tipo Amostra',
+        'Municipio_do_Solicitante': 'Município',
+        'Data_da_Coleta': 'Data Coleta',
+        'Sexo': 'Sexo'
+    }
 
- 
-#Função 'planilha_results' cria um arquivo intermediário 'tabela_resultados.csv' que irá conter informações necessárias para as etapas seguintes, e realiza as seguintes tarefas:
-##Altera nome de algumas colunas, 
-##junto arquivo GAL aos arquivos saida VF
-##O arquivo  csv resultante tem as segunites colunas: 
-### Requisição, Código Amostra, CT,
-### Tipo Amostra,	Município, Data Coleta, Sexo, Reads, Coverage, Depth of Coverage,
-### Lineage
-    
-def combine_data(metadata, reads, coverage, lineage, output_folder):
-
-    # Mudar o SEXO de nome para sigla
-    sexo = {'MASCULINO': 'M', 'FEMININO': 'F'}
-    metadata['Sexo'] = metadata['Sexo'].replace(sexo)
-
-    # Remover redundância nome Tipo de Amotra
-    metadata['Material_Biológico'] = metadata['Material_Biológico'].replace(to_replace=' .*', value='', regex=True)
-
-    # Extrair as informações de cada dataset
-    metadata_GAL_update = metadata[['Código_da_Amostra', 'Requisição', 'CT', 'Material_Biológico', 'Municipio_do_Solicitante', 'Data_da_Coleta', 'Sexo']]
-    metadata_GAL_update.loc[:,'Data_da_Coleta'] = pd.to_datetime(metadata_GAL_update['Data_da_Coleta'], format="%d-%m-%Y").dt.strftime('%d-%m-%Y')
-
-    #reads_update = reads[['cod', 'total_reads']]
-
-    # DEFINIR A PROFUNDIDADE MÍNIMA USADA PARA MONTAGEM
-    coverage_update = coverage[['cod', 'PCT_10X', 'MEAN_COVERAGE']]
-
-    # Juntar todas as planilhas
-    resultado_df_1 = pd.merge(pd.merge(reads, coverage_update, on='cod'), lineage, on='cod')
-    resultado_df_1['cod'] = resultado_df_1['cod'].astype(str)
-    metadata_GAL_update.loc[:,'Código_da_Amostra'] = metadata_GAL_update['Código_da_Amostra'].astype(str, errors='ignore')
-    metadata_GAL_update.loc[:,'Requisição'] = metadata_GAL_update['Requisição'].astype(str, errors='ignore')
-
-    #Junta os resultados do viralflow (resultado_df_1) e os dados do GAL (metadata_GAL_update)
-    resultado_df = pd.merge(resultado_df_1, metadata_GAL_update, left_on="cod", right_on="Código_da_Amostra")
-
-
-    # Mudar nomes da coluna
-    resultado_df = resultado_df.rename(columns={'cod': 'Código Amostra', 'mepf_reads_aligned': 'Reads', 'PCT_10X': 'Coverage', 'MEAN_COVERAGE': 'Depth of Coverage', 'lineage': 'Lineage',
-                                   'Requisição': 'Requisição', 'Material_Biológico': 'Tipo Amostra', 'Municipio_do_Solicitante': 'Município','Data_da_Coleta': 'Data Coleta',
-                                   'Sexo': 'Sexo'})
-
-    # Mudar ordem das colunas
-    cols = ['Código Amostra', 'Requisição', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'Lineage']
-    resultado_df = resultado_df[cols]
-
-    # Convert Column ID name to string
-    resultado_df['Coverage'] = resultado_df['Coverage'].astype(float)
-
-    # Converter valor de coverage para porcentagem
-    resultado_df['Coverage'] = resultado_df['Coverage'].multiply(100).round(2)
-
-    # Convert Column ID name to string
-    resultado_df['Depth of Coverage'] = resultado_df['Depth of Coverage'].astype(float).round(2)
-
-    resultado_df = resultado_df.set_index('Requisição')
-
-    #Salva os dados em um arquivo temporario
-    resultado_df.to_csv(os.path.join(output_folder, "tabela_resultados.csv"))
-
-    return resultado_df
+#Definir ordem das colunas
+result_cols = [
+        'Código Amostra', 'Requisição', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 
+        'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'linhagem'
+    ]
 
 
 #A função 'planilha_resultado' cria um arquivo chamado 'Planilha_de_Resultado.xlsx' que contem os resultados em formato de planilha xlsx.
 ##Contem as seguintes colunas: Gal Sequenciamento, Código Amostra, Nome da Sequencia, CT, Tipo Amostra, Município,
     #Data Coleta, Sexo, Reads, Cobertura, Profundidade Média, Linhagem
 
-def planilha_resultado(covv_virus_name, resultado_df, output_folder):
+def planilha_resultado(covv_virus_name, final_df, output_folder):
 
     #print("planilha_resultado")
 
     result_table = covv_virus_name[['id','covv_virus_name']]
 
     #Merge df
-    result_table = pd.merge(result_table, resultado_df, left_on = 'id', right_on = 'Código Amostra', how='right')
+    result_table = pd.merge(result_table, final_df, left_on = 'id', right_on = 'Código Amostra', how='right')
 
     #drop team_name column
     result_table.drop('Código Amostra', axis=1, inplace=True)
 
     #Change order header
-    result_table = result_table[[ 'Requisição','id','covv_virus_name', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'Lineage']]
+    result_table = result_table[[ 'Requisição','id','covv_virus_name', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'linhagem']]
 
     #Mudar nomes da coluna
     result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 'covv_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
@@ -125,18 +83,18 @@ def planilha_resultado(covv_virus_name, resultado_df, output_folder):
 
 
 #A função 'filter_depth' gera um arquivo intermediário 'tabela_resultados_filt.csv' com informações apenas das amostras com cobertua > 90%
-def filter_depth(resultado_df, output_folder):
+def filter_depth(final_df, output_folder):
 
-    resultado_df_filt = resultado_df.loc[resultado_df['Coverage'] >= 90]
+    final_df_filt = final_df.loc[final_df['Coverage'] >= 90]
 
-    resultado_df_filt.to_csv(os.path.join(output_folder, "tabela_resultados_filt.csv"))
+    final_df_filt.to_csv(os.path.join(output_folder, "tabela_resultados_filt.csv"))
 
-    return resultado_df_filt
+    return final_df_filt
 
 
 
 #Função para gerar o arquivo fasta para ser submetido ao Gisaid
-def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
+def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
 
     #print("gerar_arquivo_fasta")
 
@@ -229,11 +187,11 @@ def gerar_arquivo_fasta(records, metadata, resultado_df, output_folder):
     df_combine_sequence = pd.merge(df_sequence, metadata, left_on="id", right_on="Código_da_Amostra")
 
     #Controle de qualidade (cobertura)
-    resultado_df = resultado_df.loc[resultado_df['Coverage'] >= 80]
+    final_df = final_df.loc[final_df['Coverage'] >= 80]
 
-    resultado_df = resultado_df.astype(str)
+    final_df = final_df.astype(str)
 
-    df_combine_sequence = pd.merge(df_combine_sequence, resultado_df, left_on="id", right_on="Código Amostra")
+    df_combine_sequence = pd.merge(df_combine_sequence, final_df, left_on="id", right_on="Código Amostra")
 
     #Extract yerar collect date
     df_combine_sequence['Data_da_Coleta'] = pd.to_datetime(df_combine_sequence['Data_da_Coleta'], format="%d-%m-%Y")
@@ -557,24 +515,25 @@ def generate_report(metadata_path, config_path, output_folder):
     # Processar os arquivos na pasta de entrada
     metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
     lineage = lineage_sc2(output_folder)
-    df_combine_sequence = combine_data(metadata, reads, coverage, lineage, output_folder)
+    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, lineage, 
+                                                   output_folder, rename_columns,result_cols)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
     if os.path.exists(resultado_file):
-        resultado_df = pd.read_csv(resultado_file)
-        filter_depth(resultado_df, output_folder)
+        final_df = pd.read_csv(resultado_file)
+        filter_depth(final_df, output_folder)
     else:
         raise FileNotFoundError(f"Arquivo {resultado_file} não encontrado!")
 
     resultado_filt_file = os.path.join(output_folder, "tabela_resultados_filt.csv")
     if os.path.exists(resultado_filt_file):
-        resultado_df_filt = pd.read_csv(resultado_filt_file)
+        final_df_filt = pd.read_csv(resultado_filt_file)
     else:
         raise FileNotFoundError(f"Arquivo {resultado_filt_file} não encontrado!")
 
     # Gerar arquivos auxiliares
-    gerar_arquivo_fasta(records, metadata, resultado_df, output_folder)
+    gerar_arquivo_fasta(records, metadata, final_df, output_folder)
 
     seq_file = os.path.join(output_folder, "seq_df.csv")
     if os.path.exists(seq_file):
@@ -586,11 +545,11 @@ def generate_report(metadata_path, config_path, output_folder):
     covv_virus_name_file = os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx')
     if os.path.exists(covv_virus_name_file):
         covv_virus_name = pd.read_excel(covv_virus_name_file)
-        planilha_resultado(covv_virus_name, resultado_df, output_folder)
+        planilha_resultado(covv_virus_name, final_df, output_folder)
     else:
         raise FileNotFoundError(f"Arquivo {covv_virus_name_file} não encontrado!")
 
-    Quality_monitor(coverage, reads, resultado_df, output_folder)
+    Quality_monitor(coverage, reads, final_df, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)

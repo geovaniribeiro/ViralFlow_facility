@@ -69,6 +69,71 @@ def input_folder(output_folder, metadata_path):
     return metadata, sequence, records, reads, coverage
 
 
+def process_and_combine_data(metadata, reads, coverage, lineage, output_folder, 
+                             rename_columns, result_cols):
+    """
+    Combina os dados de diferentes fontes (metadata, reads, coverage e lineage) e processa os resultados
+    para gerar um arquivo consolidado em formato CSV.
+
+    Parâmetros:
+    - metadata (DataFrame): Dados de metadados do GAL.
+    - reads (DataFrame): Dados de leituras de sequência.
+    - coverage (DataFrame): Dados de cobertura de sequência.
+    - lineage (DataFrame): Dados de linhagens ou sorotipos.
+    - output_folder (str): Caminho para salvar o arquivo de resultados.
+    - rename_columns (dict): Dicionário de mapeamento de nomes de colunas para renomeação.
+    - result_cols (list): Lista com a ordem final das colunas do DataFrame.
+    """
+
+    # Substituir sexo por siglas
+    sexo = {'MASCULINO': 'M', 'FEMININO': 'F'}
+    metadata['Sexo'] = metadata['Sexo'].replace(sexo)
+
+    # Remover redundância no nome do tipo de amostra
+    metadata['Material_Biológico'] = metadata['Material_Biológico'].replace(to_replace=' .*', value='', regex=True)
+
+    # Formatar as datas corretamente
+    metadata['Data_da_Coleta'] = pd.to_datetime(metadata['Data_da_Coleta'], format="%d-%m-%Y").dt.strftime('%d-%m-%Y')
+
+    # Selecionar e renomear colunas do metadata
+    metadata = metadata[['Código_da_Amostra', 'Requisição', 'CT', 'Material_Biológico', 
+                         'Municipio_do_Solicitante', 'Data_da_Coleta', 'Sexo']]
+
+    # Atualizar dados de coverage
+    coverage_update = coverage[['cod', 'PCT_10X', 'MEAN_COVERAGE']]
+
+    # Juntar dados: reads, coverage e lineage
+    combined_data = pd.merge(pd.merge(reads, coverage_update, on='cod'), lineage, on='cod')
+    combined_data['cod'] = combined_data['cod'].astype(str)
+    # Garantir que não há warnings
+    metadata = metadata.copy()  # Faça isso apenas se necessário
+    metadata.loc[:, 'Código_da_Amostra'] = metadata['Código_da_Amostra'].astype(str)
+    metadata['Código_da_Amostra'] = metadata['Código_da_Amostra'].astype(str)
+    
+    metadata.loc[:, 'Requisição'] = metadata['Requisição'].astype(str)
+    metadata['Requisição'] = metadata['Requisição'].astype(str)
+
+    # Juntar com metadata
+    final_df = pd.merge(combined_data, metadata, left_on="cod", right_on="Código_da_Amostra")
+
+    # Renomear colunas
+    final_df.rename(columns=rename_columns, inplace=True)
+
+    # Reordenar colunas
+    final_df = final_df[result_cols]
+
+    # Ajustar valores de Coverage para porcentagem e arredondar Depth of Coverage
+    final_df['Coverage'] = final_df['Coverage'].astype(float).multiply(100).round(2)
+    final_df['Depth of Coverage'] = final_df['Depth of Coverage'].astype(float).round(2)
+
+    # Configurar a coluna de índice
+    final_df.set_index('Requisição', inplace=True)
+
+    # Salvar arquivo final
+    final_df.to_csv(os.path.join(output_folder, "tabela_resultados.csv"))
+
+    return final_df
+
 #Adiciona a pasta de RNSG_REPORT, a qual serao a adiciona os graficos, planilha, e outros
 # Adiciona a pasta de output no caminho informado
 def mod_pasta(output_folder):
