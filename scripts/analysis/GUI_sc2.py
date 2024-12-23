@@ -19,9 +19,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from scripts.analysis.report.report_generator_sc2 import generate_report
 
 #Import classes instances
-from scripts.analysis.assember.ParametersDialog import ParametersDialog
-from scripts.analysis.assember.ParametersManager import ParametersManager
-from scripts.analysis.assember.Assembler_run import Assembler_run
+from scripts.analysis.assembler.ParametersDialog import ParametersDialog
+from scripts.analysis.assembler.ParametersManager import ParametersManager
+from scripts.analysis.assembler.Assembler_run import Assembler_run
 
 class AssemblerRun_sc2(Assembler_run):
     def __init__(self, command_viralflow, output_folder, metadata_path, config_path):
@@ -40,7 +40,7 @@ class AssemblerRun_sc2(Assembler_run):
 
     def generate_report(self):
         self.process_started.emit("""Gerando o relatório...""")
-        self.process_started.emit(" ")
+        
         generate_report(
             output_folder=self.output_folder,
             metadata_path=self.metadata_path,
