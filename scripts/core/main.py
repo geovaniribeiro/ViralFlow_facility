@@ -9,8 +9,8 @@ import sys
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from scripts.analysis.assembly_sc2 import ViralFlowGUI as ViralFlowGUI_SC2  # Importa o script para configuração do pipeline
-from scripts.analysis.assembly_custom import ViralFlowGUI as ViralFlowGUI_custom  # Importa o script para configuração do pipeline
+from scripts.analysis.GUI_sc2 import ViralFlowGUI as ViralFlowGUI_SC2  # Importa o script para configuração do pipeline
+from scripts.analysis.GUI_custom import ViralFlowGUI as ViralFlowGUI_custom  # Importa o script para configuração do pipeline
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
 

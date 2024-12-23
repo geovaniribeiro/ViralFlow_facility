@@ -18,184 +18,51 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from scripts.analysis.report_generator_denv import generate_report_denv
 from scripts.analysis.DenvProcessor import DenvProcessor
 
-class ParametersDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.setWindowTitle("Configurar Parâmetros")
-        self.setGeometry(100, 100, 400, 400)
-
-        self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))
-
-        layout = QVBoxLayout()
-
-        # Parâmetros com opções booleanas (CheckBox)
-        self.run_snp_eff = QCheckBox("Habilitar --runSnpEff")
-        self.run_snp_eff.setChecked(True)
-        layout.addWidget(self.run_snp_eff)
-
-        self.write_mapped_reads = QCheckBox("Habilitar --writeMappedReads")
-        self.write_mapped_reads.setChecked(True)
-        layout.addWidget(self.write_mapped_reads)
-
-        # Parâmetros numéricos (SpinBox)
-        self.min_len_label = QLabel("Valor para --minLen")
-        layout.addWidget(self.min_len_label)
-        self.min_len = QSpinBox()
-        self.min_len.setMinimum(0)
-        self.min_len.setMaximum(1000)
-        self.min_len.setValue(75)
-        layout.addWidget(self.min_len)
-
-        self.depth_label = QLabel("Valor para --depth")
-        layout.addWidget(self.depth_label)
-        self.depth = QSpinBox()
-        self.depth.setMinimum(0)
-        self.depth.setMaximum(1000)
-        self.depth.setValue(10)
-        layout.addWidget(self.depth)
-
-        self.min_dp_intrahost_label = QLabel("Valor para --minDpIntrahost")
-        layout.addWidget(self.min_dp_intrahost_label)
-        self.min_dp_intrahost = QSpinBox()
-        self.min_dp_intrahost.setMinimum(0)
-        self.min_dp_intrahost.setMaximum(1000)
-        self.min_dp_intrahost.setValue(100)
-        layout.addWidget(self.min_dp_intrahost)
-
-        self.nextflow_sim_calls_label = QLabel("Valor para --nextflowSimCalls")
-        layout.addWidget(self.nextflow_sim_calls_label)
-        self.nextflow_sim_calls = QSpinBox()
-        self.nextflow_sim_calls.setMinimum(0)
-        self.nextflow_sim_calls.setMaximum(300)
-        self.nextflow_sim_calls.setValue(12)
-        layout.addWidget(self.nextflow_sim_calls)
-
-        self.fastp_threads_label = QLabel("Valor para --fastp_threads")
-        layout.addWidget(self.fastp_threads_label)
-        self.fastp_threads = QSpinBox()
-        self.fastp_threads.setMinimum(0)
-        self.fastp_threads.setMaximum(300)
-        self.fastp_threads.setValue(12)
-        layout.addWidget(self.fastp_threads)
-
-        self.bwa_threads_label = QLabel("Valor para --bwa_threads")
-        layout.addWidget(self.bwa_threads_label)
-        self.bwa_threads = QSpinBox()
-        self.bwa_threads.setMinimum(0)
-        self.bwa_threads.setMaximum(300)
-        self.bwa_threads.setValue(12)
-        layout.addWidget(self.bwa_threads)
-
-        self.mafft_threads_label = QLabel("Valor para --mafft_threads")
-        layout.addWidget(self.mafft_threads_label)
-        self.mafft_threads = QSpinBox()
-        self.mafft_threads.setMinimum(0)
-        self.mafft_threads.setMaximum(300)
-        self.mafft_threads.setValue(12)
-        layout.addWidget(self.mafft_threads)
-
-        # Botões
-        button_layout = QHBoxLayout()
-        save_button = QPushButton("Salvar")
-        save_button.clicked.connect(self.accept)
-        cancel_button = QPushButton("Cancelar")
-        cancel_button.clicked.connect(self.reject)
-        button_layout.addWidget(save_button)
-        button_layout.addWidget(cancel_button)
-        layout.addLayout(button_layout)
-
-        self.setLayout(layout)
-
-    def get_parameters(self):
-        return {
-            "run_snp_eff": self.run_snp_eff.isChecked(),
-            "write_mapped_reads": self.write_mapped_reads.isChecked(),
-            "min_len": self.min_len.value(),
-            "depth": self.depth.value(),
-            "min_dp_intrahost": self.min_dp_intrahost.value(),
-            "nextflow_sim_calls": self.nextflow_sim_calls.value(),
-            "fastp_threads": self.fastp_threads.value(),
-            "bwa_threads": self.bwa_threads.value(),
-            "mafft_threads": self.mafft_threads.value(),
-        }
-
-class ParametersManager:
-    def __init__(self):
-        # Valores padrão
-        self.parameters = {
-            "run_snp_eff": True,
-            "write_mapped_reads": True,
-            "min_len": 75,
-            "depth": 10,
-            "min_dp_intrahost": 100,
-            "nextflow_sim_calls": 12,
-            "fastp_threads": 12,
-            "bwa_threads": 12,
-            "mafft_threads": 12,
-        }
-
-    def configure_parameters(self, parent=None):
-        dialog = ParametersDialog(parent)
-        if dialog.exec_() == QDialog.Accepted:
-            self.parameters = dialog.get_parameters()
-
+#Import classes instances
+from scripts.classes.ParametersDialog import ParametersDialog
+from scripts.classes.ParametersManager import ParametersManager
+from scripts.classes.Assembler_run import Assembler_run
 
 # Classe para executar o processo em um thread separado
-class ProcessThread(QThread):
-    process_started = pyqtSignal(str)
-    process_finished = pyqtSignal(str)
-
-    def __init__(self, snpeff_custom, command_viralflow,
-                 output_folder, metadata_path, config_path):
-        super().__init__()
-        self.snpeff_custom = snpeff_custom
-        self.command_viralflow = command_viralflow
+# Subclasse para executar o processo ProcessThread
+class ProcessThread(Assembler_run):
+    def __init__(self, snpeff_custom, command_viralflow, output_folder, metadata_path, config_path, run_pipeline=None):
+        commands = [
+            (snpeff_custom, "Iniciando snpeff_custom..."),
+            (command_viralflow, "Executando ViralFlow...")
+        ]
+        super().__init__(commands)
         self.output_folder = output_folder
         self.metadata_path = metadata_path
         self.config_path = config_path
-        self.run_pipeline = None  # Método de pipeline opcional
+        self.run_pipeline = run_pipeline
 
     def run(self):
-        try:
-            self.process_started.emit("Iniciando snpeff_custom...")
-            subprocess.run(self.snpeff_custom, shell=True, check=True)
-            self.process_started.emit("snpeff_custom concluído com sucesso.")
-            self.process_started.emit(" ")
-            self.process_started.emit(" ")
-            self.process_started.emit(" ")
-            self.process_started.emit(" ")
-
-            self.process_started.emit("Executando ViralFlow...")
-            self.process_started.emit(" ")
-            subprocess.run(self.command_viralflow, shell=True, check=True)
-            self.process_started.emit("ViralFlow executado com sucesso!")
-            self.process_started.emit(" ")
-            self.process_started.emit(" ")
-
-
+        super().run()
+        if self.run_pipeline:
+            self.process_started.emit("Executando pipeline customizado...")
             self.run_pipeline()
-
+            self.process_started.emit("Pipeline customizado concluído com sucesso!")
 
             # Gerar o relatório após a execução dos comandos
-            self.process_started.emit("Gerando o relatório...")
-            self.process_started.emit(" ")
-            self.process_started.emit(" ")
-            generate_report_denv(output_folder=self.output_folder, 
-                            metadata_path=self.metadata_path, 
-                            config_path=self.config_path)
-            self.process_started.emit("Relatório gerado com sucesso!")
-            self.process_started.emit(" ")
-            self.process_started.emit(" ")
+        #     self.process_started.emit("Gerando o relatório...")
+        #     self.process_started.emit(" ")
+        #     self.process_started.emit(" ")
+        #     generate_report_denv(output_folder=self.output_folder, 
+        #                     metadata_path=self.metadata_path, 
+        #                     config_path=self.config_path)
+        #     self.process_started.emit("Relatório gerado com sucesso!")
+        #     self.process_started.emit(" ")
+        #     self.process_started.emit(" ")
 
-            self.process_finished.emit("Processo concluído com sucesso!")
-            self.process_started.emit(" ")
-            self.process_started.emit(" ")
+        #     self.process_finished.emit("Processo concluído com sucesso!")
+        #     self.process_started.emit(" ")
+        #     self.process_started.emit(" ")
 
-        except subprocess.CalledProcessError as e:
-            self.process_finished.emit(f"Erro ao executar o comando: {e}")
-        except Exception as e:
-            self.process_finished.emit(f"Erro ao gerar o relatório: {e}")
+        # except subprocess.CalledProcessError as e:
+        #     self.process_finished.emit(f"Erro ao executar o comando: {e}")
+        # except Exception as e:
+        #     self.process_finished.emit(f"Erro ao gerar o relatório: {e}")
 
 
 class ViralFlowGUI(QWidget):
