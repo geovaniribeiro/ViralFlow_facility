@@ -15,13 +15,13 @@ import subprocess
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from scripts.analysis.report_generator_denv import generate_report_denv
+from scripts.analysis.report.report_generator_denv import generate_report_denv
 from scripts.analysis.DenvProcessor import DenvProcessor
 
 #Import classes instances
-from scripts.classes.ParametersDialog import ParametersDialog
-from scripts.classes.ParametersManager import ParametersManager
-from scripts.classes.Assembler_run import Assembler_run
+from scripts.analysis.assember.ParametersDialog import ParametersDialog
+from scripts.analysis.assember.ParametersManager import ParametersManager
+from scripts.analysis.assember.Assembler_run import Assembler_run
 
 # Classe para executar o processo em um thread separado
 # Subclasse para executar o processo ProcessThread

@@ -16,14 +16,13 @@ import subprocess
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from scripts.analysis.report_generator_sc2 import generate_report
+from scripts.analysis.report.report_generator_sc2 import generate_report
 
 #Import classes instances
-from scripts.classes.ParametersDialog import ParametersDialog
-from scripts.classes.ParametersManager import ParametersManager
-from scripts.classes.Assembler_run import Assembler_run
+from scripts.analysis.assember.ParametersDialog import ParametersDialog
+from scripts.analysis.assember.ParametersManager import ParametersManager
+from scripts.analysis.assember.Assembler_run import Assembler_run
 
-# Subclasse para executar o processo Assembler_run
 class AssemblerRun_sc2(Assembler_run):
     def __init__(self, command_viralflow, output_folder, metadata_path, config_path):
         commands = [(command_viralflow, "Executando ViralFlow...")]
@@ -32,7 +31,16 @@ class AssemblerRun_sc2(Assembler_run):
         self.metadata_path = metadata_path
         self.config_path = config_path
 
+    def run(self):
+        # Executa o comando viralflow
+        super().run()
+
+        # Gera o relatório após a execução do comando
+        self.generate_report()
+
     def generate_report(self):
+        self.process_started.emit("""Gerando o relatório...""")
+        self.process_started.emit(" ")
         generate_report(
             output_folder=self.output_folder,
             metadata_path=self.metadata_path,
@@ -40,10 +48,6 @@ class AssemblerRun_sc2(Assembler_run):
         )
         self.process_started.emit("Relatório gerado com sucesso!")
         self.process_started.emit(" ")
-        if self.run_pipeline:
-            self.process_started.emit("Executando pipeline customizado...")
-            self.run_pipeline()
-            self.process_started.emit("Pipeline customizado concluído com sucesso!")
 
 class ViralFlowGUI(QWidget):
     def __init__(self):
@@ -159,13 +163,26 @@ class ViralFlowGUI(QWidget):
                                     os.path.join(params['outDir'], "COMPILED_OUTPUT"),
                                     metadata_path=params['metadata'],
                                     config_path=params['config_file'])
-        
+
         # Conectar os sinais do thread com as funções da GUI
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
 
         # Iniciar o thread
         self.thread.start()
+
+    def generate_report_after_run(self):
+        """Gera o relatório após a execução do comando ser concluída."""
+        params = {key: entry.text() for key, entry in self.entries.items()}
+
+        # Gera o relatório
+        generate_report(
+            output_folder=os.path.join(params['outDir'], "COMPILED_OUTPUT"),
+            metadata_path=params['metadata'],
+            config_path=params['config_file']
+        )
+
+        self.update_status("Relatório gerado com sucesso!")
 
     def update_status(self, message):
         """Atualiza a interface com as mensagens do processo."""
