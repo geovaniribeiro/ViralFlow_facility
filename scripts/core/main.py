@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QRadioButton
+from PyQt5.QtWidgets import (
+    QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QRadioButton
+)
 from PyQt5.QtGui import QIcon
 import subprocess
 import os
@@ -9,11 +11,12 @@ import sys
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from scripts.analysis.GUI_sc2 import ViralFlowGUI as ViralFlowGUI_SC2  # Importa o script para configuração do pipeline
-from scripts.analysis.GUI_custom import ViralFlowGUI as ViralFlowGUI_custom  # Importa o script para configuração do pipeline
+from scripts.analysis.GUI_sc2 import ViralFlowGUI as ViralFlowGUI_SC2  # Interface para SARS-CoV-2
+from scripts.analysis.assembler.AssemblerRun_custom import ViralFlowGUI as ViralFlowGUI_custom  # Interface para vírus customizados
+from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
-
+from scripts.analysis.DenvProcessor import DenvProcessor
 
 class MenuInicial(QWidget):
     def __init__(self):
@@ -21,7 +24,7 @@ class MenuInicial(QWidget):
 
         # Configurações da janela
         self.setWindowTitle("Menu Inicial - ViralFlow GUI")
-        self.setGeometry(200, 200, 600, 200)
+        self.setGeometry(200, 200, 600, 300)
 
         # Define o ícone da janela
         self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))  # Substitua pelo caminho do ícone
@@ -33,21 +36,23 @@ class MenuInicial(QWidget):
         label = QLabel("Escolha uma opção:")
         layout.addWidget(label)
 
-        # Botão para atualizar banco de dados
+        # Botão para atualizar ViralFlow
         update_button = QPushButton("Atualizar ViralFlow")
         update_button.clicked.connect(self.atualizar_viralflow)
         layout.addWidget(update_button)
 
         # Botão para atualizar banco de dados
-        update_button = QPushButton("Atualizar Banco de dados")
-        update_button.clicked.connect(self.atualizar_banco_dados)
-        layout.addWidget(update_button)
+        db_update_button = QPushButton("Atualizar Banco de dados")
+        db_update_button.clicked.connect(self.atualizar_banco_dados)
+        layout.addWidget(db_update_button)
 
-        # Grupo de botões de seleção
+        # Grupo de botões de seleção para vírus
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_custom = QRadioButton("DENV")
+       # self.radio_chikv = QRadioButton("CHIKV")
         layout.addWidget(self.radio_sc2)
         layout.addWidget(self.radio_custom)
+        #layout.addWidget(self.radio_chikv)
 
         # Botão para confirmar
         confirm_button = QPushButton("Iniciar Montagem")
@@ -88,8 +93,9 @@ class MenuInicial(QWidget):
             self.tela_assembly.show()
         elif self.radio_custom.isChecked():
             self.close()
-            self.tela_assembly = ViralFlowGUI_custom()
+            self.tela_assembly = ViralFlowDENV()  # Gera montagem e relatório para DENV
             self.tela_assembly.show()
+
 
     def sair(self):
         confirm = QMessageBox.question(
@@ -101,6 +107,32 @@ class MenuInicial(QWidget):
         if confirm == QMessageBox.Yes:
             subprocess.run("exit", shell=True, check=True)
             QApplication.quit()
+
+
+class ViralFlowDENV(ViralFlowGUI_custom):
+    def __init__(self):
+        super().__init__()
+
+    def on_process_finished(self, message):
+        super().on_process_finished(message)  # Reutiliza a lógica de finalização original
+
+        # Parâmetros para a geração do relatório
+        metadata_path = self.params['metadata_path']
+        config_path = self.params['config_path']
+        output_folder = self.params['outDir']
+
+        # Chama a função para gerar o relatório do DENV
+        try:
+            # Criar uma instância da classe
+            processor = DenvProcessor(output_folder)
+            
+            # Adicionar uma referência ao método de execução no thread
+            self.thread.run_pipeline = processor.execute_pipeline
+            generate_report_denv(metadata_path, config_path, output_folder)
+            QMessageBox.information(self, "Relatório Gerado", f"Relatório DENV salvo em: {output_folder}/report.txt")
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório: {str(e)}")
+
 
 
 if __name__ == "__main__":

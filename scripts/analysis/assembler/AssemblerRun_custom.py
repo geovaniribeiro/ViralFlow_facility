@@ -15,17 +15,13 @@ import subprocess
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from scripts.analysis.report.report_generator_denv import generate_report_denv
-from scripts.analysis.DenvProcessor import DenvProcessor
-
 #Import classes instances
-from scripts.analysis.assember.ParametersDialog import ParametersDialog
-from scripts.analysis.assember.ParametersManager import ParametersManager
-from scripts.analysis.assember.Assembler_run import Assembler_run
+from scripts.analysis.assembler.ParametersDialog import ParametersDialog
+from scripts.analysis.assembler.ParametersManager import ParametersManager
+from scripts.analysis.assembler.Assembler_run import Assembler_run
 
 # Classe para executar o processo em um thread separado
-# Subclasse para executar o processo ProcessThread
-class ProcessThread(Assembler_run):
+class AssemblerRun_custom(Assembler_run):
     def __init__(self, snpeff_custom, command_viralflow, output_folder, metadata_path, config_path, run_pipeline=None):
         commands = [
             (snpeff_custom, "Iniciando snpeff_custom..."),
@@ -39,31 +35,6 @@ class ProcessThread(Assembler_run):
 
     def run(self):
         super().run()
-        if self.run_pipeline:
-            self.process_started.emit("Executando pipeline customizado...")
-            self.run_pipeline()
-            self.process_started.emit("Pipeline customizado concluído com sucesso!")
-
-            # Gerar o relatório após a execução dos comandos
-        #     self.process_started.emit("Gerando o relatório...")
-        #     self.process_started.emit(" ")
-        #     self.process_started.emit(" ")
-        #     generate_report_denv(output_folder=self.output_folder, 
-        #                     metadata_path=self.metadata_path, 
-        #                     config_path=self.config_path)
-        #     self.process_started.emit("Relatório gerado com sucesso!")
-        #     self.process_started.emit(" ")
-        #     self.process_started.emit(" ")
-
-        #     self.process_finished.emit("Processo concluído com sucesso!")
-        #     self.process_started.emit(" ")
-        #     self.process_started.emit(" ")
-
-        # except subprocess.CalledProcessError as e:
-        #     self.process_finished.emit(f"Erro ao executar o comando: {e}")
-        # except Exception as e:
-        #     self.process_finished.emit(f"Erro ao gerar o relatório: {e}")
-
 
 class ViralFlowGUI(QWidget):
     
@@ -187,22 +158,11 @@ class ViralFlowGUI(QWidget):
             f"--referenceGenome null -resume"
         )
         
-
-        # Criar uma instância da classe
-        processor = DenvProcessor(params['outDir'])
-
-        
-
         # Iniciar o thread para executar o processo
-        self.thread = ProcessThread(snpeff_custom, command_viralflow,
+        self.thread = AssemblerRun_custom(snpeff_custom, command_viralflow,
                                     os.path.join(params['outDir'], "COMPILED_OUTPUT"),
                                     metadata_path=params['metadata'],
                                     config_path=params['config_file'])
-
-
-            # Adicionar uma referência ao método de execução no thread
-        self.thread.run_pipeline = processor.execute_pipeline
-
 
         # Conectar os sinais do thread com as funções da GUI
         self.thread.process_started.connect(self.update_status)
@@ -210,7 +170,6 @@ class ViralFlowGUI(QWidget):
 
         # Iniciar o thread
         self.thread.start()
-
 
 
     def update_status(self, message):
