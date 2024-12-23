@@ -115,22 +115,23 @@ class ViralFlowDENV(ViralFlowGUI_custom):
 
     def on_process_finished(self, message):
         super().on_process_finished(message)  # Reutiliza a lógica de finalização original
-
         # Parâmetros para a geração do relatório
         metadata_path = self.params['metadata_path']
         config_path = self.params['config_path']
         output_folder = self.params['outDir']
 
-        # Chama a função para gerar o relatório do DENV
+        # A execução do pipeline precisa ser realizada antes da geração do relatório
         try:
-            # Criar uma instância da classe
+            # Criar uma instância do processo de montagem
             processor = DenvProcessor(output_folder)
-            
-            # Adicionar uma referência ao método de execução no thread
-            self.thread.run_pipeline = processor.execute_pipeline
+            # Garantir que a execução do pipeline seja concluída antes de gerar o relatório
+            processor.execute_pipeline(metadata_path, config_path, output_folder)
+            # Agora que o pipeline foi concluído, gerar o relatório
             generate_report_denv(metadata_path, config_path, output_folder)
+            # Exibir uma mensagem de sucesso
             QMessageBox.information(self, "Relatório Gerado", f"Relatório DENV salvo em: {output_folder}/report.txt")
         except Exception as e:
+            # Caso ocorra algum erro, exibe a mensagem de erro
             QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório: {str(e)}")
 
 
