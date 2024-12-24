@@ -17,6 +17,8 @@ from scripts.analysis.report.report_generator_denv import generate_report_denv  
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
 from scripts.analysis.DenvNextclade import DenvNextclade
+import matplotlib
+matplotlib.use('Agg')  # Configura o backend sem GUI antes de qualquer uso do Matplotlib
 
 class MenuInicial(QWidget):
     def __init__(self):
@@ -119,9 +121,6 @@ class ViralFlowDENV(ViralFlowGUI_custom):
     def __init__(self):
         super().__init__()
 
-        # Conectar sinal de finalização ao método on_process_finished
-        #self.process_finished.connect(self.on_process_finished)
-
     def report_generator(self, message):
         """Sobrescreve a finalização com lógica específica para DENV."""
         
@@ -131,12 +130,13 @@ class ViralFlowDENV(ViralFlowGUI_custom):
             config_path = self.entries['config_file'].text()
             output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
 
-            # Gera o relatório após a execução do pipeline
+            print("")
             print("Gerando relatório DENV...")
-            # Criar uma instância da classe
+            # Criar uma instância para executar o NextClade
             processor = DenvNextclade(output_folder)
             processor.execute_pipeline()
 
+            #Executa o script de relatório
             generate_report_denv(metadata_path, config_path, output_folder)
             print("")
             print("")

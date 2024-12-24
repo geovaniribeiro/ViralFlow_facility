@@ -30,7 +30,6 @@ class Assembler_run(QThread):
                 self.process_started.emit(description)
             self.process_started.emit(" ")
             subprocess.run(command, shell=True, check=True)
-            self.process_started.emit(f"{description} concluído com sucesso!")
             self.process_started.emit(" ")
         except subprocess.CalledProcessError as e:
             self.process_started.emit(f"Erro ao executar {description}: {str(e)}")

@@ -32,14 +32,21 @@ class AssemblerRun_sc2(Assembler_run):
         self.config_path = config_path
 
     def run(self):
-        # Executa o comando viralflow
-        super().run()
-
+        try:
+            super().run()  # Executa os comandos principais
+            # Emitir o sinal de finalização com mensagem de sucesso
+            self.process_finished.emit("ViralFlow executado com sucesso!")
+            self.process_finished.emit(" ")
+        except Exception as e:
+            # Emitir o sinal de finalização com mensagem de erro
+            self.process_finished.emit(f"Erro durante a execução: {str(e)}")
+            
         # Gera o relatório após a execução do comando
         self.generate_report()
 
     def generate_report(self):
         self.process_started.emit("""Gerando o relatório...""")
+        self.process_started.emit("")
         
         generate_report(
             output_folder=self.output_folder,
