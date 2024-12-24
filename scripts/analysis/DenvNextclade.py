@@ -3,10 +3,10 @@ import time
 import pandas as pd
 import subprocess
 
-class DenvProcessor:
+class DenvNextclade:
     def __init__(self, out_dir):
         self.out_dir = out_dir
-        self.compiled_output_dir = os.path.join(out_dir, "COMPILED_OUTPUT")
+        self.compiled_output_dir = os.path.join(out_dir)
         os.makedirs(self.compiled_output_dir, exist_ok=True)
 
     def run_command(self, command):

@@ -16,7 +16,7 @@ from scripts.analysis.assembler.AssemblerRun_custom import ViralFlowGUI as Viral
 from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
-from scripts.analysis.DenvProcessor import DenvProcessor
+from scripts.analysis.DenvNextclade import DenvNextclade
 
 class MenuInicial(QWidget):
     def __init__(self):
@@ -48,10 +48,10 @@ class MenuInicial(QWidget):
 
         # Grupo de botões de seleção para vírus
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
-        self.radio_custom = QRadioButton("DENV")
-       # self.radio_chikv = QRadioButton("CHIKV")
+        self.radio_denv = QRadioButton("DENV")
+        #self.radio_chikv = QRadioButton("CHIKV")
         layout.addWidget(self.radio_sc2)
-        layout.addWidget(self.radio_custom)
+        layout.addWidget(self.radio_denv)
         #layout.addWidget(self.radio_chikv)
 
         # Botão para confirmar
@@ -91,10 +91,15 @@ class MenuInicial(QWidget):
             self.close()
             self.tela_assembly = ViralFlowGUI_SC2()
             self.tela_assembly.show()
-        elif self.radio_custom.isChecked():
+        elif self.radio_denv.isChecked():
             self.close()
             self.tela_assembly = ViralFlowDENV()  # Gera montagem e relatório para DENV
             self.tela_assembly.show()
+        #elif self.radio_chikv.isChecked():
+         #   self.close()
+          #  self.tela_assembly = ViralFlowGUI_custom()  # Gera montagem e relatório para CHIKV
+           # self.tela_assembly.show()
+
 
 
     def sair(self):
@@ -109,30 +114,37 @@ class MenuInicial(QWidget):
             QApplication.quit()
 
 
+
 class ViralFlowDENV(ViralFlowGUI_custom):
     def __init__(self):
         super().__init__()
 
-    def on_process_finished(self, message):
-        super().on_process_finished(message)  # Reutiliza a lógica de finalização original
-        # Parâmetros para a geração do relatório
-        metadata_path = self.params['metadata_path']
-        config_path = self.params['config_path']
-        output_folder = self.params['outDir']
+        # Conectar sinal de finalização ao método on_process_finished
+        #self.process_finished.connect(self.on_process_finished)
 
-        # A execução do pipeline precisa ser realizada antes da geração do relatório
+    def report_generator(self, message):
+        """Sobrescreve a finalização com lógica específica para DENV."""
+        
         try:
-            # Criar uma instância do processo de montagem
-            processor = DenvProcessor(output_folder)
-            # Garantir que a execução do pipeline seja concluída antes de gerar o relatório
-            processor.execute_pipeline(metadata_path, config_path, output_folder)
-            # Agora que o pipeline foi concluído, gerar o relatório
+            # Extrair os valores diretamente dos campos da GUI
+            metadata_path = self.entries['metadata'].text()
+            config_path = self.entries['config_file'].text()
+            output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
+
+            # Gera o relatório após a execução do pipeline
+            print("Gerando relatório DENV...")
+            # Criar uma instância da classe
+            processor = DenvNextclade(output_folder)
+            processor.execute_pipeline()
+
             generate_report_denv(metadata_path, config_path, output_folder)
-            # Exibir uma mensagem de sucesso
-            QMessageBox.information(self, "Relatório Gerado", f"Relatório DENV salvo em: {output_folder}/report.txt")
+            print("")
+            print("")
+            print("Relatório gerado com sucesso")
+        except KeyError as e:
+            QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
         except Exception as e:
-            # Caso ocorra algum erro, exibe a mensagem de erro
-            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório: {str(e)}")
+            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório DENV: {str(e)}")
 
 
 
