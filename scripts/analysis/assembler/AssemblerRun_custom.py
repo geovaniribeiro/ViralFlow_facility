@@ -38,6 +38,7 @@ class AssemblerRun_custom(Assembler_run):
             super().run()  # Executa os comandos principais
             # Emitir o sinal de finalização com mensagem de sucesso
             self.process_finished.emit("ViralFlow executado com sucesso!")
+            print("")
         except Exception as e:
             # Emitir o sinal de finalização com mensagem de erro
             self.process_finished.emit(f"Erro durante a execução: {str(e)}")

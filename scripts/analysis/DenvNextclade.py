@@ -6,8 +6,7 @@ import subprocess
 class DenvNextclade:
     def __init__(self, out_dir):
         self.out_dir = out_dir
-        self.compiled_output_dir = os.path.join(out_dir)
-        os.makedirs(self.compiled_output_dir, exist_ok=True)
+        os.makedirs(self.out_dir, exist_ok=True)
 
     def run_command(self, command):
         """Executa um comando e lança uma exceção em caso de erro."""
@@ -33,7 +32,7 @@ class DenvNextclade:
 
     def process_serotype(self):
         """Processa o arquivo de serótipo e retorna o valor de DENV."""
-        serotype_csv_path = os.path.join(self.compiled_output_dir, "serotype.csv")
+        serotype_csv_path = os.path.join(self.out_dir, "serotype.csv")
         self.wait_for_file(serotype_csv_path)
         serotype_df = pd.read_csv(serotype_csv_path, sep = ';')
         serotype_df['clade'] = serotype_df['clade'].str.lower()
@@ -43,8 +42,8 @@ class DenvNextclade:
         """Executa o pipeline completo para processar os dados."""
         # Passo 1: Executar Nextclade inicial
         initial_dataset = "nextstrain/dengue/all"
-        initial_output_csv = os.path.join(self.compiled_output_dir, "serotype.csv")
-        seqbatch_path = os.path.join(self.compiled_output_dir, "seqbatch.fa")
+        initial_output_csv = os.path.join(self.out_dir, "serotype.csv")
+        seqbatch_path = os.path.join(self.out_dir, "seqbatch.fa")
 
         self.run_nextclade(initial_dataset, initial_output_csv, seqbatch_path)
 
@@ -53,6 +52,6 @@ class DenvNextclade:
 
         # Passo 3: Executar Nextclade para genotipagem
         genotype_dataset = f"community/v-gen-lab/dengue/{DENV_value}"
-        genotype_output_csv = os.path.join(self.compiled_output_dir, "genotype.csv")
+        genotype_output_csv = os.path.join(self.out_dir, "genotype.csv")
 
         self.run_nextclade(genotype_dataset, genotype_output_csv, seqbatch_path)
