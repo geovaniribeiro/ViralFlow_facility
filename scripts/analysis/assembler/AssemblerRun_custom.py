@@ -34,7 +34,13 @@ class AssemblerRun_custom(Assembler_run):
         self.run_pipeline = run_pipeline
 
     def run(self):
-        super().run()
+        try:
+            super().run()  # Executa os comandos principais
+            # Emitir o sinal de finalização com mensagem de sucesso
+            self.process_finished.emit("ViralFlow executado com sucesso!")
+        except Exception as e:
+            # Emitir o sinal de finalização com mensagem de erro
+            self.process_finished.emit(f"Erro durante a execução: {str(e)}")
 
 class ViralFlowGUI(QWidget):
     
@@ -120,6 +126,8 @@ class ViralFlowGUI(QWidget):
             "min_dp_intrahost": 100,
         }
 
+        self.thread = None
+
     def select_file(self, entry):
         file_path, _ = QFileDialog.getOpenFileName(self, "Selecione um arquivo")
         if file_path:
@@ -168,9 +176,11 @@ class ViralFlowGUI(QWidget):
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
 
+        # Conectar o sinal de finalização ao método apropriado
+        self.thread.process_finished.connect(self.report_generator)
+
         # Iniciar o thread
         self.thread.start()
-
 
     def update_status(self, message):
         """Atualiza a interface com as mensagens do processo."""
