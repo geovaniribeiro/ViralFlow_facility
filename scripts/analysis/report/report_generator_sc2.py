@@ -552,7 +552,7 @@ def generate_report(metadata_path, config_path, output_folder):
     Quality_monitor(coverage, reads, final_df, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
-    remover_csv(output_folder)
+    #remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone
 if __name__ == "__main__":
