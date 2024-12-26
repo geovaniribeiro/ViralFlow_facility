@@ -17,27 +17,31 @@ import shutil
 import yaml
 from unidecode import unidecode
 import seaborn as sns
+import chardet
 
 ## Função que carrega o arquivo yaml e armazena em um dicionario
 def load_config(config_path):
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
 
+
 #faz algumas mudancas em alguns nomes (deixar apenas o codigo de amostra)
 def input_folder(output_folder, metadata_path):
 
-    #print("input_folder")
 
-    # Load metadata
-    metadata = pd.read_csv(metadata_path, sep=';', encoding='latin-1', on_bad_lines='skip')
+    # Detecta o delimitador do arquivo
+    with open(metadata_path, 'r', encoding='latin-1') as file:
+        sample = file.read(1024)  # Lê uma amostra do arquivo
+        sniffer = csv.Sniffer()
+        delimiter = sniffer.sniff(sample).delimiter  # Detecta o delimitador
 
 
-    # #OBS: VERIFICAR QUAL CAMPO SEPARADOR NO ARQUIVO GAL
-    metadata = pd.read_csv(metadata_path, sep =';', encoding='latin-1', on_bad_lines='skip')
-    
-    # #Substituir espaços por '_' entre palavras da coluns
+    # Carrega o arquivo usando o delimitador detectado
+    metadata = pd.read_csv(metadata_path, sep=delimiter, encoding='latin-1', on_bad_lines='skip')
+
+    # Substitui espaços por '_' nos nomes das colunas
     metadata.columns = metadata.columns.str.replace(' ', '_')
-    
+
     #Ler arquivo fasta
     #Certificar se o cabelho das sequencias possuem apenas o codigo da amostra.
 
