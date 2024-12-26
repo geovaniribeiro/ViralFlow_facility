@@ -184,14 +184,14 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
     df_sequence = df_sequence[['id','sequence']].replace(to_replace ='_.*', value = '', regex = True)
 
     ##Combinte the both subset based on ID sequence name
-    df_combine_sequence = pd.merge(df_sequence, metadata, left_on="id", right_on="Código_da_Amostra")
+    df_combine_sequence = pd.merge(df_sequence, metadata, left_on="id", right_on="Código_da_Amostra", suffixes=('', '_dup'))
 
     #Controle de qualidade (cobertura)
     final_df = final_df.loc[final_df['Coverage'] >= 80]
 
     final_df = final_df.astype(str)
 
-    df_combine_sequence = pd.merge(df_combine_sequence, final_df, left_on="id", right_on="Código Amostra")
+    df_combine_sequence = pd.merge(df_combine_sequence, final_df, left_on="id", right_on="Código Amostra", suffixes=('', '_dup'))
 
     #Extract yerar collect date
     df_combine_sequence['Data_da_Coleta'] = pd.to_datetime(df_combine_sequence['Data_da_Coleta'], format="%d-%m-%Y")
@@ -365,7 +365,7 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
 
 
     #Gender (Male / Female)
-    covv_gender = df_combine_sequence[['id','Sexo_x']]
+    covv_gender = df_combine_sequence[['id','Sexo']]
 
     gender = {
         'Masculino':'Male',
@@ -374,9 +374,9 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
 
 
 
-    covv_gender.loc[:,'Sexo_x'] = covv_gender.loc[:,'Sexo_x'].replace(gender)
+    covv_gender.loc[:,'Sexo'] = covv_gender.loc[:,'Sexo'].replace(gender)
 
-    covv_gender = covv_gender.rename(columns={'Sexo_x': 'covv_gender'})
+    covv_gender = covv_gender.rename(columns={'Sexo': 'covv_gender'})
 
     covv_gender = covv_gender.astype(str)
 
@@ -552,7 +552,7 @@ def generate_report(metadata_path, config_path, output_folder):
     Quality_monitor(coverage, reads, final_df, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
-    remover_csv(output_folder)
+    #remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone
 if __name__ == "__main__":
