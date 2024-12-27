@@ -18,7 +18,7 @@ import yaml
 from unidecode import unidecode
 import seaborn as sns
 
-from scripts.modules.modules import load_config, mod_pasta, Quality_monitor, \
+from scripts.analysis.report.modules import load_config, mod_pasta, Quality_monitor, \
     remover_csv, input_folder, process_and_combine_data
 
 
@@ -552,7 +552,7 @@ def generate_report(metadata_path, config_path, output_folder):
     Quality_monitor(coverage, reads, final_df, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
-    #remover_csv(output_folder)
+    remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone
 if __name__ == "__main__":

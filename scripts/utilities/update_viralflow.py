@@ -8,7 +8,7 @@ def atualizar_viralflow():
     try:
         # Comando para atualizar banco de dados
         subprocess.run(
-            "./Installer/viralflow_setup.sh",
+            "./Installer/viralflow_full.sh",
             shell=True,
             check=True
         )
