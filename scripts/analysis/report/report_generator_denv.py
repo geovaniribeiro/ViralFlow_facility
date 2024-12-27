@@ -18,9 +18,9 @@ import yaml
 from unidecode import unidecode
 import seaborn as sns
 
-from scripts.modules.modules import load_config, mod_pasta, Quality_monitor, \
+from scripts.analysis.report.modules import load_config, mod_pasta, Quality_monitor, \
     remover_csv, input_folder,process_and_combine_data
-from scripts.modules.modules_EpiArbo import filter_depth, format_virus_name 
+from scripts.analysis.report.modules_EpiArbo import filter_depth, format_virus_name 
 
 # Load serotype and genotype files
 def lineage_denv(output_folder):
