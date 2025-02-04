@@ -46,8 +46,5 @@ O uso desta ferramenta requer o pareamento de informações entre arquivos **FAS
 ## 📌 Atualização de Bancos de Dados
 Para manter a análise precisa, utilize a opção de atualização dos bancos de dados do **Pangolin** e **Nextclade** sempre que possível.
 
-## 🧬 Montagem do Sars-CoV-2
-A ferramenta permite a **montagem e análise de genomas do Sars-CoV-2** de maneira eficiente e integrada.
-
 ---
 Este manual fornece as informações necessárias para a **instalação e uso** da interface gráfica do ViralFlow. Para mais detalhes técnicos e suporte, consulte a documentação oficial do projeto (Em contrução)
