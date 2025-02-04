@@ -29,12 +29,10 @@ No terminal, digite o comando correspondente e pressione `Enter`:
 2. No campo de busca, digite `ViralFlow GUI`.
 3. Clique no ícone correspondente para abrir a interface gráfica.
 
-Uma interface semelhante à mostrada abaixo será aberta, juntamente com um terminal.
-
 ## ⚠️ Avisos Importantes
 O uso desta ferramenta requer o pareamento de informações entre arquivos **FASTQ** e dados obtidos do **GAL**. Para evitar erros:
 
-- **Baixe** o arquivo em formato **CSV** do GAL (*módulo Sequenciamento e/ou "Vírus, Biologia Médica/Sequenciamento"*).
+- **Baixe** o arquivo os metadados do GAL no formato **CSV** (*módulo Sequenciamento ou "Vírus, Biologia Médica/Sequenciamento"*).
 - **Não edite** o arquivo CSV para evitar problemas de formatação e codificação.
 - O **nome das amostras cadastradas no sequenciador** deve corresponder aos códigos das amostras oriundas do GAL (*coluna `Código de Amostra`*).
 
@@ -52,4 +50,4 @@ Para manter a análise precisa, utilize a opção de atualização dos bancos de
 A ferramenta permite a **montagem e análise de genomas do Sars-CoV-2** de maneira eficiente e integrada.
 
 ---
-Este manual fornece as informações necessárias para a **instalação e uso** da interface gráfica do ViralFlow. Para mais detalhes técnicos e suporte, consulte a documentação oficial do projeto.
+Este manual fornece as informações necessárias para a **instalação e uso** da interface gráfica do ViralFlow. Para mais detalhes técnicos e suporte, consulte a documentação oficial do projeto (Em contrução)
