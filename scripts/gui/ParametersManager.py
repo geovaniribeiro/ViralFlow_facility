@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from scripts.analysis.assembler.ParametersDialog import ParametersDialog
+from scripts.gui.ParametersDialog import ParametersDialog
 
 import subprocess
 

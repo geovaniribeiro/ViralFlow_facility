@@ -18,7 +18,7 @@ import yaml
 from unidecode import unidecode
 import seaborn as sns
 
-from scripts.analysis.report.modules import load_config, mod_pasta, Quality_monitor, \
+from scripts.analysis.report.modules_general import load_config, mod_pasta, Quality_monitor, \
     remover_csv, input_folder, process_and_combine_data
 
 

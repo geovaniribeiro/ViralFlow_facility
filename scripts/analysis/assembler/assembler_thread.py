@@ -16,7 +16,7 @@ import subprocess
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Classe para executar o processo em um thread separado
-class Assembler_run(QThread):
+class AssemblerThread(QThread):
     process_started = pyqtSignal(str)
     process_finished = pyqtSignal(str)
 
