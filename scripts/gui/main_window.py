@@ -11,12 +11,14 @@ import sys
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from scripts.analysis.GUI_sc2 import ViralFlowGUI as ViralFlowGUI_SC2  # Interface para SARS-CoV-2
-from scripts.analysis.assembler.AssemblerRun_custom import ViralFlowGUI as ViralFlowGUI_custom  # Interface para vírus customizados
-from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
+from scripts.gui.AssemblerRun_SC2 import ViralFlowGUI as ViralFlowGUI_SC2  # Interface para SARS-CoV-2
+from scripts.gui.AssemblerRun_custom import ViralFlowGUI as ViralFlowGUI_custom  # Interface para vírus customizados
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
-from scripts.analysis.DenvNextclade import DenvNextclade
+from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
+from scripts.analysis.DenvNextclade import DenvNextclade # Classe para rodar DenvNext (genotyping e linhagem)
+
+
 import matplotlib
 matplotlib.use('Agg')  # Configura o backend sem GUI antes de qualquer uso do Matplotlib
 
