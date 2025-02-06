@@ -2,19 +2,9 @@
 
 #Carregar todas as lib usadas ao longo de todo script
 import pandas as pd
-import numpy as np
-import subprocess
-from matplotlib import pyplot as plt
-import matplotlib.pyplot as plt
-from matplotlib.cm import viridis 
-import matplotlib.image as mpimg
-from Bio import SeqIO
-from Bio.SeqIO import FastaIO
 import csv
 import os
 import sys
-import shutil
-import yaml
 from unidecode import unidecode
 import seaborn as sns
 
