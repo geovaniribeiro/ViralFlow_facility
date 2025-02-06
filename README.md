@@ -34,7 +34,7 @@ O uso desta ferramenta requer o pareamento de informações entre arquivos **FAS
 
 - **Baixe** o arquivo os metadados do GAL no formato **CSV** (*módulo Sequenciamento ou "Vírus, Biologia Médica/Sequenciamento"*).
 - **Não edite** o arquivo CSV para evitar problemas de formatação e codificação.
-- O **nome das amostras cadastradas no sequenciador** deve corresponder aos códigos das amostras oriundas do GAL (*coluna `Código de Amostra`*).
+- O **nome das amostras cadastradas no sequenciador** deve corresponder aos *Códigos das Amostras* ou *Requisição* oriundas do GAL (*coluna `Código de Amostra` ou `Requisição`*).
 
 ## 🚀 Principais Funcionalidades
 1. **📥 Baixar Atualizações** diretamente do repositório do ViralFlow.
