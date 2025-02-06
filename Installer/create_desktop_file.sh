@@ -2,7 +2,7 @@
 
 # Caminhos relativos
 SCRIPT_SH="../viralflow_GUI"
-ICON_PATH="~/ViralFlow/docs/source/img/viralflow_logo.png"
+ICON_PATH="$HOME/ViralFlow/docs/source/img/viralflow_logo.png"
 
 # Resolver caminhos absolutos
 SCRIPT_SH_PATH=$(realpath "$SCRIPT_SH")

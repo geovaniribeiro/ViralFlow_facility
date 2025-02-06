@@ -2,15 +2,9 @@
 
 import sys
 import os
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QDialog, QCheckBox, QSpinBox
-)
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QThread, pyqtSignal
-
-import pandas as pd
 import subprocess
+
+from PyQt5.QtCore import QThread, pyqtSignal
 
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
