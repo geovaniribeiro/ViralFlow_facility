@@ -7,6 +7,8 @@ from PyQt5.QtGui import QIcon
 import subprocess
 import os
 import sys
+import matplotlib
+matplotlib.use('Agg')  # Configura o backend sem GUI antes de qualquer uso do Matplotlib
 
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -17,10 +19,6 @@ from scripts.utilities.update_database import atualizar_banco_dados  # Função 
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
 from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
 from scripts.analysis.DenvNextclade import DenvNextclade # Classe para rodar DenvNext (genotyping e linhagem)
-
-
-import matplotlib
-matplotlib.use('Agg')  # Configura o backend sem GUI antes de qualquer uso do Matplotlib
 
 class MenuInicial(QWidget):
     def __init__(self):

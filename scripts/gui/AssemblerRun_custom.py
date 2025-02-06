@@ -2,15 +2,14 @@
 
 import sys
 import os
+
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QDialog, QCheckBox, QSpinBox
+    QPushButton, QFileDialog, QMessageBox, QDialog
 )
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 
-import pandas as pd
-import subprocess
 
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -150,10 +149,14 @@ class ViralFlowGUI(QWidget):
         params = {key: entry.text() for key, entry in self.entries.items()}
 
         # Customizing the snpEff database
-        snpeff_custom = f"bash ~/ViralFlow//vfnext/containers/add_entries_SnpeffDB.sh custom {params['refGenomeCode']}"
+        snpeff_custom = (
+            f"micromamba run -n viralflow bash ~/ViralFlow//vfnext/containers/add_entries_SnpeffDB.sh custom {params['refGenomeCode']}"
+            )
+            
 
         # Construir o comando
         command_viralflow = (
+            f"micromamba run -n viralflow "
             f"nextflow run ~/ViralFlow//vfnext/main.nf --primersBED {params['primersBED']} "
             f"--outDir {params['outDir']} --inDir {params['inDir']} --virus custom "
             f"--runSnpEff {'true' if self.param_manager.parameters['run_snp_eff'] else 'false'} "

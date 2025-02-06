@@ -49,6 +49,9 @@ sudo ln -sf /usr/bin/unsquashfs /usr/local/bin/unsquashfs
 # Baixar imagem e construir os containers
 yes | viralflow -build_containers
 
+#Desativar ambiente do viralflow
+micromamba deactivate viralflow
+
 #Instalar a versão GUI do viralflow
 cd $code_path
 
