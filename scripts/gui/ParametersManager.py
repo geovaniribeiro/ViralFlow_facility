@@ -1,19 +1,8 @@
 #!/usr/bin/env python3
 
-import sys
-import os
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QDialog, QCheckBox, QSpinBox
-)
-
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import (QDialog)
 
 from scripts.gui.ParametersDialog import ParametersDialog
-
-import subprocess
-
 
 class ParametersManager:
     def __init__(self):

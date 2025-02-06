@@ -18,7 +18,7 @@ unset __mamba_setup
 micromamba activate
 
 # Ativa o ambiente
-micromamba activate viralflow
+micromamba activate viralflow_gui
 
 
 gnome-terminal -- bash -c "

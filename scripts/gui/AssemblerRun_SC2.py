@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import (
 
 from PyQt5.QtGui import QIcon
 
-import subprocess
 
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -158,6 +157,7 @@ class ViralFlowGUI(QWidget):
 
         # Acessar parâmetros do ParametersManager
         command_viralflow = (
+            f"micromamba run -n viralflow "
             f"nextflow run ~/ViralFlow//vfnext/main.nf "
             f"--primersBED {params['primersBED']} "
             f"--outDir {params['outDir']} "
