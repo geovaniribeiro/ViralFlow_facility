@@ -9,6 +9,12 @@ test_file/denv/*
 !test_file/denv/data.csv
 !test_file/denv/denv_1_primers.bed
 
+test_file/outros_virus/*
+!test_file/outros_virus/input
+!test_file/outros_virus/data.csv
+!test_file/outros_virus/chikv.bed
+
+
 scripts/container
 
 *.nextflow*
