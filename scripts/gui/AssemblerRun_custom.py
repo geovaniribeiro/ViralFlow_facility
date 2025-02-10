@@ -144,6 +144,18 @@ class ViralFlowGUI(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             self.parameters = dialog.get_parameters()
 
+    #Função que irá gerar relatorio apenas quando metadata e config.yml for informado
+    def post_processing(self):
+        """Executa o processamento de dados após a finalização do assembler."""
+        try:
+            reads, coverage = data_processing(os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
+            mod_pasta(os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
+            Quality_monitor(coverage, reads, os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
+            print("")
+            print("Quality check realizado!")
+        except Exception as e:
+            print(f"Erro ao executar data_processing, mod_pasta ou Quality_monitor: {e}")
+
     def run_command(self):
         """Constrói e executa o comando com os parâmetros da GUI."""
         params = {key: entry.text() for key, entry in self.entries.items()}
@@ -181,18 +193,13 @@ class ViralFlowGUI(QWidget):
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
 
-        # Verificar se metadata_path e config_path foram fornecidos antes de conectar o sinal
-        try:
+        # Se metadata_path e config_path forem válidos, gerar relatório ao finalizar o processo
+        if params.get('metadata') and params.get('config_file'):
             self.thread.process_finished.connect(self.report_generator)
-        except AttributeError:
+        else:
             print("Aviso: metadata_path ou config_path não foram definidos, pulando a geração do relatório.")
-            #Caso contrário, irá apenar criar a pasta RNSG_Report e os gráficos de "Quality check"
-            try:                
-                mod_pasta(os.path.join(params['outDir'], "COMPILED_OUTPUT"))
-                reads, coverage  = data_processing(os.path.join(params['outDir'], "COMPILED_OUTPUT"))
-                Quality_monitor(coverage, reads, os.path.join(params['outDir'], "COMPILED_OUTPUT"))
-            except Exception as e:
-                print(f"Erro ao executar data_processing ou mod_pasta: {e}")
+            # Executar pós-processamento quando o thread finalizar
+            self.thread.process_finished.connect(self.post_processing)
 
         # Iniciar o thread
         self.thread.start()
