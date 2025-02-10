@@ -51,10 +51,10 @@ class MenuInicial(QWidget):
         # Grupo de botões de seleção para vírus
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_denv = QRadioButton("DENV")
-        #self.radio_chikv = QRadioButton("CHIKV")
+        self.radio_outro_virus = QRadioButton("OUTRO VÍRUS")
         layout.addWidget(self.radio_sc2)
         layout.addWidget(self.radio_denv)
-        #layout.addWidget(self.radio_chikv)
+        layout.addWidget(self.radio_outro_virus)
 
         # Botão para confirmar
         confirm_button = QPushButton("Iniciar Montagem")
@@ -97,10 +97,10 @@ class MenuInicial(QWidget):
             self.close()
             self.tela_assembly = ViralFlowDENV()  # Gera montagem e relatório para DENV
             self.tela_assembly.show()
-        #elif self.radio_chikv.isChecked():
-         #   self.close()
-          #  self.tela_assembly = ViralFlowGUI_custom()  # Gera montagem e relatório para CHIKV
-           # self.tela_assembly.show()
+        elif self.radio_outro_virus.isChecked():
+            self.close()
+            self.tela_assembly = ViralFlowGUI_custom()  # Gera montagem para outros vírus
+            self.tela_assembly.show()
 
 
 
