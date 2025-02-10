@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from scripts.gui.ParametersDialog import ParametersDialog #Classe dos parametros ViralFlow
 from scripts.gui.ParametersManager import ParametersManager #Classe parametros Deafult do ViralFlow
 from scripts.analysis.assembler.assembler_thread import AssemblerThread #Classe para iniciar uma nova thread no processo
-
+from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
 
 # Classe para executar o processo em um thread separado
 class AssemblerRun_custom(AssemblerThread):
@@ -181,15 +181,18 @@ class ViralFlowGUI(QWidget):
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
 
-
-        #self.thread.process_finished.connect(self.report_generator)
-        # Conectar o sinal de finalização ao método apropriado
         # Verificar se metadata_path e config_path foram fornecidos antes de conectar o sinal
         try:
             self.thread.process_finished.connect(self.report_generator)
         except AttributeError:
             print("Aviso: metadata_path ou config_path não foram definidos, pulando a geração do relatório.")
-
+            #Caso contrário, irá apenar criar a pasta RNSG_Report e os gráficos de "Quality check"
+            try:                
+                mod_pasta(os.path.join(params['outDir'], "COMPILED_OUTPUT"))
+                reads, coverage  = data_processing(os.path.join(params['outDir'], "COMPILED_OUTPUT"))
+                Quality_monitor(coverage, reads, os.path.join(params['outDir'], "COMPILED_OUTPUT"))
+            except Exception as e:
+                print(f"Erro ao executar data_processing ou mod_pasta: {e}")
 
         # Iniciar o thread
         self.thread.start()
