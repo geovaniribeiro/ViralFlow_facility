@@ -18,11 +18,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from scripts.gui.ParametersDialog import ParametersDialog #Classe dos parametros ViralFlow
 from scripts.gui.ParametersManager import ParametersManager #Classe parametros Deafult do ViralFlow
 from scripts.analysis.assembler.assembler_thread import AssemblerThread #Classe para iniciar uma nova thread no processo
-
+from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
 
 # Classe para executar o processo em um thread separado
 class AssemblerRun_custom(AssemblerThread):
-    def __init__(self, snpeff_custom, command_viralflow, output_folder, metadata_path, config_path, run_pipeline=None):
+    def __init__(self, snpeff_custom, command_viralflow, output_folder, metadata_path=None, config_path=None, run_pipeline=None):
         commands = [
             (snpeff_custom, "Iniciando snpeff_custom..."),
             (command_viralflow, "Executando ViralFlow...")
@@ -144,6 +144,18 @@ class ViralFlowGUI(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             self.parameters = dialog.get_parameters()
 
+    #Função que irá gerar relatorio apenas quando metadata e config.yml for informado
+    def post_processing(self):
+        """Executa o processamento de dados após a finalização do assembler."""
+        try:
+            reads, coverage = data_processing(os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
+            mod_pasta(os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
+            Quality_monitor(coverage, reads, os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
+            print("")
+            print("Quality check realizado!")
+        except Exception as e:
+            print(f"Erro ao executar data_processing, mod_pasta ou Quality_monitor: {e}")
+
     def run_command(self):
         """Constrói e executa o comando com os parâmetros da GUI."""
         params = {key: entry.text() for key, entry in self.entries.items()}
@@ -174,15 +186,20 @@ class ViralFlowGUI(QWidget):
         # Iniciar o thread para executar o processo
         self.thread = AssemblerRun_custom(snpeff_custom, command_viralflow,
                                     os.path.join(params['outDir'], "COMPILED_OUTPUT"),
-                                    metadata_path=params['metadata'],
-                                    config_path=params['config_file'])
+                                    metadata_path=params.get(params['metadata'], None),
+                                    config_path=params.get(params['config_file'], None))
 
         # Conectar os sinais do thread com as funções da GUI
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
 
-        # Conectar o sinal de finalização ao método apropriado
-        self.thread.process_finished.connect(self.report_generator)
+        # Se metadata_path e config_path forem válidos, gerar relatório ao finalizar o processo
+        if params.get('metadata') and params.get('config_file'):
+            self.thread.process_finished.connect(self.report_generator)
+        else:
+            print("Aviso: metadata_path ou config_path não foram definidos, pulando a geração do relatório.")
+            # Executar pós-processamento quando o thread finalizar
+            self.thread.process_finished.connect(self.post_processing)
 
         # Iniciar o thread
         self.thread.start()

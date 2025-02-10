@@ -558,8 +558,7 @@ def generate_report_denv(metadata_path, config_path, output_folder):
         raise FileNotFoundError(f"Arquivo {arbo_virus_name} não encontrado!")
 
 
-
-    Quality_monitor(coverage, reads, final_df, output_folder)
+    Quality_monitor(coverage, reads, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)

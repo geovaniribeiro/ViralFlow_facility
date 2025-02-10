@@ -65,6 +65,24 @@ def input_folder(output_folder, metadata_path):
 
     return metadata, sequence, records, reads, coverage
 
+def data_processing(output_folder):
+        # Construct the file path for the CSV file
+    reads_path = os.path.join(output_folder, "reads_count.csv")
+
+    reads = pd.read_csv(reads_path, sep =',')
+
+    reads['cod'] = reads['cod'].replace(to_replace ='_.*', value = '', regex = True)
+
+    #wgs
+    # Construct the file path for the CSV file
+    coverage_path = os.path.join(output_folder, 'wgs.csv')
+
+    coverage = pd.read_csv(coverage_path, sep =',')
+    coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
+
+    return reads, coverage
+
+
 
 def process_and_combine_data(metadata, reads, coverage, lineage, output_folder, 
                              rename_columns, result_cols):
@@ -147,7 +165,7 @@ def mod_pasta(output_folder):
     os.mkdir(output_path)
 
 #Função para criar um grafico com métricas gerais da corrida, para aferição de controle de qualidade
-def Quality_monitor(coverage, reads, resultado_df, output_folder):
+def Quality_monitor(coverage, reads, output_folder):
 
     #print("QualityCheck")
 
