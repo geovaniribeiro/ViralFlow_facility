@@ -22,7 +22,7 @@ from scripts.analysis.assembler.assembler_thread import AssemblerThread #Classe 
 
 # Classe para executar o processo em um thread separado
 class AssemblerRun_custom(AssemblerThread):
-    def __init__(self, snpeff_custom, command_viralflow, output_folder, metadata_path, config_path, run_pipeline=None):
+    def __init__(self, snpeff_custom, command_viralflow, output_folder, metadata_path=None, config_path=None, run_pipeline=None):
         commands = [
             (snpeff_custom, "Iniciando snpeff_custom..."),
             (command_viralflow, "Executando ViralFlow...")
@@ -174,15 +174,22 @@ class ViralFlowGUI(QWidget):
         # Iniciar o thread para executar o processo
         self.thread = AssemblerRun_custom(snpeff_custom, command_viralflow,
                                     os.path.join(params['outDir'], "COMPILED_OUTPUT"),
-                                    metadata_path=params['metadata'],
-                                    config_path=params['config_file'])
+                                    metadata_path=params.get(params['metadata'], None),
+                                    config_path=params.get(params['config_file'], None))
 
         # Conectar os sinais do thread com as funções da GUI
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
 
+
+        #self.thread.process_finished.connect(self.report_generator)
         # Conectar o sinal de finalização ao método apropriado
-        self.thread.process_finished.connect(self.report_generator)
+        # Verificar se metadata_path e config_path foram fornecidos antes de conectar o sinal
+        try:
+            self.thread.process_finished.connect(self.report_generator)
+        except AttributeError:
+            print("Aviso: metadata_path ou config_path não foram definidos, pulando a geração do relatório.")
+
 
         # Iniciar o thread
         self.thread.start()
