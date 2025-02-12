@@ -13,33 +13,26 @@ from PyQt5.QtGui import QIcon
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 #Import classes instances
-from scripts.analysis.report.report_generator_sc2 import generate_report #Função para gerar relatorio SC2
 from scripts.gui.ParametersDialog import ParametersDialog #Classe dos parametros ViralFlow
 from scripts.gui.ParametersManager import ParametersManager #Classe parametros Deafult do ViralFlow
 from scripts.analysis.assembler.assembler_thread import AssemblerThread #Instancia para iniciar uma nova thread no processo
 from scripts.analysis.rename_fastq import rename_fastq_files #Função para renomear arquivos para codigo de amostras, se necessario
+from scripts.analysis.report.report_generator_sc2 import generate_report #Função para gerar relatorio e arquivos de SC2
+from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor #Importa funções para gerar relatorio de qualidade
 
 class AssemblerRun_sc2(AssemblerThread):
 
     def __init__(self, command_viralflow, output_folder, metadata_path, config_path, input_path):
-        # Primeiro, renomeia os arquivos FASTQ antes de qualquer outra ação
-        try:
-            rename_fastq_files(metadata_path, input_path)
-            print("")
-            print("Renomeação de arquivos FASTQ concluída com sucesso!")
-            print("")
-            print("")
-            print("")
-        except Exception as e:
-            raise RuntimeError(f"Erro ao renomear arquivos FASTQ: {str(e)}")  # Interrompe a inicialização se houver erro
-        
+       
         # Define os comandos após garantir a renomeação dos arquivos
-        commands = [(command_viralflow, "Executando ViralFlow...")]
-        super().__init__(commands)
         self.output_folder = output_folder
         self.metadata_path = metadata_path
         self.config_path = config_path
         self.input_path = input_path
+
+        commands = [(command_viralflow, "Executando ViralFlow...")]
+        super().__init__(commands)
+
 
     def run(self):
         try:
@@ -51,8 +44,18 @@ class AssemblerRun_sc2(AssemblerThread):
             # Emitir o sinal de finalização com mensagem de erro
             self.process_finished.emit(f"Erro durante a execução: {str(e)}")
             
-        # Gera o relatório após a execução do comando
-        self.generate_report()
+        # Se metadata_path e config_path forem válidos, gera o relatório
+        if self.metadata_path and self.config_path:
+            self.generate_report()
+        else:
+            print("Metadados ou configuração ausentes, gerando apenas análise de qualidade.")
+            try:
+                compiled_output_folder = self.output_folder
+                reads, coverage = data_processing(compiled_output_folder)
+                mod_pasta(compiled_output_folder)
+                Quality_monitor(coverage, reads, compiled_output_folder)
+            except Exception as e:
+                print(f"Erro ao executar Quality_monitor: {e}")
 
     def generate_report(self):
         self.process_started.emit("""Gerando o relatório...""")
@@ -87,8 +90,8 @@ class ViralFlowGUI(QWidget):
             ("Arquivo bed (Primers)", "primersBED", True),
             ("Pasta de entrada", "inDir", False),
             ("Pasta de saída", "outDir", False),
-            ("Arquivo metadados (.csv)", "metadata", True),
-            ("Arquivo configuração (.yaml)", "config_file", True),
+            ("Arquivo metadados (.csv) [Opcional]", "metadata", True),
+            ("Arquivo configuração (.yaml) [Opcional]", "config_file", True),
         ]
 
         # Criar dicionário para armazenar os campos de entrada

@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from scripts.gui.ParametersDialog import ParametersDialog #Classe dos parametros ViralFlow
 from scripts.gui.ParametersManager import ParametersManager #Classe parametros Deafult do ViralFlow
 from scripts.analysis.assembler.assembler_thread import AssemblerThread #Classe para iniciar uma nova thread no processo
-from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
+from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor  #Importa funções para gerar relatorio de qualidade
 
 # Classe para executar o processo em um thread separado
 class AssemblerRun_custom(AssemblerThread):
@@ -69,8 +69,8 @@ class ViralFlowGUI(QWidget):
             ("Pasta de entrada", "inDir", False),
             ("Pasta de saída", "outDir", False),
             ("Código refseq", "refGenomeCode", False),
-            ("Arquivo metadados (.csv)", "metadata", True),
-            ("Arquivo configuração (.yaml)", "config_file", True),
+            ("Arquivo metadados (.csv) [Opcional]", "metadata", True),
+            ("Arquivo configuração (.yaml) [Opcional]", "config_file", True),
         ]
 
         # Criar dicionário para armazenar os campos de entrada

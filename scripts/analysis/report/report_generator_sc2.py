@@ -539,7 +539,7 @@ def generate_report(metadata_path, config_path, output_folder):
     else:
         raise FileNotFoundError(f"Arquivo {covv_virus_name_file} não encontrado!")
 
-    Quality_monitor(coverage, reads, final_df, output_folder)
+    Quality_monitor(coverage, reads, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)
