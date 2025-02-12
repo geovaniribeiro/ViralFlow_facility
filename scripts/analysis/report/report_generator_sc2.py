@@ -145,7 +145,7 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
         '2795965': 'PR',
         '2712075': 'PE',
         '2551888': 'PI',
-        '2019639': 'RJ',
+        '2766779': 'RJ',
         '2693615': 'RN',
         '4066251': 'RS',
         '2496860': 'RO',
