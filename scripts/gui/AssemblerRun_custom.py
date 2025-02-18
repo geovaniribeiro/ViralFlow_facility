@@ -34,7 +34,7 @@ class AssemblerRun_custom(AssemblerThread):
             print("")
             print("")
         except Exception as e:
-            raise RuntimeError(f"Erro ao renomear arquivos FASTQ: {str(e)}")  # Interrompe a inicialização se houver erro
+            print(f"Erro ao renomear arquivos FASTQ: {str(e)}")  # Interrompe a inicialização se houver erro
        
        # Define os comandos após garantir a renomeação dos arquivos
         self.output_folder = output_folder
