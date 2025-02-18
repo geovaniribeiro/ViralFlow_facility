@@ -16,13 +16,27 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from scripts.gui.ParametersDialog import ParametersDialog #Classe dos parametros ViralFlow
 from scripts.gui.ParametersManager import ParametersManager #Classe parametros Deafult do ViralFlow
 from scripts.analysis.assembler.assembler_thread import AssemblerThread #Instancia para iniciar uma nova thread no processo
-from scripts.analysis.rename_fastq import rename_fastq_files #Função para renomear arquivos para codigo de amostras, se necessario
 from scripts.analysis.report.report_generator_sc2 import generate_report #Função para gerar relatorio e arquivos de SC2
+from scripts.analysis.rename_fastq import rename_fastq_files #Função para renomear arquivos para codigo de amostras, se necessario
 from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor #Importa funções para gerar relatorio de qualidade
 
 class AssemblerRun_sc2(AssemblerThread):
 
     def __init__(self, command_viralflow, output_folder, metadata_path, config_path, input_path):
+
+       # Primeiro, renomeia os arquivos FASTQ antes de qualquer outra ação
+        try:
+            rename_fastq_files(metadata_path, input_path)
+            print("")
+            print("Renomeação de arquivos FASTQ concluída com sucesso!")
+            print("")
+            print("")
+            print("")
+        except Exception as e:
+            print(f"Erro ao renomear arquivos FASTQ: {str(e)}")  # Se metadata_path e input_path não for informado, pula a etapa de renomear
+            print("")
+            print("")
+       
        
         # Define os comandos após garantir a renomeação dos arquivos
         self.output_folder = output_folder
@@ -49,6 +63,7 @@ class AssemblerRun_sc2(AssemblerThread):
             self.generate_report()
         else:
             print("Metadados ou configuração ausentes, gerando apenas análise de qualidade.")
+            print("")
             try:
                 compiled_output_folder = self.output_folder
                 reads, coverage = data_processing(compiled_output_folder)
