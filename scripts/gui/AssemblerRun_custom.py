@@ -2,6 +2,7 @@
 
 import sys
 import os
+import subprocess
 
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -23,7 +24,7 @@ from scripts.analysis.report.modules_general import data_processing, mod_pasta, 
 
 # Classe para executar o processo em um thread separado
 class AssemblerRun_custom(AssemblerThread):
-    def __init__(self, snpeff_custom, command_viralflow, output_folder, input_path, metadata_path, config_path, run_pipeline):
+    def __init__(self, snpeff_custom, command_viralflow, output_folder, input_path, metadata_path, config_path):
         
         # Verifica se os caminhos foram fornecidos antes de tentar renomear os arquivos
         if metadata_path and input_path:
@@ -45,7 +46,6 @@ class AssemblerRun_custom(AssemblerThread):
         self.output_folder = output_folder
         self.metadata_path = metadata_path
         self.config_path = config_path
-        self.run_pipeline = run_pipeline
         self.input_path = input_path
 
     def run(self):
@@ -171,20 +171,35 @@ class ViralFlowGUI(QWidget):
         except Exception as e:
             print(f"Erro ao executar data_processing, mod_pasta ou Quality_monitor: {e}")
 
+    def get_nextflow_path(self):
+        """Descobre o caminho correto do Nextflow dentro do ambiente Micromamba"""
+    
+        try:
+            result = subprocess.run(
+                ["which", "nextflow"],
+                capture_output=True, text=True, check=True
+            )
+            return result.stdout.strip()  # Retorna o caminho completo do Nextflow
+        except subprocess.CalledProcessError:
+            return "nextflow"  # Se falhar, tenta rodar "nextflow" normalmente
+
+
+
     def run_command(self):
         """Constrói e executa o comando com os parâmetros da GUI."""
         params = {key: entry.text() for key, entry in self.entries.items()}
+
+        nextflow_path = self.get_nextflow_path()  
 
         # Customizing the snpEff database
         snpeff_custom = (
             f"micromamba run -n viralflow bash ~/ViralFlow//vfnext/containers/add_entries_SnpeffDB.sh custom {params['refGenomeCode']}"
             )
-            
 
         # Construir o comando
         command_viralflow = (
             f"micromamba run -n viralflow "
-            f"nextflow run ~/ViralFlow//vfnext/main.nf --primersBED {params['primersBED']} "
+            f"{nextflow_path} run ~/ViralFlow//vfnext/main.nf --primersBED {params['primersBED']} "
             f"--outDir {params['outDir']} --inDir {params['inDir']} --virus custom "
             f"--runSnpEff {'true' if self.param_manager.parameters['run_snp_eff'] else 'false'} "
             f"--writeMappedReads {'true' if self.param_manager.parameters['write_mapped_reads'] else 'false'} "

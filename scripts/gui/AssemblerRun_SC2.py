@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import subprocess
 import os
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -169,14 +170,29 @@ class ViralFlowGUI(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             self.parameters = dialog.get_parameters()
 
+    def get_nextflow_path(self):
+        """Descobre o caminho correto do Nextflow dentro do ambiente Micromamba"""
+    
+        try:
+            result = subprocess.run(
+                ["which", "nextflow"],
+                capture_output=True, text=True, check=True
+            )
+            return result.stdout.strip()  # Retorna o caminho completo do Nextflow
+        except subprocess.CalledProcessError:
+            return "nextflow"  # Se falhar, tenta rodar "nextflow" normalmente
+
+
     def run_command(self):
         """Constrói e executa o comando com os parâmetros configurados na GUI."""
         params = {key: entry.text() for key, entry in self.entries.items()}
 
+        nextflow_path = self.get_nextflow_path()
+        
         # Acessar parâmetros do ParametersManager
         command_viralflow = (
             f"micromamba run -n viralflow "
-            f"nextflow run ~/ViralFlow//vfnext/main.nf "
+            f"{nextflow_path} run ~/ViralFlow//vfnext/main.nf "
             f"--primersBED {params['primersBED']} "
             f"--outDir {params['outDir']} "
             f"--inDir {params['inDir']} "
