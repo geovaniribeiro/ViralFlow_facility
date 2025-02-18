@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Atualizar e instalar pacotes necessários
-#sudo apt update -y && \
-#sudo apt upgrade -y && \
+sudo apt update -y && \
+sudo apt upgrade -y && \
 sudo apt install curl git python3-pip uidmap -y
 
 code_path=$(pwd)
@@ -26,16 +26,9 @@ unset __mamba_setup
 
 micromamba activate
 
-# Remover instalação anterior do ViralFlow
-sudo rm -rf ViralFlow/
-
 # Clonar repositório do ViralFlow e configurar o ambiente
-#git clone -b develop https://github.com/WallauBioinfo/ViralFlow
 git clone https://github.com/WallauBioinfo/ViralFlow
 cd ViralFlow/
-
-#add container Singularity_pangolin modificado
-curl -o vfnext/containers/Singularity_pangolin https://raw.githubusercontent.com/WallauBioinfo/ViralFlow/develop/vfnext/containers/Singularity_pangolin
 
 yes | micromamba env create -f envs/env.yml --yes
 micromamba activate viralflow
