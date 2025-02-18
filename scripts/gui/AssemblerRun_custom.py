@@ -23,33 +23,31 @@ from scripts.analysis.report.modules_general import data_processing, mod_pasta, 
 
 # Classe para executar o processo em um thread separado
 class AssemblerRun_custom(AssemblerThread):
-    def __init__(self, snpeff_custom, command_viralflow, output_folder,  input_path, metadata_path, config_path):
-               
-       # Primeiro, renomeia os arquivos FASTQ antes de qualquer outra ação
-        try:
-            rename_fastq_files(metadata_path, input_path)
-            print("")
-            print("Renomeação de arquivos FASTQ concluída com sucesso!")
-            print("")
-            print("")
-            print("")
-        except Exception as e:
-            print(f"Erro ao renomear arquivos FASTQ: {str(e)}")  # Se metadata_path e input_path não for informado, pula a etapa de renomear
-            print("")
-            print("")
+    def __init__(self, snpeff_custom, command_viralflow, output_folder, input_path, metadata_path, config_path, run_pipeline):
         
-
+        # Verifica se os caminhos foram fornecidos antes de tentar renomear os arquivos
+        if metadata_path and input_path:
+            try:
+                rename_fastq_files(metadata_path, input_path)
+                print("\nRenomeação de arquivos FASTQ concluída com sucesso!\n")
+            except Exception as e:
+                print(f"Erro ao renomear arquivos FASTQ: {str(e)}\n")
+        else:
+            print("Aviso: metadata_path ou input_path não foram fornecidos. Pulando a renomeação de arquivos.\n")
+        
         # Define os comandos após garantir a renomeação dos arquivos
+        commands = [
+            (snpeff_custom, "Iniciando snpeff_custom..."),
+            (command_viralflow, "Executando ViralFlow...")
+        ]
+        super().__init__(commands)
+        
         self.output_folder = output_folder
         self.metadata_path = metadata_path
         self.config_path = config_path
-        #self.run_pipeline = run_pipeline
+        self.run_pipeline = run_pipeline
         self.input_path = input_path
-        
-        commands = [(snpeff_custom, "Iniciando snpeff_custom..."),
-            (command_viralflow, "Executando ViralFlow...")]
-        super().__init__(commands)
-        
+
     def run(self):
         try:
             super().run()  # Executa os comandos principais

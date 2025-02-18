@@ -18,34 +18,34 @@ from scripts.gui.ParametersManager import ParametersManager #Classe parametros D
 from scripts.analysis.assembler.assembler_thread import AssemblerThread #Instancia para iniciar uma nova thread no processo
 from scripts.analysis.report.report_generator_sc2 import generate_report #Função para gerar relatorio e arquivos de SC2
 from scripts.analysis.rename_fastq import rename_fastq_files #Função para renomear arquivos para codigo de amostras, se necessario
+from scripts.analysis.report.report_generator_sc2 import generate_report #Função para gerar relatorio e arquivos de SC2
 from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor #Importa funções para gerar relatorio de qualidade
 
 class AssemblerRun_sc2(AssemblerThread):
 
     def __init__(self, command_viralflow, output_folder, metadata_path, config_path, input_path):
-
-       # Primeiro, renomeia os arquivos FASTQ antes de qualquer outra ação
-        try:
-            rename_fastq_files(metadata_path, input_path)
-            print("")
-            print("Renomeação de arquivos FASTQ concluída com sucesso!")
-            print("")
-            print("")
-            print("")
-        except Exception as e:
-            print(f"Erro ao renomear arquivos FASTQ: {str(e)}")  # Se metadata_path e input_path não for informado, pula a etapa de renomear
-            print("")
-            print("")
        
-       
+        # Verifica se os caminhos foram fornecidos antes de tentar renomear os arquivos
+        if metadata_path and input_path:
+            try:
+                rename_fastq_files(metadata_path, input_path)
+                print("\nRenomeação de arquivos FASTQ concluída com sucesso!\n")
+            except Exception as e:
+                print(f"Erro ao renomear arquivos FASTQ: {str(e)}\n")
+        else:
+            print("Aviso: metadata_path ou input_path não foram fornecidos. Pulando a renomeação de arquivos.\n")
+        
         # Define os comandos após garantir a renomeação dos arquivos
+        commands = [
+            (command_viralflow, "Executando ViralFlow...")
+        ]
+        super().__init__(commands)
+        
         self.output_folder = output_folder
         self.metadata_path = metadata_path
         self.config_path = config_path
         self.input_path = input_path
 
-        commands = [(command_viralflow, "Executando ViralFlow...")]
-        super().__init__(commands)
 
 
     def run(self):
