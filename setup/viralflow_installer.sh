@@ -9,6 +9,7 @@ code_path=$(pwd)
 
 # Download e configuração do Micromamba
 cd $HOME
+
 curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/1.5.7 | tar -xvj bin/micromamba
 ./bin/micromamba shell init -s bash -p ~/micromamba
 source ~/.bashrc
@@ -44,14 +45,6 @@ yes | viralflow -build_containers
 
 #Desativar ambiente do viralflow
 micromamba deactivate viralflow
-
-#Instalar a versão GUI do viralflow
-cd $code_path
-
-chmod +x viralflow_GUI_setup.sh
-
-$code_path/viralflow_GUI_setup.sh
-
 
 echo ""
 echo ""
