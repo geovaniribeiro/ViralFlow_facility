@@ -8,8 +8,8 @@ ICON_PATH="$HOME/ViralFlow/docs/source/img/viralflow_logo.png"
 SCRIPT_SH_PATH=$(realpath "$SCRIPT_SH")
 ICON_FULL_PATH=$(realpath "$ICON_PATH")
 
-# Verificar se os arquivos existem
 if [[ ! -f "$SCRIPT_SH_PATH" ]]; then
+# Verificar se os arquivos existem
     echo "Erro: Arquivo viralflow_GUI não encontrado em $SCRIPT_SH_PATH"
     exit 1
 fi
