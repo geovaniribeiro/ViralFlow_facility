@@ -2,11 +2,11 @@
 
 # Caminhos relativos
 SCRIPT_SH="../viralflow_GUI"
-ICON_PATH="$HOME/ViralFlow/docs/source/img/viralflow_logo.png"
+ICON_RELATIVE_PATH="/ViralFlow/docs/source/img/viralflow_logo.png"
 
 # Resolver caminhos absolutos
 SCRIPT_SH_PATH=$(realpath "$SCRIPT_SH")
-ICON_FULL_PATH=$(realpath "$ICON_PATH")
+ICON_FULL_PATH="$(getent passwd $SUDO_USER | cut -d: -f6)$ICON_RELATIVE_PATH"
 
 if [[ ! -f "$SCRIPT_SH_PATH" ]]; then
 # Verificar se os arquivos existem
@@ -30,5 +30,5 @@ Categories=Science;Biology;
 EOF
 
 # Copiar para o diretório de aplicações
-cp "$DESKTOP_FILE" ~/.local/share/applications/
+cp "$DESKTOP_FILE" $(getent passwd $SUDO_USER | cut -d: -f6)/.local/share/applications/
 echo "Desktop file criado com sucesso e copiado para ~/.local/share/applications"
