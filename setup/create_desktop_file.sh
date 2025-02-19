@@ -30,5 +30,5 @@ Categories=Science;Biology;
 EOF
 
 # Copiar para o diretório de aplicações
-cp "$DESKTOP_FILE" ~/.local/share/applications/
+cp "$DESKTOP_FILE" $(getent passwd $SUDO_USER | cut -d: -f6)/.local/share/applications/
 echo "Desktop file criado com sucesso e copiado para ~/.local/share/applications"
