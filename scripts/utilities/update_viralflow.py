@@ -55,8 +55,6 @@ def atualizar_viralflow():
         # Baixar imagem e construir os containers
         yes | viralflow -build_containers
 
-        #Desativar ambiente do viralflow
-        micromamba deactivate viralflow    
         """
 
         subprocess.run(["bash", "-c", comando], check=True)
