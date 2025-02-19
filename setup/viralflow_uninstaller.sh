@@ -22,12 +22,6 @@ else
     echo "Ambiente 'viralflow' não encontrado, ignorando remoção."
 fi
 
-if micromamba env list | grep -q "viralflow_gui"; then
-    yes | micromamba env remove -n viralflow_gui --yes
-else
-    echo "Ambiente 'viralflow_gui' não encontrado, ignorando remoção."
-fi
-
 # Remover pasta viralflow com sudo para evitar erros de permissão
 if [ -d "$HOME/ViralFlow" ]; then
     sudo rm -rf "$HOME/ViralFlow"
