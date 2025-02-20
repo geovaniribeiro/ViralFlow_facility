@@ -10,7 +10,7 @@ $code_path/viralflow_uninstaller.sh
 
 #Instalação viralflow diretamento do repositorio
 chmod +x viralflow_installer.sh
-sudo $code_path/viralflow_installer.sh
+$code_path/viralflow_installer.sh
 
 #Instalar a versão GUI do viralflow
 cd $code_path

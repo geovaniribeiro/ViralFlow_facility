@@ -23,11 +23,11 @@ else
 fi
 
 #Acessamento a home usando o sudo
-cd $(getent passwd $SUDO_USER | cut -d: -f6)
+cd $HOME
 
 # Remover pasta viralflow com sudo para evitar erros de permissão
-if [ -d "$(getent passwd $SUDO_USER | cut -d: -f6)/ViralFlow" ]; then
-    sudo rm -rf "$(getent passwd $SUDO_USER | cut -d: -f6)/ViralFlow"
+if [ -d "ViralFlow" ]; then
+    sudo rm -rf ViralFlow
 else
     echo "Pasta 'ViralFlow' não encontrada, ignorando remoção."
 fi
