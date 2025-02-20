@@ -7,7 +7,9 @@ sudo apt install curl git python3-pip uidmap -y
 
 code_path=$(pwd)
 
-# Download e configuração do Micromamba
+#Acessamento a home usando o sudo
+#cd $(getent passwd $SUDO_USER | cut -d: -f6)
+
 cd $HOME
 
 curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/1.5.7 | tar -xvj bin/micromamba
@@ -50,5 +52,5 @@ echo ""
 echo ""
 echo '##########################################################################'
 echo '########################## ViralFlow Instalado! ##########################'
-echo '##################### Esse terminal pode ser fechado #####################'
 echo '##########################################################################'
+echo ''
