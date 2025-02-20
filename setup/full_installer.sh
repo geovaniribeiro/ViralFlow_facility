@@ -5,14 +5,12 @@
 code_path=$(pwd)
 
 #remove versão anterior viralflow
-cd $code_path
 chmod +x viralflow_uninstaller.sh
 $code_path/viralflow_uninstaller.sh
 
 #Instalação viralflow diretamento do repositorio
-cd $code_path
 chmod +x viralflow_installer.sh
-$code_path/viralflow_installer.sh
+sudo $code_path/viralflow_installer.sh
 
 #Instalar a versão GUI do viralflow
 cd $code_path

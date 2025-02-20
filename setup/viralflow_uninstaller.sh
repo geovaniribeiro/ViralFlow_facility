@@ -22,9 +22,12 @@ else
     echo "Ambiente 'viralflow' não encontrado, ignorando remoção."
 fi
 
+#Acessamento a home usando o sudo
+cd $(getent passwd $SUDO_USER | cut -d: -f6)
+
 # Remover pasta viralflow com sudo para evitar erros de permissão
-if [ -d "$HOME/ViralFlow" ]; then
-    sudo rm -rf "$HOME/ViralFlow"
+if [ -d "$(getent passwd $SUDO_USER | cut -d: -f6)/ViralFlow" ]; then
+    sudo rm -rf "$(getent passwd $SUDO_USER | cut -d: -f6)/ViralFlow"
 else
     echo "Pasta 'ViralFlow' não encontrada, ignorando remoção."
 fi
@@ -33,5 +36,5 @@ echo ""
 echo ""
 echo '###############################################################################'
 echo '#################### ViralFlow Removido com Sucesso! ##########################'
-echo '###################### Esse terminal pode ser fechado #########################'
 echo '###############################################################################'
+echo ''
