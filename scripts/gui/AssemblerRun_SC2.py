@@ -86,8 +86,11 @@ class AssemblerRun_sc2(AssemblerThread):
         self.process_started.emit(" ")
 
 class ViralFlowGUI(QWidget):
-    def __init__(self):
+    def __init__(self, menu_inicial):
         super().__init__()
+
+        # Armazena referência da tela inicial
+        self.menu_inicial = menu_inicial
 
         # Inicializar a janela
         self.setWindowTitle("ViralFlow GUI")
@@ -147,6 +150,12 @@ class ViralFlowGUI(QWidget):
         run_button = QPushButton("Executar ViralFlow", self)
         run_button.clicked.connect(self.run_command)
         layout.addWidget(run_button)
+
+        # Botão para retornar ao menu inicial
+        menu_button = QPushButton("Voltar ao Menu Inicial")
+        menu_button.clicked.connect(self.voltar_menu_inicial)
+        layout.addWidget(menu_button)
+
 
         # Botão para sair
         exit_button = QPushButton("Sair")
@@ -240,6 +249,12 @@ class ViralFlowGUI(QWidget):
     def update_status(self, message):
         """Atualiza a interface com as mensagens do processo."""
         print(message)
+
+
+    def voltar_menu_inicial(self):
+        self.close()  # Fecha a janela atual
+        self.menu_inicial.show()  # Reabre o Menu Inicial
+
 
 
     def sair(self):
