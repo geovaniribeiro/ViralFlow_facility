@@ -91,15 +91,15 @@ class MenuInicial(QWidget):
     def executar_montagem(self):
         if self.radio_sc2.isChecked():
             self.close()
-            self.tela_assembly = ViralFlowGUI_SC2()
+            self.tela_assembly = ViralFlowGUI_SC2(self)
             self.tela_assembly.show()
         elif self.radio_denv.isChecked():
             self.close()
-            self.tela_assembly = ViralFlowDENV()  # Gera montagem e relatório para DENV
+            self.tela_assembly = ViralFlowDENV(self)  # Gera montagem e relatório para DENV
             self.tela_assembly.show()
         elif self.radio_outro_virus.isChecked():
             self.close()
-            self.tela_assembly = ViralFlowGUI_custom()  # Gera montagem para outros vírus
+            self.tela_assembly = ViralFlowGUI_custom(self)  # Gera montagem para outros vírus
             self.tela_assembly.show()
 
 
@@ -118,8 +118,9 @@ class MenuInicial(QWidget):
 
 
 class ViralFlowDENV(ViralFlowGUI_custom):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, menu_inicial=None):
+        super().__init__(menu_inicial)
+        self.menu_principal = menu_inicial  # Armazena referência do menu principal, se fornecida
 
     def report_generator(self, message):
         """Sobrescreve a finalização com lógica específica para DENV."""
