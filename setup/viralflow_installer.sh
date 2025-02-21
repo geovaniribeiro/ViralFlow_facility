@@ -42,6 +42,9 @@ pip install -e .
 # Criar link simbólico para unsquashfs
 sudo ln -sf /usr/bin/unsquashfs /usr/local/bin/unsquashfs
 
+#instalar Singularity manualmente
+yes | micromamba install -c wallaulab singularityce --yes
+
 # Baixar imagem e construir os containers
 yes | viralflow -build_containers
 

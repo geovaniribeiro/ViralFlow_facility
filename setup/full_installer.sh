@@ -14,5 +14,5 @@ $code_path/viralflow_installer.sh
 
 #Instalar a versão GUI do viralflow
 cd $code_path
-chmod +x viralflow_GUI_setup.sh
-$code_path/viralflow_GUI_setup.sh
+chmod +x viralflowGUI_installer.sh
+sudo $code_path/viralflowGUI_installer.sh
