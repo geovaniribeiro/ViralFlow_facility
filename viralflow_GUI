@@ -23,7 +23,7 @@ micromamba activate viralflow_gui
 
 gnome-terminal -- bash -c "
 echo '###################################################################';
-echo '################## Iniciando a interface gráfica ##################';
+echo '################## Iniciando interface gráfica ##################';
 echo '###################################################################';
 python3 ${path}/scripts/gui/main_window.py;
 exec bash"
