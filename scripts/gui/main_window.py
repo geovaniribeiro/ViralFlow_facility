@@ -57,8 +57,8 @@ class MenuInicial(QWidget):
         layout.addWidget(self.radio_outro_virus)
 
         # Botão para confirmar
-        confirm_button = QPushButton("Iniciar Montagem")
-        confirm_button.clicked.connect(self.executar_montagem)
+        confirm_button = QPushButton("Iniciar Análise")
+        confirm_button.clicked.connect(self.executar_analise)
         layout.addWidget(confirm_button)
 
         # Botão para sair
@@ -88,7 +88,7 @@ class MenuInicial(QWidget):
         if confirm == QMessageBox.Yes:
             atualizar_banco_dados()
 
-    def executar_montagem(self):
+    def executar_analise(self):
         if self.radio_sc2.isChecked():
             self.close()
             self.tela_assembly = ViralFlowGUI_SC2(self)
