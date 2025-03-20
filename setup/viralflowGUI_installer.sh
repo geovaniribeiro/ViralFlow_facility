@@ -31,9 +31,21 @@ chmod +x create_desktop_file.sh
 # Criar arquivo .desktop
 $code_path/create_desktop_file.sh
 
-echo ""
-echo ""
-echo '##############################################################################';
-echo '########################## ViralFlow GUI Instalado! ##########################';
-echo '##############################################################################';
-echo ''
+# Verificar se o comando anterior foi bem-sucedido (código de saída 0 significa sucesso)
+if [ $? -eq 0 ]; then
+    # Se não houver erro, exibe a mensagem de sucesso
+    echo ""
+    echo ""
+    echo '##############################################################################';
+    echo '########################## ViralFlow GUI Instalado! ##########################';
+    echo '##############################################################################';
+    echo ''
+else
+    # Se houver erro, exibe a mensagem de erro
+    echo ""
+    echo ""
+    echo '##############################################################################';
+    echo '########################## Erro na instalação do ViralFlow GUI! ##############';
+    echo '##############################################################################';
+    echo ''
+fi

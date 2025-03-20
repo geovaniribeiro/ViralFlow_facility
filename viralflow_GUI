@@ -3,6 +3,8 @@
 # Caminho absoluto do diretório atual
 path=$(realpath "$(dirname "$0")")
 
+# Inicializa o shell para micromamba
+eval "$(micromamba shell hook --shell bash)"
 
 # Carregar manualmente as alterações feitas no ~/.bashrc no ambiente atual
 export MAMBA_EXE="$HOME/bin/micromamba"

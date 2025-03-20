@@ -242,7 +242,7 @@ def Quality_monitor(coverage, reads, output_folder):
 
     # save the plot as SVG file
     plt.tight_layout()
-    plt.savefig(os.path.join(output_folder, "RNSG_REPORT/Quality_ckeck.png"), format='png', dpi = 300)
+    plt.savefig(os.path.join(output_folder, "RNSG_REPORT/Quality_check.png"), format='png', dpi = 300)
 
 
 #Função para remover os arquivos intermediários
