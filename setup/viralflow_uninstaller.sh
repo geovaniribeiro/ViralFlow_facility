@@ -32,9 +32,21 @@ else
     echo "Pasta 'ViralFlow' não encontrada, ignorando remoção."
 fi
 
-echo ""
-echo ""
-echo '###############################################################################'
-echo '#################### ViralFlow Removido com Sucesso! ##########################'
-echo '###############################################################################'
-echo ''
+# Verificar se o comando anterior foi bem-sucedido (código de saída 0 significa sucesso)
+if [ $? -eq 0 ]; then
+    # Se não houver erro, exibe a mensagem de sucesso
+    echo ""
+    echo ""
+    echo '##############################################################################';
+    echo '########################## ViralFlow Removido! ##############################';
+    echo '###############################################################################';
+    echo ''
+else
+    # Se houver erro, exibe a mensagem de erro
+    echo ""
+    echo ""
+    echo '##############################################################################';
+    echo '########################## Erro na remoção do ViralFlow! #####################';
+    echo '##############################################################################';
+    echo ''
+fi
