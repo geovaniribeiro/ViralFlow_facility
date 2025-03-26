@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QRadioButton
 )
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QThread, pyqtSignal
 import subprocess
 import os
 import sys
@@ -19,6 +20,24 @@ from scripts.utilities.update_database import atualizar_banco_dados  # Função 
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
 from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
 from scripts.analysis.DenvNextclade import DenvNextclade # Classe para rodar DenvNext (genotyping e linhagem)
+
+class WorkerThread(QThread):
+    finished = pyqtSignal()
+    error = pyqtSignal(str)
+
+    def __init__(self, function, *args, **kwargs):
+        super().__init__()
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self):
+        try:
+            self.function(*self.args, **self.kwargs)
+            self.finished.emit()
+        except Exception as e:
+            self.error.emit(str(e))
+
 
 class MenuInicial(QWidget):
     def __init__(self):
@@ -69,14 +88,11 @@ class MenuInicial(QWidget):
         self.setLayout(layout)
 
     def atualizar_viralflow(self):
-        confirm = QMessageBox.question(
-            self,
-            "Confirmação",
-            "Você deseja atualizar o ViralFlow?\nIsso pode levar algum tempo.",
-            QMessageBox.Yes | QMessageBox.No
-        )
+        confirm = QMessageBox.question(self, "Confirmação", "Você deseja atualizar o ViralFlow?", QMessageBox.Yes | QMessageBox.No)
         if confirm == QMessageBox.Yes:
-            atualizar_viralflow()
+            self.thread = WorkerThread(atualizar_viralflow)
+            self.thread.error.connect(lambda msg: QMessageBox.critical(self, "Erro", msg))
+            self.thread.start()
 
     def atualizar_banco_dados(self):
         confirm = QMessageBox.question(
@@ -90,19 +106,20 @@ class MenuInicial(QWidget):
 
     def executar_analise(self):
         if self.radio_sc2.isChecked():
-            self.close()
             self.tela_assembly = ViralFlowGUI_SC2(self)
-            self.tela_assembly.show()
         elif self.radio_denv.isChecked():
-            self.close()
-            self.tela_assembly = ViralFlowDENV(self)  # Gera montagem e relatório para DENV
-            self.tela_assembly.show()
+            self.tela_assembly = ViralFlowDENV(self)
         elif self.radio_outro_virus.isChecked():
-            self.close()
-            self.tela_assembly = ViralFlowGUI_custom(self)  # Gera montagem para outros vírus
-            self.tela_assembly.show()
+            self.tela_assembly = ViralFlowGUI_custom(self)
+        else:
+            QMessageBox.warning(self, "Atenção", "Selecione uma opção antes de continuar.")
+            return
 
+        self.thread = WorkerThread(self.tela_assembly.show)
+        self.thread.error.connect(lambda msg: QMessageBox.critical(self, "Erro", msg))
+        self.thread.start()
 
+        self.close()
 
     def sair(self):
         confirm = QMessageBox.question(
