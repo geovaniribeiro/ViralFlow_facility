@@ -2,6 +2,12 @@
 
 code_path=$(pwd)
 
+# Adiciona o micromamba ao PATH explicitamente
+export PATH="$HOME/bin:$PATH"
+
+# Inicializa o shell para micromamba
+eval "$(micromamba shell hook --shell bash)"
+
 # Carregar manualmente as alterações feitas no ~/.bashrc no ambiente atual
 export MAMBA_EXE="$HOME/bin/micromamba"
 export MAMBA_ROOT_PREFIX="$HOME/micromamba"

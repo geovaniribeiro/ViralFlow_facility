@@ -16,6 +16,12 @@ curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/1.5.7 | tar -xvj bin/mic
 ./bin/micromamba shell init -s bash -p ~/micromamba
 source ~/.bashrc
 
+# Adiciona o micromamba ao PATH explicitamente
+export PATH="$HOME/bin:$PATH"
+
+# Inicializa o shell para micromamba
+eval "$(micromamba shell hook --shell bash)"
+
 # Carregar manualmente as alterações feitas no ~/.bashrc no ambiente atual
 export MAMBA_EXE="$HOME/bin/micromamba"
 export MAMBA_ROOT_PREFIX="$HOME/micromamba"
