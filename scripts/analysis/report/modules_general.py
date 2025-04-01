@@ -6,11 +6,30 @@ from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 from Bio import SeqIO
 import csv
+import re
 import os
 import shutil
 import yaml
 from unidecode import unidecode
 import seaborn as sns
+
+colunas_mapeadas = {
+    "Código_da_Amostra": [r"C[oó]digo\s*(?:da\s*)?Amostra"],
+    "Municipio_do_Solicitante": [r"Munic[ií]pio\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
+    "Estado_do_Solicitante": [r"Estado\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
+    "CNES_Laboratório_responsável": [r"CNES\s*(?:do\s*)?Laboratório\s*[Rr]espons[aá]vel"]
+}
+
+# Função para padronizar os nomes das colunas usando regex
+def padronizar_colunas(df, mapeamento):
+    novo_nomes = {}
+    for padrao_padronizado, regex_variacoes in mapeamento.items():
+        for regex in regex_variacoes:
+            for coluna in df.columns:
+                if pd.Series(coluna).str.contains(regex, regex=True, case=False).any():
+                    novo_nomes[coluna] = padrao_padronizado  # Mapeia para o nome padronizado
+    df.rename(columns=novo_nomes, inplace=True)
+
 
 ## Função que carrega o arquivo yaml e armazena em um dicionario
 def load_config(config_path):
@@ -31,6 +50,9 @@ def input_folder(output_folder, metadata_path):
 
     # Carrega o arquivo usando o delimitador detectado
     metadata = pd.read_csv(metadata_path, sep=delimiter, encoding='latin-1', on_bad_lines='skip')
+
+    # Padroniza os nomes das colunas
+    padronizar_colunas(metadata, colunas_mapeadas)
 
     # Substitui espaços por '_' nos nomes das colunas
     metadata.columns = metadata.columns.str.replace(' ', '_')
@@ -82,10 +104,8 @@ def data_processing(output_folder):
 
     return reads, coverage
 
-
-
 def process_and_combine_data(metadata, reads, coverage, lineage, output_folder, 
-                             rename_columns, result_cols):
+                             rename_columns):
     """
     Combina os dados de diferentes fontes (metadata, reads, coverage e lineage) e processa os resultados
     para gerar um arquivo consolidado em formato CSV.
@@ -100,19 +120,15 @@ def process_and_combine_data(metadata, reads, coverage, lineage, output_folder,
     - result_cols (list): Lista com a ordem final das colunas do DataFrame.
     """
 
-    # Substituir sexo por siglas
-    sexo = {'MASCULINO': 'M', 'FEMININO': 'F'}
-    metadata['Sexo'] = metadata['Sexo'].replace(sexo)
-
     # Remover redundância no nome do tipo de amostra
     metadata['Material_Biológico'] = metadata['Material_Biológico'].replace(to_replace=' .*', value='', regex=True)
 
     # Formatar as datas corretamente
-    metadata['Data_da_Coleta'] = pd.to_datetime(metadata['Data_da_Coleta'], format="%d-%m-%Y").dt.strftime('%d-%m-%Y')
+    metadata['Data_da_Coleta'] = pd.to_datetime(metadata['Data_da_Coleta'], dayfirst=True, errors='coerce').dt.strftime('%d-%m-%Y')
 
     # Selecionar e renomear colunas do metadata
-    metadata = metadata[['Código_da_Amostra', 'Requisição', 'CT', 'Material_Biológico', 
-                         'Municipio_do_Solicitante', 'Data_da_Coleta', 'Sexo']]
+    metadata = metadata[['Código_da_Amostra', 'Requisição', 'Material_Biológico', 
+                         'Municipio_do_Solicitante', "Idade", "Tipo_Idade",'Estado_do_Solicitante', 'Data_da_Coleta', 'Sexo']]
 
     # Atualizar dados de coverage
     coverage_update = coverage[['cod', 'PCT_10X', 'MEAN_COVERAGE']]
@@ -135,7 +151,7 @@ def process_and_combine_data(metadata, reads, coverage, lineage, output_folder,
     final_df.rename(columns=rename_columns, inplace=True)
 
     # Reordenar colunas
-    final_df = final_df[result_cols]
+    #final_df = final_df[result_cols]
 
     # Ajustar valores de Coverage para porcentagem e arredondar Depth of Coverage
     final_df['Coverage'] = final_df['Coverage'].astype(float).multiply(100).round(2)

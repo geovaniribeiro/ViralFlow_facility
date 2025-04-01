@@ -13,7 +13,7 @@ from scripts.analysis.report.modules_general import load_config, mod_pasta, Qual
 from scripts.analysis.report.modules_EpiArbo import filter_depth, format_virus_name 
 
 # Load serotype and genotype files
-def lineage_denv(output_folder):
+def genotype_denv(output_folder):
     # Construct the file path for the serotype CSV file
     serotype_path = os.path.join(output_folder, "serotype.csv")
     serotype = pd.read_csv(serotype_path, sep=';')
@@ -30,33 +30,13 @@ def lineage_denv(output_folder):
     # Process genotype DataFrame
     genotype['seqName'] = genotype['seqName'].replace(to_replace='_.*', value='', regex=True)
     genotype.rename(columns={'seqName': 'cod', 'clade': 'lineage'}, inplace=True)
+    genotype['lineage'] = genotype['lineage'].str.split('_').str[0]
     genotype_filtered = genotype[['cod', 'lineage']]
 
     # Combine serotype and genotype filtered DataFrames
-    lineage = pd.merge(serotype_filtered, genotype_filtered, on='cod', how='outer')
+    genotype = pd.merge(serotype_filtered, genotype_filtered, on='cod', how='outer')
 
-    return lineage
-
-#Define as colunas do dataframe a serem renomeadas
-rename_columns = {
-        'cod': 'Código Amostra',
-        'mepf_reads_aligned': 'Reads',
-        'PCT_10X': 'Coverage',
-        'MEAN_COVERAGE': 'Depth of Coverage',
-        'serotype': 'Sorotipo',
-        'lineage': 'Linhagem',
-        'Requisição': 'Requisição',
-        'Material_Biológico': 'Tipo Amostra',
-        'Municipio_do_Solicitante': 'Município',
-        'Data_da_Coleta': 'Data Coleta',
-        'Sexo': 'Sexo'
-    }
-
-#Definir ordem das colunas
-result_cols = [
-        'Código Amostra', 'Requisição', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 
-        'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'Sorotipo', 'Linhagem'
-    ]
+    return genotype
 
 def planilha_resultado(arbo_virus_name, final_df, output_folder):
 
@@ -70,13 +50,30 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
     #drop team_name column
     result_table.drop('Código Amostra', axis=1, inplace=True)
 
+    # Adicionar a coluna colunas extras com valores vazios
+    result_table["LACEN Executor"] = ""
+    result_table["Unidade Federativa (UF)"] = ""
+    result_table["Responsável envio dos dados"] = ""
+    result_table["Data sequenciamento"] = ""
+    result_table["Vírus"] = "DENV"
+    result_table["CT"] = ""
+    result_table["Software Montagem"] = "ViralFlow"
+    result_table["Versão software"] = "1.3"
+    result_table["Versão primer"] = "ZDC_CADDE 1.0"
+
     #Change order header
-    result_table = result_table[[ 'Requisição','id','arbo_virus_name', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 
-                                 'Reads', 'Coverage', 'Depth of Coverage', 'Sorotipo', 'Linhagem']]
+    result_table = result_table[["LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
+                                 "Vírus", 'id', 'Requisição', "CT", 'Município', 'Estado_do_Solicitante',
+                                'Data Coleta', 'Tipo Amostra', 'Idade', "Tipo_Idade", 'Sexo', 'Software Montagem', 
+                                "Versão software", "Versão primer", 'Reads','Depth of Coverage', 'Coverage', 
+                                'Sorotipo', 'Genótipo', 'arbo_virus_name']]
+    
     #Mudar nomes da coluna
     result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 
                                                 'arbo_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
-                                                'Depth of Coverage': 'Profundidade Média'})
+                                                'Depth of Coverage': 'Profundidade Média', 
+                                                'Estado_do_Solicitante': 'UF município solicitante',
+                                                'Tipo_Idade': 'Tipo Idade'})
 
     # Salve o DataFrame resultante em um arquivo Excel
     result_table.to_excel(os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx'), index=False)
@@ -127,6 +124,7 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
     # Dictionary to change the Name of the state to SIGLA
     cnes_lacen = {
         '2306352': 'AC',
+        '2865874': 'AC',
         '2009129': 'AL',
         '2018764': 'AP',
         '2019639': 'AM',
@@ -172,14 +170,15 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
     df_sequence = df_sequence[['id','sequence']].replace(to_replace ='_.*', value = '', regex = True)
 
     ##Combinte the both subset based on ID sequence name
-    df_combine_sequence = pd.merge(df_sequence, metadata, left_on="id", right_on="Código_da_Amostra")
+    df_combine_sequence = pd.merge(df_sequence, metadata, left_on="id", right_on="Código_da_Amostra", suffixes=('', '_dup'))
 
     #Controle de qualidade (cobertura)
     final_df = final_df.loc[final_df['Coverage'] >= 60]
 
     final_df = final_df.astype(str)
 
-    df_combine_sequence = pd.merge(df_combine_sequence, final_df, left_on="id", right_on="Código Amostra")
+    df_combine_sequence = pd.merge(df_combine_sequence, final_df, left_on="id", right_on="Código Amostra", suffixes=('', '_dup'))
+
 
     #Extract yerar collect date
     df_combine_sequence['Data_da_Coleta'] = pd.to_datetime(df_combine_sequence['Data_da_Coleta'], format="%d-%m-%Y")
@@ -242,7 +241,7 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
         'PB': 'Paraíba',
         'PR': 'Paraná',
         'PE': 'Pernambuco',
-        'PI': 'Piauí',
+        'PI': 'Piauí',                                 
         'RJ': 'Rio de Janeiro',
         'RN': 'Rio Grande do Norte',
         'RS': 'Rio Grande do Sul',
@@ -355,18 +354,13 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
 
 
     #Gender (Male / Female)
-    arbo_gender = df_combine_sequence[['id','Sexo_x']]
+    arbo_gender = df_combine_sequence[['id','Sexo']]
 
-    gender = {
-        'Masculino':'Male',
-        'Feminino':'Female'
-    }
+    gender = {'MASCULINO':'Male', 'FEMININO':'Female'}
 
+    arbo_gender.loc[:,'Sexo'] = arbo_gender['Sexo'].replace(gender)
 
-
-    arbo_gender.loc[:,'Sexo_x'] = arbo_gender['Sexo_x'].replace(gender)
-
-    arbo_gender = arbo_gender.rename(columns={'Sexo_x': 'arbo_gender'})
+    arbo_gender = arbo_gender.rename(columns={'Sexo': 'arbo_gender'})
 
     arbo_gender = arbo_gender.astype(str)
 
@@ -512,6 +506,20 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
     pass
 
 
+
+#Define as colunas do dataframe a serem renomeadas
+rename_columns = {'cod': 'Código Amostra',
+        'mepf_reads_aligned': 'Reads',
+        'PCT_10X': 'Coverage',
+        'MEAN_COVERAGE': 'Depth of Coverage',
+        'serotype': 'Sorotipo',
+        'lineage': 'Genótipo',
+        'Requisição': 'Requisição',
+        'Material_Biológico': 'Tipo Amostra',
+        'Municipio_do_Solicitante': 'Município',
+        'Data_da_Coleta': 'Data Coleta',
+        'Sexo': 'Sexo'}
+
 def generate_report_denv(metadata_path, config_path, output_folder):
 
     # Carregar configurações
@@ -521,10 +529,10 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     
     # Processar os arquivos na pasta de entrada
     metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
-    lineage = lineage_denv(output_folder)
+    genotype = genotype_denv(output_folder)
 
-    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, lineage, 
-                                                   output_folder, rename_columns,result_cols)
+    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, genotype, 
+                                                   output_folder, rename_columns)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
