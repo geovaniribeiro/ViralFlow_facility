@@ -23,27 +23,6 @@ def lineage_sc2(output_folder):
 
     return lineage
 
-#Define as colunas do dataframe a serem renomeadas
-rename_columns = {
-        'cod': 'Código Amostra',
-        'mepf_reads_aligned': 'Reads',
-        'PCT_10X': 'Coverage',
-        'MEAN_COVERAGE': 'Depth of Coverage',
-        'lineage': 'linhagem',
-        'Requisição': 'Requisição',
-        'Material_Biológico': 'Tipo Amostra',
-        'Municipio_do_Solicitante': 'Município',
-        'Data_da_Coleta': 'Data Coleta',
-        'Sexo': 'Sexo'
-    }
-
-#Definir ordem das colunas
-result_cols = [
-        'Código Amostra', 'Requisição', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 
-        'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'linhagem'
-    ]
-
-
 #A função 'planilha_resultado' cria um arquivo chamado 'Planilha_de_Resultado.xlsx' que contem os resultados em formato de planilha xlsx.
 ##Contem as seguintes colunas: Gal Sequenciamento, Código Amostra, Nome da Sequencia, CT, Tipo Amostra, Município,
     #Data Coleta, Sexo, Reads, Cobertura, Profundidade Média, Linhagem
@@ -60,12 +39,31 @@ def planilha_resultado(covv_virus_name, final_df, output_folder):
     #drop team_name column
     result_table.drop('Código Amostra', axis=1, inplace=True)
 
-    #Change order header
-    result_table = result_table[[ 'Requisição','id','covv_virus_name', 'CT', 'Tipo Amostra', 'Município', 'Data Coleta', 'Sexo', 'Reads', 'Coverage', 'Depth of Coverage', 'linhagem']]
+   # Adicionar a coluna colunas extras com valores vazios
+    result_table["LACEN Executor"] = ""
+    result_table["Unidade Federativa (UF)"] = ""
+    result_table["Responsável envio dos dados"] = ""
+    result_table["Data sequenciamento"] = ""
+    result_table["Vírus"] = "SARS-CoV 2"
+    result_table["CT"] = ""
+    result_table["Software Montagem"] = "ViralFlow"
+    result_table["Versão software"] = ""
+    result_table["Versão primer"] = "Artic 5.3.2"
+    result_table["Versão Pangolin"] = ""
 
+    #Change order header
+    result_table = result_table[["LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
+                                 "Vírus", 'id', 'Requisição', "CT", 'Município', 'Estado_do_Solicitante',
+                                'Data Coleta', 'Tipo Amostra', 'Idade', "Tipo_Idade", 'Sexo', 'Software Montagem', 
+                                "Versão software", "Versão primer", "Versão Pangolin", 'Reads','Depth of Coverage', 'Coverage', 
+                                'Linhagem', 'covv_virus_name']]
+    
     #Mudar nomes da coluna
-    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 'covv_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
-                                                'Depth of Coverage': 'Profundidade Média'})
+    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 
+                                                'covv_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
+                                                'Depth of Coverage': 'Profundidade Média', 'Estado_do_Solicitante': 'UF município solicitante',
+                                                'Tipo_Idade': 'Tipo Idade'})
+
 
     # Salve o DataFrame resultante em um arquivo Excel
     result_table.to_excel(os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx'), index=False)
@@ -128,6 +126,7 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
     # Dictionary to change the Name of the state to SIGLA
     cnes_lacen = {
         '2306352': 'AC',
+        '2865874': 'AC',
         '2009129': 'AL',
         '2018764': 'AP',
         '2019639': 'AM',
@@ -157,10 +156,10 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
     }
 
     #convert column to string
-    metadata['CNES_do_Laboratório_Responsável'] = metadata['CNES_do_Laboratório_Responsável'].astype(str)
+    metadata['CNES_Laboratório_responsável'] = metadata['CNES_Laboratório_responsável'].astype(str)
 
     # Change the CNES of the executor LAB to SIGLA
-    metadata['CNES_do_Laboratório_Responsável'] = metadata['CNES_do_Laboratório_Responsável'].replace(cnes_lacen)
+    metadata['CNES_Laboratório_responsável'] = metadata['CNES_Laboratório_responsável'].replace(cnes_lacen)
 
 
 
@@ -184,9 +183,10 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
     df_combine_sequence = pd.merge(df_combine_sequence, final_df, left_on="id", right_on="Código Amostra", suffixes=('', '_dup'))
 
     #Extract yerar collect date
-    df_combine_sequence['Data_da_Coleta'] = pd.to_datetime(df_combine_sequence['Data_da_Coleta'], format="%d-%m-%Y")
+    df_combine_sequence['Data_da_Coleta'] = pd.to_datetime(df_combine_sequence['Data_da_Coleta'], dayfirst=True, errors='coerce')
+
     df_combine_sequence['ANO_SEMANA_EPIDEMIOLOGICA'] = df_combine_sequence['Data_da_Coleta'].dt.strftime('%Y')
-        
+
     #Cria um arquivo chamado 'seq_df.csv' para ser usado na geração do fasta
     df_combine_sequence.to_csv(os.path.join(output_folder, 'seq_df.csv'), sep = ',')
 
@@ -194,7 +194,7 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
     with open(os.path.join(output_folder, 'seq_df.csv')) as csvfile, open(os.path.join(output_folder,'RNSG_REPORT/LACEN_seq.fasta'), 'w') as outfile:
         reader = csv.DictReader(csvfile, delimiter=',')
         for row in reader:
-            seq_id = f">hCoV-19/Brazil/{row['Estado_do_Solicitante']}-LACEN{row['CNES_do_Laboratório_Responsável']}-{row['id']}/{row['ANO_SEMANA_EPIDEMIOLOGICA']}"
+            seq_id = f">hCoV-19/Brazil/{row['Estado_do_Solicitante']}-LACEN{row['CNES_Laboratório_responsável']}-{row['id']}/{row['ANO_SEMANA_EPIDEMIOLOGICA']}"
             seq = row['sequence']
             outfile.write(f"{seq_id}\n{seq}\n")
     
@@ -279,8 +279,8 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
 
 
     #Virus name
-    covv_virus_name = df_combine_sequence[['Estado_do_Solicitante','CNES_do_Laboratório_Responsável','id','ANO_SEMANA_EPIDEMIOLOGICA']].astype(str)
-    covv_virus_name['covv_virus_name'] = "hCoV-19/Brazil/" + covv_virus_name['Estado_do_Solicitante'] + "-LACEN" + covv_virus_name['CNES_do_Laboratório_Responsável'] + "-" + covv_virus_name['id'] + "/" + covv_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
+    covv_virus_name = df_combine_sequence[['Estado_do_Solicitante','CNES_Laboratório_responsável','id','ANO_SEMANA_EPIDEMIOLOGICA']].astype(str)
+    covv_virus_name['covv_virus_name'] = "hCoV-19/Brazil/" + covv_virus_name['Estado_do_Solicitante'] + "-LACEN" + covv_virus_name['CNES_Laboratório_responsável'] + "-" + covv_virus_name['id'] + "/" + covv_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
     covv_virus_name = covv_virus_name[['id','covv_virus_name']]
 
 
@@ -308,8 +308,8 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
 
     #Collection date
     covv_collection_date = df_combine_sequence[['id','Data_da_Coleta']]
-    #covv_collection_date['Data_da_Coleta'] = pd.to_datetime(covv_collection_date['Data_da_Coleta'], format="mixed")
     covv_collection_date.loc[:,'Data_da_Coleta'] = pd.to_datetime(covv_collection_date['Data_da_Coleta']).dt.strftime('%Y-%m-%d')
+
     covv_collection_date = covv_collection_date.rename(columns={'Data_da_Coleta': 'covv_collection_date'})
 
     covv_collection_date = covv_collection_date.astype(str)
@@ -357,12 +357,8 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     #Gender (Male / Female)
     covv_gender = df_combine_sequence[['id','Sexo']]
 
-    gender = {
-        'Masculino':'Male',
-        'Feminino':'Female'
-    }
-
-
+    gender = {'MASCULINO':'Male', 'FEMININO':'Female'}
+    gender = {'Masculino':'Male', 'Feminino':'Female'}
 
     covv_gender.loc[:,'Sexo'] = covv_gender.loc[:,'Sexo'].replace(gender)
 
@@ -495,6 +491,21 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     pass
 
 
+
+#Define as colunas do dataframe a serem renomeadas
+rename_columns = {
+        'cod': 'Código Amostra',
+        'mepf_reads_aligned': 'Reads',
+        'PCT_10X': 'Coverage',
+        'MEAN_COVERAGE': 'Depth of Coverage',
+        'lineage': 'Linhagem',
+        'Requisição': 'Requisição',
+        'Material_Biológico': 'Tipo Amostra',
+        'Municipio_do_Solicitante': 'Município',
+        'Data_da_Coleta': 'Data Coleta',
+        'Sexo': 'Sexo'
+    }
+
 def generate_report(metadata_path, config_path, output_folder):
 
     # Carregar configurações
@@ -506,7 +517,7 @@ def generate_report(metadata_path, config_path, output_folder):
     metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
     lineage = lineage_sc2(output_folder)
     df_combine_sequence = process_and_combine_data(metadata, reads, coverage, lineage, 
-                                                   output_folder, rename_columns,result_cols)
+                                                   output_folder, rename_columns)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")

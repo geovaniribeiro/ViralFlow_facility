@@ -27,18 +27,32 @@ class DenvNextclade:
     def run_nextclade(self, dataset_name, output_csv, seqbatch_path):
         """Executa o comando Docker para o Nextclade."""
         command = (f'nextclade run --dataset-name="{dataset_name}" '
-                   f'--output-csv="{output_csv}" '
+                   f'--output-csv="{output_csv}" --min-match-length 20 '
                    f'"{seqbatch_path}"'
         )
         self.run_command(command)
 
     def process_serotype(self):
-        """Processa o arquivo de serótipo e retorna o valor de DENV."""
+        """Processa o arquivo de serótipo e retorna o primeiro valor válido de DENV."""
         serotype_csv_path = os.path.join(self.out_dir, "serotype.csv")
         self.wait_for_file(serotype_csv_path)
-        serotype_df = pd.read_csv(serotype_csv_path, sep = ';')
+        
+        serotype_df = pd.read_csv(serotype_csv_path, sep=';')
+        
+        # Garantir que a coluna "clade" existe antes de manipular
+        if 'clade' not in serotype_df.columns:
+            raise ValueError("A coluna 'clade' não foi encontrada no arquivo serotype.csv")
+
         serotype_df['clade'] = serotype_df['clade'].str.lower()
-        return serotype_df.iloc[0, 2]  # Acessando a coluna 3 (index 2) da primeira linha
+
+        # Percorrer as linhas para encontrar a primeira célula válida na coluna 3 (index 2)
+        for _, row in serotype_df.iterrows():
+            DENV_value = row.iloc[2]  # Coluna de índice 2
+            if pd.notna(DENV_value) and str(DENV_value).strip():  # Verifica se não é NaN nem vazio
+                return DENV_value
+
+        print("Nenhum valor válido encontrado para DENV_value.")
+        return None  # Retorna None se nenhum valor válido for encontrado
 
     def execute_pipeline(self):
         """Executa o pipeline completo para processar os dados."""
