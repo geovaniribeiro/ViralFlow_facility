@@ -516,8 +516,8 @@ def generate_report(metadata_path, config_path, output_folder):
     # Processar os arquivos na pasta de entrada
     metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
     lineage = lineage_sc2(output_folder)
-    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, lineage, 
-                                                   output_folder, rename_columns)
+    df_combine_sequence = process_and_combine_data(metadata, reads, coverage,
+                                                   output_folder, rename_columns, lineage)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
