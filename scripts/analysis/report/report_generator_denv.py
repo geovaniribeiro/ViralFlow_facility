@@ -80,9 +80,10 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
 
 
 #Função para gerar o arquivo fasta para ser submetido ao Gisaid
-def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
+def gerar_arquivo_fasta(records, metadata, final_df, output_folder, 
+                        seq_id_col='Sorotipo', seq_id_fixed=None):
 
-    print("gerar_arquivo_fasta")
+    print("Gerando arquivo fasta")
 
     # Convert Column ID name to string
     metadata['Código_da_Amostra'] = metadata['Código_da_Amostra'].astype(str)
@@ -181,27 +182,31 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
 
 
     #Extract yerar collect date
-    df_combine_sequence['Data_da_Coleta'] = pd.to_datetime(df_combine_sequence['Data_da_Coleta'], format="%d-%m-%Y")
+    df_combine_sequence['Data_da_Coleta'] = pd.to_datetime(df_combine_sequence['Data_da_Coleta'], dayfirst=True, errors='coerce')
     df_combine_sequence['ANO_SEMANA_EPIDEMIOLOGICA'] = df_combine_sequence['Data_da_Coleta'].dt.strftime('%Y')
 
     #Cria um arquivo chamado 'seq_df.csv' para ser usado na geração do fasta
     df_combine_sequence.to_csv(os.path.join(output_folder, 'seq_df.csv'), sep = ',')
 
     # Convert DataFrame df_combine_sequence to a fasta file with the required header format
-    with open(os.path.join(output_folder, 'seq_df.csv')) as csvfile, open(os.path.join(output_folder,'RNSG_REPORT/LACEN_seq.fasta'), 'w') as outfile:
+    # Criar arquivo FASTA
+    with open(os.path.join(output_folder, 'seq_df.csv')) as csvfile, open(os.path.join(output_folder, 'RNSG_REPORT/LACEN_seq.fasta'), 'w') as outfile:
         reader = csv.DictReader(csvfile, delimiter=',')
         for row in reader:
-                seq_id = f">h{row['Sorotipo']}/Brazil/{row['Estado_do_Solicitante']}-LACEN{row['CNES_Laboratório_responsável']}-{row['id']}/{row['ANO_SEMANA_EPIDEMIOLOGICA']}"
-                seq_id = format_virus_name(seq_id)
-                seq = row['sequence']
-                outfile.write(f"{seq_id}\n{seq}\n")
+            seq_id = seq_id_fixed if seq_id_fixed else row[seq_id_col]  # Usa valor fixo ou coluna
+
+            seq_id = f">h{seq_id}/Brazil/{row['Estado_do_Solicitante']}-LACEN{row['CNES_Laboratório_responsável']}-{row['id']}/{row['ANO_SEMANA_EPIDEMIOLOGICA']}"
+            seq_id = format_virus_name(seq_id)  # Formatar nome
+            seq = row['sequence']
+            outfile.write(f"{seq_id}\n{seq}\n")
     
     return df_combine_sequence
 
 #Função para gerar o arquivo EpiArbo para ser submetido ao Gisaid
-def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
+def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder, arbo_virus_name_value,
+                    seq_id_col='Sorotipo', seq_id_fixed=None):
 
-    print("arquivo_epiarbo")
+    print("Gerando arquivo EpiArbo")
 
     #Columnas que serão inseridas manualmente
     #Nickname do submitter no gisaid
@@ -274,8 +279,13 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
     arbo_patient_age = arbo_patient_age[['id','arbo_patient_age']]
 
     #Virus name
-    arbo_virus_name = df_combine_sequence[['Estado_do_Solicitante','CNES_Laboratório_responsável','id','ANO_SEMANA_EPIDEMIOLOGICA', 'Sorotipo']].astype(str)
-    arbo_virus_name.loc[:,'arbo_virus_name'] = "h" + arbo_virus_name['Sorotipo'] + "/Brazil/" + arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + arbo_virus_name['CNES_Laboratório_responsável'] + "-" + arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
+    if seq_id_fixed:
+        arbotype = seq_id_fixed
+    else:
+        arbotype = seq_id_col
+
+    arbo_virus_name = df_combine_sequence[['Estado_do_Solicitante', 'CNES_Laboratório_responsável', 'id', 'ANO_SEMANA_EPIDEMIOLOGICA']].astype(str)
+    arbo_virus_name.loc[:, 'arbo_virus_name'] = "h" + arbotype + "/Brazil/" + arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + arbo_virus_name['CNES_Laboratório_responsável'] + "-" + arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
     # Converte nome 1º e Ultima Maiúscula
     arbo_virus_name['arbo_virus_name'] = arbo_virus_name['arbo_virus_name'].apply(format_virus_name)
     arbo_virus_name = arbo_virus_name[['id', 'arbo_virus_name']]
@@ -293,11 +303,16 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
 
     #Insert arbo_type column
     arbo_virus_name.insert(4, 'arbo_type', '')
-    arbo_virus_name.loc[:, 'arbo_type'] = 'Dengue Virus'
+    arbo_virus_name.loc[:, 'arbo_type'] = arbo_virus_name_value
 
     #Insert arbo_subtype column
     arbo_virus_name.insert(5, 'arbo_subtype', '')
-    arbo_virus_name.loc[:, 'arbo_subtype'] = df_combine_sequence['Sorotipo']
+    # Verificar se 'arbotype' é um valor fixo
+    if isinstance(arbotype, str):  # Se for uma string, isso indica que é um valor fixo
+        arbo_virus_name.loc[:, 'arbo_subtype'] = arbotype
+    else:
+        # Caso contrário, assume-se que 'arbotype' é o nome de uma coluna
+        arbo_virus_name.loc[:, 'arbo_subtype'] = df_combine_sequence[arbotype]
 
     #Insert arbo_passage column
     arbo_virus_name.insert(6, 'arbo_passage', '')
@@ -375,7 +390,6 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder):
     arbo_patient_age.loc[:,'Data_de_Nascimento'] = arbo_patient_age['Data_de_Nascimento'].replace(to_replace =' .*', value = '', regex = True)
 
     ##Conveter colunas para Data
-    #arbo_patient_age.loc[:,'Data_de_Nascimento'] = pd.to_datetime(arbo_patient_age['Data_de_Nascimento'], errors='coerce')
     arbo_patient_age.loc[:, 'Data_de_Nascimento'] = pd.to_datetime(arbo_patient_age['Data_de_Nascimento'], errors='coerce', dayfirst=True)
     arbo_patient_age.loc[:,'Data_da_Coleta'] = pd.to_datetime(arbo_patient_age['Data_da_Coleta'], errors='coerce')
 
@@ -531,8 +545,7 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
     genotype = genotype_denv(output_folder)
 
-    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, genotype, 
-                                                   output_folder, rename_columns)
+    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, output_folder, rename_columns, genotype)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
@@ -543,6 +556,7 @@ def generate_report_denv(metadata_path, config_path, output_folder):
         raise FileNotFoundError(f"Arquivo {resultado_file} não encontrado!")
 
     resultado_filt_file = os.path.join(output_folder, "tabela_resultados_filt.csv")
+
     if os.path.exists(resultado_filt_file):
         final_df_filt = pd.read_csv(resultado_filt_file)
     else:
@@ -554,7 +568,7 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     seq_file = os.path.join(output_folder, "seq_df.csv")
     if os.path.exists(seq_file):
         df_combine_sequence = pd.read_csv(seq_file)
-        arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder)
+        arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder, arbo_virus_name_value = 'Dengue virus')
     else:
         raise FileNotFoundError(f"Arquivo {seq_file} não encontrado!")
 

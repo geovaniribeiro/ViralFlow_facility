@@ -104,8 +104,7 @@ def data_processing(output_folder):
 
     return reads, coverage
 
-def process_and_combine_data(metadata, reads, coverage, lineage, output_folder, 
-                             rename_columns):
+def process_and_combine_data(metadata, reads, coverage, output_folder, rename_columns, lineage = None):
     """
     Combina os dados de diferentes fontes (metadata, reads, coverage e lineage) e processa os resultados
     para gerar um arquivo consolidado em formato CSV.
@@ -127,14 +126,18 @@ def process_and_combine_data(metadata, reads, coverage, lineage, output_folder,
     metadata['Data_da_Coleta'] = pd.to_datetime(metadata['Data_da_Coleta'], dayfirst=True, errors='coerce').dt.strftime('%d-%m-%Y')
 
     # Selecionar e renomear colunas do metadata
-    metadata = metadata[['Código_da_Amostra', 'Requisição', 'Material_Biológico', 
+    metadata = metadata[['Código_da_Amostra', 'Requisição', 'Material_Biológico',
                          'Municipio_do_Solicitante', "Idade", "Tipo_Idade",'Estado_do_Solicitante', 'Data_da_Coleta', 'Sexo']]
 
     # Atualizar dados de coverage
     coverage_update = coverage[['cod', 'PCT_10X', 'MEAN_COVERAGE']]
 
-    # Juntar dados: reads, coverage e lineage
-    combined_data = pd.merge(pd.merge(reads, coverage_update, on='cod'), lineage, on='cod')
+    # Juntar dados: reads, coverage e lineage se lineage foi fornecido, adicionar na junção
+    if lineage is not None:
+        combined_data = pd.merge(pd.merge(reads, coverage_update, on='cod'), lineage, on='cod')
+    elif lineage is None:
+        combined_data = pd.merge(reads, coverage_update, on='cod')
+
     combined_data['cod'] = combined_data['cod'].astype(str)
     # Garantir que não há warnings
     metadata = metadata.copy()  # Faça isso apenas se necessário
@@ -235,14 +238,9 @@ def Quality_monitor(coverage, reads, output_folder):
     colors = sns.color_palette("viridis")
     #create stacked bar chart
     reads_df.set_index('cod').plot(kind='bar', stacked=True, ax=ax3)
-    
-    #Gênero x Idade
-
 
     #Depth X Coverage
     #ax4.scatter(x=coverage['MEAN_COVERAGE'], y=coverage['PCT_10X'])
-
-
 
     # Set ylabels
     ax1.set_ylabel('Profundidade')
@@ -254,7 +252,6 @@ def Quality_monitor(coverage, reads, output_folder):
     ax3.legend(["Leituras mapeadas", "Leituras não-mapeadas"], bbox_to_anchor=(0.5, 1),
                prop = { "size": 6})
     #axs[3].set_ylabel('Reads Mapeadas vs não-mapeadas', fontsize=12)
-
 
     # save the plot as SVG file
     plt.tight_layout()
