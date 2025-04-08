@@ -1,6 +1,13 @@
 #!/bin/bash
+#!/bin/bash
+
+echo ">>> SCRIPT DE INSTALAÇÃO INICIADO!"
+
+read -p "Pressione ENTER para continuar..."
 
 code_path=$(pwd)
+
+HERE="$(dirname "$(readlink -f "$0")")"
 
 # Adiciona o micromamba ao PATH explicitamente
 export PATH="$HOME/bin:$PATH"
@@ -21,21 +28,22 @@ unset __mamba_setup
 
 micromamba activate
 
-yes | micromamba env create -f ../envs/env.yml --yes
+yes | micromamba env create -f "$code_path/usr/envs/env.yml" --yes
 
 micromamba activate viralflow_gui
 
 ###################
+
 #Install PyQt plugins requirements
-apt-get install libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+sudo apt-get install libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa
 
 #Transform to executables files
-chmod +x ../viralflow_GUI
-chmod +x create_desktop_file.sh
+chmod +x $code_path/../viralflow_GUI
+chmod +x $code_path/ViralFlowGUI/create_desktop_file.sh
 
 # Criar arquivo .desktop
-$code_path/create_desktop_file.sh
+$code_path/ViralFlowGUI/create_desktop_file.sh
 
 # Verificar se o comando anterior foi bem-sucedido (código de saída 0 significa sucesso)
 if [ $? -eq 0 ]; then
