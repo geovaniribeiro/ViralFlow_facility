@@ -545,7 +545,8 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
     genotype = genotype_denv(output_folder)
 
-    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, output_folder, rename_columns, genotype)
+    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, 
+                                                   output_folder, rename_columns, genotype)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
