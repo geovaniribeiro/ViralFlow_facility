@@ -1,5 +1,4 @@
 #!/bin/bash
-#!/bin/bash
 
 echo ">>> SCRIPT DE INSTALAÇÃO INICIADO!"
 
