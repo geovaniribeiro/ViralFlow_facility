@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo ">>> SCRIPT DE INSTALAÇÃO INICIADO!"
+
+read -p "Pressione ENTER para continuar..."
+
 # Atualizar e instalar pacotes necessários
 sudo apt update -y && \
 sudo apt upgrade -y && \
