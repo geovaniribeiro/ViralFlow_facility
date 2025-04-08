@@ -1,0 +1,21 @@
+#!/bin/bash
+
+HERE="$(dirname "$(readlink -f "$0")")"
+
+# Detectar terminal disponível e construir o comando correto
+if command -v gnome-terminal > /dev/null; then
+    gnome-terminal -- bash -c "$HERE/viralflowGUI_installer.sh; read -p 'Pressione ENTER para sair...'"
+elif command -v konsole > /dev/null; then
+    konsole --noclose -e bash "$HERE/viralflowGUI_installer.sh"
+elif command -v x-terminal-emulator > /dev/null; then
+    x-terminal-emulator -e bash "$HERE/viralflowGUI_installer.sh"
+elif command -v xterm > /dev/null; then
+    xterm -hold -e bash "$HERE/viralflowGUI_installer.sh"
+elif command -v xfce4-terminal > /dev/null; then
+    xfce4-terminal --hold -e bash "$HERE/viralflowGUI_installer.sh"
+elif command -v lxterminal > /dev/null; then
+    lxterminal -e bash "$HERE/viralflowGUI_installer.sh"
+else
+    echo "Nenhum terminal suportado encontrado!"
+    read -p "Pressione ENTER para sair..."
+fi
