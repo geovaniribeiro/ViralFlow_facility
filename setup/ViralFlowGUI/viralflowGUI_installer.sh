@@ -40,7 +40,7 @@ chmod +x $code_path/../viralflow_GUI
 chmod +x $code_path/ViralFlowGUI/create_desktop_file.sh
 
 # Criar arquivo .desktop
-$code_path/ViralFlowGUI/create_desktop_file.sh
+sudo $code_path/ViralFlowGUI/create_desktop_file.sh
 
 # Verificar se o comando anterior foi bem-sucedido (código de saída 0 significa sucesso)
 if [ $? -eq 0 ]; then
