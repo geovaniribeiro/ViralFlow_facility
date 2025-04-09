@@ -108,22 +108,22 @@ class MenuInicial(QWidget):
 
     def executar_analise(self):
         if self.radio_sc2.isChecked():
+            self.close()
             self.tela_assembly = ViralFlowGUI_SC2(self)
+            self.tela_assembly.show()
         elif self.radio_denv.isChecked():
+            self.close()
             self.tela_assembly = ViralFlowDENV(self)
+            self.tela_assembly.show()
         elif self.radio_chikv.isChecked():
+            self.close()
             self.tela_assembly = ViralFlowCHIKV(self)
+            self.tela_assembly.show()
         elif self.radio_outro_virus.isChecked():
+            self.close()
             self.tela_assembly = ViralFlowGUI_custom(self)
-        else:
-            QMessageBox.warning(self, "Atenção", "Selecione uma opção antes de continuar.")
-            return
+            self.tela_assembly.show()
 
-        self.thread = WorkerThread(self.tela_assembly.show)
-        self.thread.error.connect(lambda msg: QMessageBox.critical(self, "Erro", msg))
-        self.thread.start()
-
-        self.close()
 
     def sair(self):
         confirm = QMessageBox.question(
