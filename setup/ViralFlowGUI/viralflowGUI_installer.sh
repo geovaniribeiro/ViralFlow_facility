@@ -1,12 +1,10 @@
 #!/bin/bash
 
-echo ">>> SCRIPT DE INSTALAÇÃO INICIADO!"
+echo ">>> INSTALAÇÃO DO VIRALFLOW_GUI INICIANDO!"
 
 read -p "Pressione ENTER para continuar..."
 
 code_path=$(pwd)
-
-HERE="$(dirname "$(readlink -f "$0")")"
 
 # Adiciona o micromamba ao PATH explicitamente
 export PATH="$HOME/bin:$PATH"

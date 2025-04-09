@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo ">>> SCRIPT DE INSTALAÇÃO INICIADO!"
+echo ">>> INSTALAÇÃO DO VIRALFLOW INICIANDO!"
 
 read -p "Pressione ENTER para continuar..."
 
