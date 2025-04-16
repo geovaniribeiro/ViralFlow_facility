@@ -41,12 +41,8 @@ def rename_fastq_files(metadata_path, input_path):
     # Substitui espaços por '_' nos nomes das colunas
     metadata.columns = metadata.columns.str.replace(' ', '_')
 
-    print(metadata.columns.tolist())
-
     # Padroniza os nomes das colunas
     padronizar_colunas(metadata, colunas_mapeadas)
-
-    print(metadata.columns.tolist())
 
     # Converter as colunas para string
     metadata['Requisição'] = metadata['Requisição'].astype(str)
