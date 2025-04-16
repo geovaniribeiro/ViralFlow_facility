@@ -1,7 +1,9 @@
 #!/bin/bash
 
+code_path=$(pwd)
+
 # Caminhos relativos
-SCRIPT_SH="../viralflow_GUI"
+SCRIPT_SH="$code_path/../viralflow_GUI"
 ICON_RELATIVE_PATH="/ViralFlow/docs/source/img/viralflow_logo.png"
 
 # Resolver caminhos absolutos
