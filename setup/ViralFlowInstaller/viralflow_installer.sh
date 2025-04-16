@@ -1,6 +1,24 @@
 #!/bin/bash
 
+echo ">>> INSTALAÇÃO DO VIRALFLOW INICIANDO!"
+
+read -p "Pressione ENTER para continuar..."
+
+# Atualizar e instalar pacotes necessários
+sudo apt update -y && \
+sudo apt upgrade -y && \
+sudo apt install curl git python3-pip uidmap -y
+
 code_path=$(pwd)
+
+#Acessamento a home usando o sudo
+#cd $(getent passwd $SUDO_USER | cut -d: -f6)
+
+cd $HOME
+
+curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/1.5.7 | tar -xvj bin/micromamba
+./bin/micromamba shell init -s bash -p ~/micromamba
+source ~/.bashrc
 
 # Adiciona o micromamba ao PATH explicitamente
 export PATH="$HOME/bin:$PATH"
@@ -21,21 +39,27 @@ unset __mamba_setup
 
 micromamba activate
 
-yes | micromamba env create -f ../envs/env.yml --yes
+# Clonar repositório do ViralFlow e configurar o ambiente
+git clone https://github.com/WallauBioinfo/ViralFlow
+cd ViralFlow/
 
-micromamba activate viralflow_gui
+yes | micromamba env create -f envs/env.yml --yes
+micromamba activate viralflow
 
-###################
-#Install PyQt plugins requirements
-apt-get install libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa
+# Instalar o ViralFlow no modo de desenvolvimento
+pip install -e .
 
-#Transform to executables files
-chmod +x ../viralflow_GUI
-chmod +x create_desktop_file.sh
+# Criar link simbólico para unsquashfs
+sudo ln -sf /usr/bin/unsquashfs /usr/local/bin/unsquashfs
 
-# Criar arquivo .desktop
-$code_path/create_desktop_file.sh
+#instalar Singularity manualmente
+yes | micromamba install -c wallaulab singularityce --yes
+
+# Baixar imagem e construir os containers
+yes | viralflow -build_containers
+
+#Desativar ambiente do viralflow
+micromamba deactivate viralflow
 
 # Verificar se o comando anterior foi bem-sucedido (código de saída 0 significa sucesso)
 if [ $? -eq 0 ]; then
@@ -43,7 +67,7 @@ if [ $? -eq 0 ]; then
     echo ""
     echo ""
     echo '##############################################################################';
-    echo '########################## ViralFlow GUI Instalado! ##########################';
+    echo '########################## ViralFlow Instalado! ##############################';
     echo '##############################################################################';
     echo ''
 else
@@ -51,7 +75,7 @@ else
     echo ""
     echo ""
     echo '##############################################################################';
-    echo '########################## Erro na instalação do ViralFlow GUI! ##############';
+    echo '########################## Erro na instalação do ViralFlow! ##################';
     echo '##############################################################################';
     echo ''
 fi
