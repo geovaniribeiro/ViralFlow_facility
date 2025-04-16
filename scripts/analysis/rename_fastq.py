@@ -2,7 +2,26 @@ import os
 import pandas as pd
 import csv
 
+# Função para padronizar os nomes das colunas usando regex
 def rename_fastq_files(metadata_path, input_path):
+
+    colunas_mapeadas = {
+        "Código_da_Amostra": [
+            r"C[oó]digo_?(?:da_?)?Amostra",  # cobre 'Código_Amostra', 'Código_da_Amostra'
+            r"C[oó]digoAmostra"             # só por segurança, se vier tudo junto
+        ]
+    }
+
+    def padronizar_colunas(df, mapeamento):
+        novo_nomes = {}
+        for padrao_padronizado, regex_variacoes in mapeamento.items():
+            for regex in regex_variacoes:
+                for coluna in df.columns:
+                    if pd.Series(coluna).str.contains(regex, regex=True, case=False).any():
+                        novo_nomes[coluna] = padrao_padronizado
+        df.rename(columns=novo_nomes, inplace=True)
+        
+
     """ Renomeia arquivos FASTQ com base no arquivo de metadados """
     if not os.path.exists(metadata_path):
         raise FileNotFoundError(f"Arquivo de metadados não encontrado: {metadata_path}")
@@ -18,9 +37,16 @@ def rename_fastq_files(metadata_path, input_path):
 
     # Carrega o arquivo usando o delimitador detectado
     metadata = pd.read_csv(metadata_path, sep=delimiter, encoding='latin-1', on_bad_lines='skip')
-
+    
     # Substitui espaços por '_' nos nomes das colunas
     metadata.columns = metadata.columns.str.replace(' ', '_')
+
+    print(metadata.columns.tolist())
+
+    # Padroniza os nomes das colunas
+    padronizar_colunas(metadata, colunas_mapeadas)
+
+    print(metadata.columns.tolist())
 
     # Converter as colunas para string
     metadata['Requisição'] = metadata['Requisição'].astype(str)
