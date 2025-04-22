@@ -58,9 +58,6 @@ yes | micromamba install -c wallaulab singularityce --yes
 # Baixar imagem e construir os containers
 yes | viralflow -build_containers
 
-#Desativar ambiente do viralflow
-micromamba deactivate viralflow
-
 # Verificar se o comando anterior foi bem-sucedido (código de saída 0 significa sucesso)
 if [ $? -eq 0 ]; then
     # Se não houver erro, exibe a mensagem de sucesso

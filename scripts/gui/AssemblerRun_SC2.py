@@ -19,7 +19,6 @@ from scripts.gui.ParametersManager import ParametersManager #Classe parametros D
 from scripts.analysis.assembler.assembler_thread import AssemblerThread #Instancia para iniciar uma nova thread no processo
 from scripts.analysis.report.report_generator_sc2 import generate_report #Função para gerar relatorio e arquivos de SC2
 from scripts.analysis.rename_fastq import rename_fastq_files #Função para renomear arquivos para codigo de amostras, se necessario
-from scripts.analysis.report.report_generator_sc2 import generate_report #Função para gerar relatorio e arquivos de SC2
 from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor #Importa funções para gerar relatorio de qualidade
 
 class AssemblerRun_sc2(AssemblerThread):

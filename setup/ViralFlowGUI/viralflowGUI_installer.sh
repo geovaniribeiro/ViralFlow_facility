@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo ">>> INSTALAÇÃO DO VIRALFLOW_GUI INICIANDO!"
+echo ">>> INICIANDO INSTALAÇÃO DO VIRALFLOW_GUI!"
 
 read -p "Pressione ENTER para continuar..."
 
