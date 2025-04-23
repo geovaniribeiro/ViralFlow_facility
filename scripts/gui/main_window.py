@@ -104,7 +104,10 @@ class MenuInicial(QWidget):
             QMessageBox.Yes | QMessageBox.No
         )
         if confirm == QMessageBox.Yes:
-            atualizar_banco_dados()
+            self.thread_banco = WorkerThread(atualizar_banco_dados)
+            self.thread_banco.finished.connect(lambda: QMessageBox.information(self, "Sucesso", "Banco de dados atualizado com sucesso!"))
+            self.thread_banco.error.connect(lambda msg: QMessageBox.critical(self, "Erro", f"Erro ao atualizar o banco de dados:\n{msg}"))
+            self.thread_banco.start()
 
     def executar_analise(self):
         if self.radio_sc2.isChecked():
