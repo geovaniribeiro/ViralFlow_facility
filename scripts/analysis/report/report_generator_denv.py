@@ -426,8 +426,55 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder, arbo_v
 
 
     #Insert arbo_specimen column
-    gisaid_temp.insert(18, 'arbo_specimen','')
+    arbo_specimen = df_combine_sequence[['id', 'Material_Biológico']].copy()
 
+    #Traduzir para ingles
+    bio_material_translation = {
+    "Aspirado": "Aspirate",
+    "Aspirado bronquico": "Bronchial aspirate",
+    "Aspirado de nasofaringe": "Nasopharyngeal aspirate",
+    "Aspirado Traqueal": "Tracheal aspirate",
+    "Coriza": "Nasal discharge",
+    "Escarro": "Sputum",
+    "Exsudato de lesao cutanea": "Exudate from skin lesion",
+    "Exsudato de nasofaringe": "Nasopharyngeal exudate",
+    "Fragmentos de pulmao": "Lung tissue fragments",
+    "Lavado bronquico": "Bronchial lavage",
+    "Lavado bronquico alveolar": "Bronchoalveolar lavage",
+    "Liquor": "Cerebrospinal fluid (CSF)",
+    "Secrecao": "Secretion",
+    "Secrecao bronquica": "Bronchial secretion",
+    "Secrecao de abscessos": "Abscess secretion",
+    "Secrecao nasofaringea": "Nasopharyngeal secretion",
+    "Secrecao orofaringea": "Oropharyngeal secretion",
+    "Secrecao orofaringe e nasofaringe": "Oropharyngeal and nasopharyngeal secretion",
+    "Secrecao traqueal": "Tracheal secretion",
+    "Soro": "Serum",
+    "Swab": "Swab",
+    "Swab Anal": "Anal swab",
+    "Swab da secrecao de mucosas oral": "Oral mucosal secretion swab",
+    "Swab da secrecao de Naso/orofaringe": "Naso/oropharyngeal secretion swab",
+    "Swab de abscesso": "Abscess swab",
+    "Swab de orofaringe": "Oropharyngeal swab",
+    "Swab fecal": "Fecal swab",
+    "Swab nasal": "Nasal swab",
+    "Swab Nasofaringe": "Nasopharyngeal swab",
+    "Swab naso-orofaringeo": "Naso-oropharyngeal swab",
+    "Fragmento": "Fragment",
+    "Fragmento de Placenta": "Placental fragment",
+    "Fragmentos de baco": "Spleen tissue fragments",
+    "Fragmentos de figado": "Liver tissue fragments",
+    "Liquido pericardico": "Pericardial fluid",
+    "Liquido pleural": "Pleural fluid",
+    "Plasma": "Plasma",
+    "Sangue": "Blood",
+    "Sangue com EDTA": "EDTA blood",
+    "Urina": "Urine"
+}
+    # Aplica a tradução
+    arbo_specimen['arbo_specimen'] = arbo_specimen['Material_Biológico'].map(bio_material_translation)
+    arbo_specimen = arbo_specimen[['id', 'arbo_specimen']].astype(str)
+    gisaid_temp = pd.merge(gisaid_temp,arbo_specimen,on='id')
 
     #Insert arbo_outbreak column
     gisaid_temp.insert(19, 'arbo_outbreak','')
