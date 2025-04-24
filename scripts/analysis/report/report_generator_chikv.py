@@ -102,7 +102,8 @@ def generate_report_chikv(metadata_path, config_path, output_folder):
                         arbo_virus_name_value = "Chikungunya virus", seq_id_fixed= "ChikV")
 
         epi_arbo_file = os.path.join(output_folder, 'RNSG_REPORT', 'EpiArbo.csv')
-        colunas_remover = ['arbo_subtype', 'arbo_last_vaccination_date']  # Substitua pelos nomes reais das colunas
+        #Removendo as colunas "arbo_subtype" e "arbo_last_vaccination_date" que estão no EpiArbo (DENV) mas não estão no EpiArbo (CHIKV)
+        colunas_remover = ['arbo_subtype', 'arbo_last_vaccination_date']
         df_epi_arbo = pd.read_csv(epi_arbo_file)
         df_epi_arbo = df_epi_arbo.drop(columns=colunas_remover, errors='ignore')
         df_epi_arbo.to_csv(epi_arbo_file, index=False)
