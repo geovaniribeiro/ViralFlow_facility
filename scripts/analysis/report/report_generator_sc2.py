@@ -439,7 +439,17 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     "Swab fecal": "Fecal swab",
     "Swab nasal": "Nasal swab",
     "Swab Nasofaringe": "Nasopharyngeal swab",
-    "Swab naso-orofaringeo": "Naso-oropharyngeal swab"
+    "Swab naso-orofaringeo": "Naso-oropharyngeal swab",
+    "Fragmento": "Fragment",
+    "Fragmento de Placenta": "Placental fragment",
+    "Fragmentos de baco": "Spleen tissue fragments",
+    "Fragmentos de figado": "Liver tissue fragments",
+    "Liquido pericardico": "Pericardial fluid",
+    "Liquido pleural": "Pleural fluid",
+    "Plasma": "Plasma",
+    "Sangue": "Blood",
+    "Sangue com EDTA": "EDTA blood",
+    "Urina": "Urine"
 }
     # Aplica a tradução
     covv_specimen['covv_specimen'] = covv_specimen['Material_Biológico'].map(bio_material_translation)
