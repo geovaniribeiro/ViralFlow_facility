@@ -36,9 +36,6 @@ def planilha_resultado(covv_virus_name, final_df, output_folder):
     #Merge df
     result_table = pd.merge(result_table, final_df, left_on = 'id', right_on = 'Código Amostra', how='right')
 
-    #drop team_name column
-    result_table.drop('Código Amostra', axis=1, inplace=True)
-
    # Adicionar a coluna colunas extras com valores vazios
     result_table["LACEN Executor"] = ""
     result_table["Unidade Federativa (UF)"] = ""
@@ -53,13 +50,13 @@ def planilha_resultado(covv_virus_name, final_df, output_folder):
 
     #Change order header
     result_table = result_table[["LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
-                                 "Vírus", 'id', 'Requisição', "CT", 'Município', 'Estado_do_Solicitante',
+                                 "Vírus", 'Código Amostra', 'Requisição', "CT", 'Município', 'Estado_do_Solicitante',
                                 'Data Coleta', 'Tipo Amostra', 'Idade', "Tipo_Idade", 'Sexo', 'Software Montagem', 
                                 "Versão software", "Versão primer", "Versão Pangolin", 'Reads','Depth of Coverage', 'Coverage', 
                                 'Linhagem', 'covv_virus_name']]
     
     #Mudar nomes da coluna
-    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 
+    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento',
                                                 'covv_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
                                                 'Depth of Coverage': 'Profundidade Média', 'Estado_do_Solicitante': 'UF município solicitante',
                                                 'Tipo_Idade': 'Tipo Idade'})
@@ -404,8 +401,6 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
 
 
     #Insert covv_specimen column
-    ##gisaid_temp.insert(15, 'covv_specimen','')
-    # Seleciona apenas as colunas necessárias
     covv_specimen = df_combine_sequence[['id', 'Material_Biológico']].copy()
     
     #Traduzir para ingles
@@ -568,9 +563,9 @@ def generate_report(metadata_path, config_path, output_folder):
     mod_pasta(output_folder)
     
     # Processar os arquivos na pasta de entrada
-    metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
+    metadata, sequence, records, reads, coverage, errors = input_folder(output_folder, metadata_path)
     lineage = lineage_sc2(output_folder)
-    df_combine_sequence = process_and_combine_data(metadata, reads, coverage,
+    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, errors,
                                                    output_folder, rename_columns, lineage)
 
     # Trabalhar com arquivos de resultados
