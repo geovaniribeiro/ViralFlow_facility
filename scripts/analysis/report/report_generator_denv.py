@@ -40,7 +40,7 @@ def genotype_denv(output_folder):
 
 def planilha_resultado(arbo_virus_name, final_df, output_folder):
 
-    print("planilha_resultado")
+    #print("planilha_resultado")
 
     result_table = arbo_virus_name[['id','arbo_virus_name']]
 
@@ -48,7 +48,9 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
     result_table = pd.merge(result_table, final_df, left_on = 'id', right_on = 'Código Amostra', how='right')
 
     #drop team_name column
-    result_table.drop('Código Amostra', axis=1, inplace=True)
+    #result_table.drop('Código Amostra', axis=1, inplace=True)
+
+    result_table.to_csv(os.path.join(output_folder, 'test.csv'), index=False)
 
     # Adicionar a coluna colunas extras com valores vazios
     result_table["LACEN Executor"] = ""
@@ -63,13 +65,13 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
 
     #Change order header
     result_table = result_table[["LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
-                                 "Vírus", 'id', 'Requisição', "CT", 'Município', 'Estado_do_Solicitante',
+                                 "Vírus",  'Código Amostra', 'Requisição', "CT", 'Município', 'Estado_do_Solicitante',
                                 'Data Coleta', 'Tipo Amostra', 'Idade', "Tipo_Idade", 'Sexo', 'Software Montagem', 
                                 "Versão software", "Versão primer", 'Reads','Depth of Coverage', 'Coverage', 
                                 'Sorotipo', 'Genótipo', 'arbo_virus_name']]
     
     #Mudar nomes da coluna
-    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra', 
+    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento',
                                                 'arbo_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
                                                 'Depth of Coverage': 'Profundidade Média', 
                                                 'Estado_do_Solicitante': 'UF município solicitante',
@@ -282,48 +284,58 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder, arbo_v
     arbo_patient_age.loc[:, 'arbo_patient_age'] = (arbo_patient_age['Data_da_Coleta'] - arbo_patient_age['Data_de_Nascimento'])
     arbo_patient_age = arbo_patient_age[['id','arbo_patient_age']]
 
-    #Virus name
+    # Define valores para arbotype e nome da coluna (se aplicável)
     if seq_id_fixed:
-        arbotype = seq_id_fixed
+        arbotype_col = None
+        arbotype_values = seq_id_fixed
+    elif seq_id_col in df_combine_sequence.columns:
+        arbotype_col = seq_id_col
+        arbotype_values = df_combine_sequence[seq_id_col].astype(str)
     else:
-        arbotype = seq_id_col
+        raise ValueError(f"A coluna '{seq_id_col}' não foi encontrada no DataFrame.")
 
+    # Monta os dados iniciais para o nome do vírus
     arbo_virus_name = df_combine_sequence[['Estado_do_Solicitante', 'CNES_Laboratório_responsável', 'id', 'ANO_SEMANA_EPIDEMIOLOGICA']].astype(str)
-    arbo_virus_name.loc[:, 'arbo_virus_name'] = "h" + arbotype + "/Brazil/" + arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + arbo_virus_name['CNES_Laboratório_responsável'] + "-" + arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
-    # Converte nome 1º e Ultima Maiúscula
+
+    # Gera o nome do vírus, dependendo do tipo de arbotype
+    if isinstance(arbotype_values, pd.Series):
+        arbo_virus_name['arbo_virus_name'] = "h" + arbotype_values + "/Brazil/" + \
+            arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + \
+            arbo_virus_name['CNES_Laboratório_responsável'] + "-" + \
+            arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
+    else:
+        arbo_virus_name['arbo_virus_name'] = "h" + arbotype_values + "/Brazil/" + \
+            arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + \
+            arbo_virus_name['CNES_Laboratório_responsável'] + "-" + \
+            arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
+
+    # Aplica formatação no nome do vírus
     arbo_virus_name['arbo_virus_name'] = arbo_virus_name['arbo_virus_name'].apply(format_virus_name)
+
+    # Mantém apenas as colunas desejadas inicialmente
     arbo_virus_name = arbo_virus_name[['id', 'arbo_virus_name']]
 
-    #Insert submitter column
-    arbo_virus_name.insert(0, 'submitter','')
-    arbo_virus_name.loc[:, 'submitter'] = submitter
+    # Insert submitter
+    arbo_virus_name.insert(0, 'submitter', submitter)
 
+    # Insert fasta filename
+    arbo_virus_name.insert(1, 'fn', 'LACEN_seq.fasta')
 
-    #Insert fn (fasta file name) column
-    arbo_virus_name.insert(1, 'fn', '')
+    # Insert arbo_type
+    arbo_virus_name.insert(4, 'arbo_type', arbo_virus_name_value)
 
-    arbo_virus_name.loc[:, 'fn'] = 'LACEN_seq.fasta'
-
-
-    #Insert arbo_type column
-    arbo_virus_name.insert(4, 'arbo_type', '')
-    arbo_virus_name.loc[:, 'arbo_type'] = arbo_virus_name_value
-
-    #Insert arbo_subtype column
+    # Insert arbo_subtype
     arbo_virus_name.insert(5, 'arbo_subtype', '')
-    # Verificar se 'arbotype' é um valor fixo
-    if isinstance(arbotype, str):  # Se for uma string, isso indica que é um valor fixo
-        arbo_virus_name.loc[:, 'arbo_subtype'] = arbotype
+    if arbotype_col:
+        arbo_virus_name['arbo_subtype'] = df_combine_sequence[arbotype_col].astype(str)
     else:
-        # Caso contrário, assume-se que 'arbotype' é o nome de uma coluna
-        arbo_virus_name.loc[:, 'arbo_subtype'] = df_combine_sequence[arbotype]
+        arbo_virus_name['arbo_subtype'] = arbotype_values
 
-    #Insert arbo_passage column
-    arbo_virus_name.insert(6, 'arbo_passage', '')
+    # Insert arbo_passage
+    arbo_virus_name.insert(6, 'arbo_passage', 'Original')
 
-    arbo_virus_name.loc[:, 'arbo_passage'] = 'Original'
-
-    arbo_virus_name.to_excel(os.path.join(output_folder,'RNSG_REPORT/Planilha_de_Resultado.xlsx'), index=False)
+    # Salvar planilha
+    arbo_virus_name.to_excel(os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx'), index=False)
 
     #Collection date
     arbo_collection_date = df_combine_sequence[['id','Data_da_Coleta']]
@@ -593,10 +605,10 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     mod_pasta(output_folder)
     
     # Processar os arquivos na pasta de entrada
-    metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
+    metadata, sequence, records, reads, coverage, errors = input_folder(output_folder, metadata_path)
     genotype = genotype_denv(output_folder)
 
-    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, 
+    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, errors,
                                                    output_folder, rename_columns, genotype)
 
     # Trabalhar com arquivos de resultados
@@ -635,7 +647,7 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     Quality_monitor(coverage, reads, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
-    remover_csv(output_folder)
+    #remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone
 if __name__ == "__main__":
