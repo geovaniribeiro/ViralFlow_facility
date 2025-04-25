@@ -15,7 +15,7 @@ from scripts.analysis.report.report_generator_denv import gerar_arquivo_fasta, a
 
 def planilha_resultado(arbo_virus_name, final_df, output_folder):
 
-    print("planilha_resultado")
+    #print("planilha_resultado")
 
     result_table = arbo_virus_name[['id','arbo_virus_name']]
 
@@ -23,7 +23,7 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
     result_table = pd.merge(result_table, final_df, left_on = 'id', right_on = 'Código Amostra', how='right')
 
     #drop team_name column
-    result_table.drop('Código Amostra', axis=1, inplace=True)
+    #result_table.drop('Código Amostra', axis=1, inplace=True)
 
     # Adicionar a coluna colunas extras com valores vazios
     result_table["LACEN Executor"] = ""
@@ -39,13 +39,13 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
 
     #Change order header
     result_table = result_table[["LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
-                                 "Vírus", 'id', 'Requisição', "CT", 'Município', 'Estado_do_Solicitante',
+                                 "Vírus", 'Código Amostra', 'Requisição', "CT", 'Município', 'Estado_do_Solicitante',
                                  'Data Coleta', 'Tipo Amostra', 'Idade', "Tipo_Idade", 'Sexo', 'Software Montagem',
                                  "Versão software", "Versão primer", 'Reads','Depth of Coverage', 'Coverage',
                                  'Genótipo', 'arbo_virus_name']]
     
     #Mudar nomes da coluna
-    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento','id': 'Código Amostra',
+    result_table = result_table.rename(columns={'Requisição':'Gal Sequenciamento',
                                                 'arbo_virus_name': 'Nome da Sequencia', 'Coverage': 'Cobertura', 
                                                 'Depth of Coverage': 'Profundidade Média', 
                                                 'Estado_do_Solicitante': 'UF município solicitante',
@@ -73,9 +73,10 @@ def generate_report_chikv(metadata_path, config_path, output_folder):
     mod_pasta(output_folder)
     
     # Processar os arquivos na pasta de entrada
-    metadata, sequence, records, reads, coverage = input_folder(output_folder, metadata_path)
+    metadata, sequence, records, reads, coverage, errors = input_folder(output_folder, metadata_path)
 
-    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, output_folder, rename_columns)
+    df_combine_sequence = process_and_combine_data(metadata, reads, coverage, errors,
+                                                   output_folder, rename_columns)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
