@@ -354,21 +354,28 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     #Insert covv_sampling_strategy column
     gisaid_temp.insert(11, 'covv_sampling_strategy', '')
 
+    # Gender (Male / Female)
+    covv_gender = df_combine_sequence[['id', 'Sexo']].copy()
 
-    #Gender (Male / Female)
-    covv_gender = df_combine_sequence[['id','Sexo']]
+    # Dicionário de substituição correto
+    gender = {
+        'MASCULINO': 'Male', 'FEMININO': 'Female',
+        'Masculino': 'Male', 'Feminino': 'Female',
+        'masculino': 'Male', 'feminino': 'Female',
+        'M': 'Male', 'F': 'Female'
+    }
 
-    gender = {'MASCULINO':'Male', 'FEMININO':'Female'}
-    gender = {'Masculino':'Male', 'Feminino':'Female'}
+    # Substituir os valores de Sexo
+    covv_gender['Sexo'] = covv_gender['Sexo'].replace(gender)
 
-    covv_gender.loc[:,'Sexo'] = covv_gender.loc[:,'Sexo'].replace(gender)
-
+    # Renomear coluna
     covv_gender = covv_gender.rename(columns={'Sexo': 'covv_gender'})
 
+    # Garantir que tudo seja string
     covv_gender = covv_gender.astype(str)
 
-    gisaid_temp = pd.merge(gisaid_temp,covv_gender,on='id')
-
+    # Merge com tabela final
+    gisaid_temp = pd.merge(gisaid_temp, covv_gender, on='id')
 
     #Insert covv_patient_age column
     ##Extrair campos de intersse
@@ -602,7 +609,7 @@ def generate_report(metadata_path, config_path, output_folder):
     Quality_monitor(coverage, reads, output_folder)
 
     # Limpar arquivos temporários e monitorar qualidade
-    remover_csv(output_folder)
+    #remover_csv(output_folder)
 
 # Mantém a funcionalidade standalone
 if __name__ == "__main__":
