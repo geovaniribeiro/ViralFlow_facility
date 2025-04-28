@@ -85,10 +85,18 @@ def input_folder(output_folder, metadata_path):
     coverage = pd.read_csv(coverage_path, sep =',')
     coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
 
-    return metadata, sequence, records, reads, coverage
+    #Load errors detected (samples that were not assembled)
+    errors_path = os.path.join(output_folder, 'errors_detected.csv')
+    errors = pd.read_csv(errors_path, sep =',')
+    errors['cod'] = errors['cod'].replace(to_replace ='_.*', value = '', regex = True)
+
+    return metadata, sequence, records, reads, coverage, errors
+
 
 def data_processing(output_folder):
-        # Construct the file path for the CSV file
+    #Function to get sample ID
+
+    # Construct the file path for the CSV file
     reads_path = os.path.join(output_folder, "reads_count.csv")
 
     reads = pd.read_csv(reads_path, sep =',')
@@ -104,7 +112,8 @@ def data_processing(output_folder):
 
     return reads, coverage
 
-def process_and_combine_data(metadata, reads, coverage, output_folder, rename_columns, lineage = None):
+
+def process_and_combine_data(metadata, reads, coverage, errors, output_folder, rename_columns, lineage = None):
     """
     Combina os dados de diferentes fontes (metadata, reads, coverage e lineage) e processa os resultados
     para gerar um arquivo consolidado em formato CSV.
@@ -132,11 +141,17 @@ def process_and_combine_data(metadata, reads, coverage, output_folder, rename_co
     # Atualizar dados de coverage
     coverage_update = coverage[['cod', 'PCT_10X', 'MEAN_COVERAGE']]
 
+    #Atualizar erros
+    errors = errors[['cod']]
+
     # Juntar dados: reads, coverage e lineage se lineage foi fornecido, adicionar na junção
     if lineage is not None:
-        combined_data = pd.merge(pd.merge(reads, coverage_update, on='cod'), lineage, on='cod')
+        combined_data = pd.merge(reads, coverage_update, on='cod', how='outer')
+        combined_data = pd.merge(combined_data, lineage, on='cod', how='outer')
+        combined_data = pd.merge(combined_data, errors, on='cod', how='outer') 
     elif lineage is None:
-        combined_data = pd.merge(reads, coverage_update, on='cod')
+        combined_data = pd.merge(reads, coverage_update, on='cod', how='outer')
+        combined_data = pd.merge(combined_data, errors, on='cod', how='outer')
 
     combined_data['cod'] = combined_data['cod'].astype(str)
     # Garantir que não há warnings
@@ -168,6 +183,7 @@ def process_and_combine_data(metadata, reads, coverage, output_folder, rename_co
 
     return final_df
 
+
 #Adiciona a pasta de RNSG_REPORT, a qual serao a adiciona os graficos, planilha, e outros
 # Adiciona a pasta de output no caminho informado
 def mod_pasta(output_folder):
@@ -182,6 +198,7 @@ def mod_pasta(output_folder):
     
     # Cria a pasta 'RNSG_REPORT' dentro da pasta de saida do viralflow
     os.mkdir(output_path)
+
 
 #Função para criar um grafico com métricas gerais da corrida, para aferição de controle de qualidade
 def Quality_monitor(coverage, reads, output_folder):
