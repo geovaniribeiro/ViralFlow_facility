@@ -50,8 +50,6 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
     #drop team_name column
     #result_table.drop('Código Amostra', axis=1, inplace=True)
 
-    result_table.to_csv(os.path.join(output_folder, 'test.csv'), index=False)
-
     # Adicionar a coluna colunas extras com valores vazios
     result_table["LACEN Executor"] = ""
     result_table["Unidade Federativa (UF)"] = ""
