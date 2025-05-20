@@ -85,10 +85,17 @@ def input_folder(output_folder, metadata_path):
     coverage = pd.read_csv(coverage_path, sep =',')
     coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
 
-    #Load errors detected (samples that were not assembled)
+    # Carregar errors_detected.csv somente se não estiver vazio
     errors_path = os.path.join(output_folder, 'errors_detected.csv')
-    errors = pd.read_csv(errors_path, sep =',')
-    errors['cod'] = errors['cod'].replace(to_replace ='_.*', value = '', regex = True)
+    # Verifica se o arquivo existe e não está vazio
+    if os.path.isfile(errors_path) and os.path.getsize(errors_path) > 0:
+        try:
+            errors = pd.read_csv(errors_path, sep=',')
+            errors['cod'] = errors['cod'].replace(to_replace='_.*', value='', regex=True)
+        except pd.errors.EmptyDataError:
+            errors = pd.DataFrame(columns=['cod'])  # Cria DataFrame vazio com coluna esperada
+    else:
+        errors = pd.DataFrame(columns=['cod'])  # Cria DataFrame vazio se arquivo não existe ou está vazio
 
     return metadata, sequence, records, reads, coverage, errors
 
