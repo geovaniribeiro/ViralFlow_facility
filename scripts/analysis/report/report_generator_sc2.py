@@ -79,7 +79,7 @@ def filter_depth(final_df, output_folder):
 
 
 #Função para gerar o arquivo fasta para ser submetido ao Gisaid
-def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
+def gerar_arquivo_fasta(records, metadata, final_df, output_folder, cnes_codes='cnes_lacen.csv'):
 
     #print("gerar_arquivo_fasta")
 
@@ -120,49 +120,30 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder):
     # Change the Name of the state to SIGLA
     metadata['Estado_do_Solicitante'] = metadata['Estado_do_Solicitante'].replace(states)
 
-    # Dictionary to change the Name of the state to SIGLA
-    cnes_lacen = {
-        '2306352': 'AC',
-        '2865874': 'AC',
-        '2009129': 'AL',
-        '2018764': 'AM',
-        '2019639': 'AP',
-        '6487300': 'BA',
-        '4162': 'BA',
-        '2611678': 'CE',
-        '4011465': 'CE',
-        '11371': 'DF',
-        '12424': 'ES',
-        '2338343': 'GO',
-        '2697718': 'MA',
-        '4037081': 'MA',
-        '2604175': 'MT',
-        '9997': 'MS',
-        '2695294': 'MG',
-        '2333163': 'PA',
-        '2399350': 'PB',
-        '2795965': 'PR',
-        '2712075': 'PE',
-        '2551888': 'PI',
-        '2766779': 'RJ',
-        '2693615': 'RN',
-        '4066251': 'RS',
-        '2496860': 'RO',
-        '2476835': 'RR',
-        '3157237': 'SC',
-        '2091364': 'SP',
-        '3532259': 'SE',
-        '2765705': 'TO',
-        '2494086': 'TO'
-    }
+    # Caminho do diretório onde o script está
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    cnes_path = os.path.join(script_dir, cnes_codes)
 
-    #convert column to string
+    # Carrega o CSV
+    cnes_codes = pd.read_csv(cnes_path, dtype={'CNES': str, 'SIGLA': str})
+
+    # Garantir que a coluna no metadata também seja string
     metadata['CNES_Laboratório_responsável'] = metadata['CNES_Laboratório_responsável'].astype(str)
+    cnes_codes['CNES'] = cnes_codes['CNES'].astype(str)
 
-    # Change the CNES of the executor LAB to SIGLA
-    metadata['CNES_Laboratório_responsável'] = metadata['CNES_Laboratório_responsável'].replace(cnes_lacen)
+    # Merge para adicionar a SIGLA com base no CNES
+    metadata = metadata.merge(
+        cnes_codes,
+        how='left',
+        left_on='CNES_Laboratório_responsável',
+        right_on='CNES'
+    )
 
+    # Substituir a coluna original pelo valor da sigla
+    metadata['CNES_Laboratório_responsável'] = metadata['SIGLA']
 
+    # Limpar colunas auxiliares
+    metadata.drop(columns=['CNES', 'SIGLA'], inplace=True)
 
     # Extract the sequence and ID from each record and store in a dictionary
     data = {'id': [r.id for r in records], 'sequence': [str(r.seq) for r in records]}
@@ -590,7 +571,7 @@ def generate_report(metadata_path, config_path, output_folder):
         raise FileNotFoundError(f"Arquivo {resultado_filt_file} não encontrado!")
 
     # Gerar arquivos auxiliares
-    gerar_arquivo_fasta(records, metadata, final_df, output_folder)
+    gerar_arquivo_fasta(records, metadata, final_df, output_folder, cnes_codes='cnes_lacen.csv')
 
     seq_file = os.path.join(output_folder, "seq_df.csv")
     if os.path.exists(seq_file):
