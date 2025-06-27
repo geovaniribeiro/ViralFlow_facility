@@ -4,7 +4,9 @@ echo ">>> INICIANDO INSTALAÇÃO DO VIRALFLOW_GUI!"
 
 read -p "Pressione ENTER para continuar..."
 
-code_path=$(pwd)
+code_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+echo $code_path
 
 # Adiciona o micromamba ao PATH explicitamente
 export PATH="$HOME/bin:$PATH"
@@ -25,7 +27,8 @@ unset __mamba_setup
 
 micromamba activate
 
-yes | micromamba env create -f "$code_path/usr/envs/env.yml" --yes
+yes | micromamba env create -f "$code_path/../usr/envs/env.yml" --yes
+
 
 micromamba activate viralflow_gui
 
@@ -36,11 +39,11 @@ sudo apt-get install libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysy
 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa
 
 #Transform to executables files
-chmod +x $code_path/../viralflow_GUI
-chmod +x $code_path/ViralFlowGUI/create_desktop_file.sh
+chmod +x $code_path/../../viralflow_GUI
+chmod +x $code_path/create_desktop_file.sh
 
 # Criar arquivo .desktop
-sudo $code_path/ViralFlowGUI/create_desktop_file.sh
+sudo $code_path/create_desktop_file.sh
 
 # Verificar se o comando anterior foi bem-sucedido (código de saída 0 significa sucesso)
 if [ $? -eq 0 ]; then
