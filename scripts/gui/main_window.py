@@ -18,6 +18,7 @@ from scripts.gui.AssemblerRun_SC2 import ViralFlowGUI as ViralFlowGUI_SC2  # Int
 from scripts.gui.AssemblerRun_custom import ViralFlowGUI as ViralFlowGUI_custom  # Interface para vírus customizados
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
+from scripts.utilities.update_GUI import atualizar_GUI  # Função para atualizar viralflow
 from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
 from scripts.analysis.report.report_generator_chikv import generate_report_chikv  # Classe para geração de relatórios
 from scripts.analysis.DenvNextclade import DenvNextclade # Classe para rodar DenvNext (genotyping e linhagem)
@@ -57,6 +58,11 @@ class MenuInicial(QWidget):
         label = QLabel("Escolha uma opção:")
         layout.addWidget(label)
 
+        # Botão para atualizar GUI
+        update_button = QPushButton("Atualizar Interface")
+        update_button.clicked.connect(self.atualizar_GUI)
+        layout.addWidget(update_button)
+
         # Botão para atualizar ViralFlow
         update_button = QPushButton("Atualizar ViralFlow")
         update_button.clicked.connect(self.atualizar_viralflow)
@@ -88,6 +94,14 @@ class MenuInicial(QWidget):
         layout.addWidget(exit_button)
 
         self.setLayout(layout)
+
+    def atualizar_GUI(self):
+        confirm = QMessageBox.question(self, "Confirmação", "Você deseja atualizar a interface", QMessageBox.Yes | QMessageBox.No)
+        if confirm == QMessageBox.Yes:
+            self.thread = WorkerThread(atualizar_GUI)
+            self.thread.error.connect(lambda msg: QMessageBox.critical(self, "Erro", msg))
+            self.thread.start()
+
 
     def atualizar_viralflow(self):
         confirm = QMessageBox.question(self, "Confirmação", "Você deseja atualizar o ViralFlow?", QMessageBox.Yes | QMessageBox.No)
