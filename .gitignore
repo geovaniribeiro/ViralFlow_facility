@@ -1,12 +1,12 @@
 # Ignorar arquivos de saida nas pastas de test
 test_file/sars-cov2/*
+test_file/sars-cov2/data.csv
 !test_file/sars-cov2/input
-!test_file/sars-cov2/data.csv
 !test_file/sars-cov2/SARS-CoV-2_artic_5.3.2.bed
 
 test_file/denv/*
+test_file/denv/data.csv
 !test_file/denv/input
-!test_file/denv/data.csv
 !test_file/denv/denv_1_primers.bed
 
 test_file/outros_virus/*
