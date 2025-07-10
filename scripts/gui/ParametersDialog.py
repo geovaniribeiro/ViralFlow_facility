@@ -43,7 +43,7 @@ class ParametersDialog(QDialog):
         self.depth = QSpinBox()
         self.depth.setMinimum(0)
         self.depth.setMaximum(1000)
-        self.depth.setValue(10)
+        self.depth.setValue(20)
         layout.addWidget(self.depth)
 
         self.min_dp_intrahost_label = QLabel("Valor para --minDpIntrahost")

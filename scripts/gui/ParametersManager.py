@@ -11,7 +11,7 @@ class ParametersManager:
             "run_snp_eff": True,
             "write_mapped_reads": True,
             "min_len": 75,
-            "depth": 10,
+            "depth": 20,
             "min_dp_intrahost": 100,
             "nextflow_sim_calls": 12,
             "fastp_threads": 12,
