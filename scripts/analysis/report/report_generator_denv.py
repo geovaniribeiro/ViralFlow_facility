@@ -568,8 +568,9 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder, arbo_v
 #Define as colunas do dataframe a serem renomeadas
 rename_columns = {'cod': 'Código Amostra',
         'mepf_reads_aligned': 'Reads',
-        'PCT_10X': 'Coverage',
-        'MEAN_COVERAGE': 'Depth of Coverage',
+        'coverage_breadth': 'Coverage',
+        'mean_depth_coverage_x': 'Depth of Coverage',
+        'mean_depth_coverage': 'Depth of Coverage',
         'serotype': 'Sorotipo',
         'lineage': 'Genótipo',
         'Requisição': 'Requisição',

@@ -533,8 +533,8 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
 rename_columns = {
         'cod': 'Código Amostra',
         'mepf_reads_aligned': 'Reads',
-        'PCT_10X': 'Coverage',
-        'MEAN_COVERAGE': 'Depth of Coverage',
+        'coverage_breadth': 'Coverage',
+        'mean_depth_coverage_x': 'Depth of Coverage',
         'lineage': 'Linhagem',
         'Requisição': 'Requisição',
         'Material_Biológico': 'Tipo Amostra',

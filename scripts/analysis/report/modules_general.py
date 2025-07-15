@@ -80,9 +80,13 @@ def input_folder(output_folder, metadata_path):
 
     #wgs
     # Construct the file path for the CSV file
-    coverage_path = os.path.join(output_folder, 'wgs.csv')
+    coverage_path = os.path.join(output_folder, 'short_summary.csv')
 
     coverage = pd.read_csv(coverage_path, sep =',')
+
+    # Remove linhas onde a coluna "taxon" contém "_minor"
+    if 'taxon' in coverage.columns:
+        coverage = coverage[~coverage['taxon'].str.contains('_minor', na=False)]
     coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
 
     # Carregar errors_detected.csv somente se não estiver vazio
@@ -112,9 +116,11 @@ def data_processing(output_folder):
 
     #wgs
     # Construct the file path for the CSV file
-    coverage_path = os.path.join(output_folder, 'wgs.csv')
+    coverage_path = os.path.join(output_folder, 'short_summary.csv')
 
     coverage = pd.read_csv(coverage_path, sep =',')
+    # Remove linhas onde a coluna "taxon" contém "_minor"
+    coverage = coverage[~coverage['taxon'].str.contains('_minor', na=False)]
     coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
 
     return reads, coverage
@@ -146,7 +152,7 @@ def process_and_combine_data(metadata, reads, coverage, errors, output_folder, r
                          'Municipio_do_Solicitante', "Idade", "Tipo_Idade",'Estado_do_Solicitante', 'Data_da_Coleta', 'Sexo']]
 
     # Atualizar dados de coverage
-    coverage_update = coverage[['cod', 'PCT_10X', 'MEAN_COVERAGE']]
+    coverage_update = coverage[['cod', 'coverage_breadth', 'mean_depth_coverage']]
 
     #Atualizar erros
     errors = errors[['cod']]
@@ -174,7 +180,7 @@ def process_and_combine_data(metadata, reads, coverage, errors, output_folder, r
 
     # Renomear colunas
     final_df.rename(columns=rename_columns, inplace=True)
-
+ 
     # Reordenar colunas
     #final_df = final_df[result_cols]
 
@@ -212,7 +218,7 @@ def Quality_monitor(coverage, reads, output_folder):
 
     #print("QualityCheck")
 
-    coverage['PCT_10X'] = coverage['PCT_10X']*100
+    coverage['coverage_breadth'] = coverage['coverage_breadth']*100
 
     #Criar os subplots e os seus respec. eixos x
     fig = plt.figure()
@@ -226,27 +232,27 @@ def Quality_monitor(coverage, reads, output_folder):
 
 
     # Depth of Coverage (X)
-    sns.violinplot(y='MEAN_COVERAGE', data=coverage, 
+    sns.violinplot(y='mean_depth_coverage', data=coverage, 
                inner="points", ax=ax1, cut= 0)
     
-    sns.swarmplot(y='MEAN_COVERAGE', data=coverage, ax=ax1,
+    sns.swarmplot(y='mean_depth_coverage', data=coverage, ax=ax1,
                   color = 'black', size=3)
 
     # Pinte a linha com 'CN' de outra cor (neste caso, vermelho)
     linha_cn = coverage[coverage['cod'] == 'CN']
 
     if not linha_cn.empty:
-            ax1.scatter(x=0, y=linha_cn['PCT_10X'], color='red', 
+            ax1.scatter(x=0, y=linha_cn['coverage_breadth'], color='red', 
                         marker='o', label='CN', s=20)
 
-            ax2.scatter(x=0, y=linha_cn['MEAN_COVERAGE'], color='red', 
+            ax2.scatter(x=0, y=linha_cn['mean_depth_coverage'], color='red', 
                         marker='o', label='CN', s=20)
 
     # Coverage (%)
-    sns.violinplot(y='PCT_10X', data=coverage, ax=ax2, cut= 0)
+    sns.violinplot(y='coverage_breadth', data=coverage, ax=ax2, cut= 0)
     
 
-    sns.swarmplot(y='PCT_10X', data=coverage, ax=ax2,
+    sns.swarmplot(y='coverage_breadth', data=coverage, ax=ax2,
                   color = 'black', size=3)
 
 

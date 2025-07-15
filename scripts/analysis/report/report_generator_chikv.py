@@ -57,8 +57,9 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
 #Define as colunas do dataframe a serem renomeadas
 rename_columns = {'cod': 'Código Amostra',
                   'mepf_reads_aligned': 'Reads',
-                  'PCT_10X': 'Coverage',
-                  'MEAN_COVERAGE': 'Depth of Coverage',
+                  'coverage_breadth': 'Coverage',
+                  'mean_depth_coverage_x': 'Depth of Coverage',
+                  'mean_depth_coverage': 'Depth of Coverage',
                   'Requisição': 'Requisição',
                   'Material_Biológico': 'Tipo Amostra',
                   'Municipio_do_Solicitante': 'Município',
