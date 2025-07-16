@@ -1,23 +1,43 @@
 #!/bin/bash
 
-code_path=$(pwd)
+echo ">>> INICIANDO CRIAÇÃO DO ARQUIVO .desktop PARA VIRALFLOW_GUI"
 
-# Caminhos relativos
-SCRIPT_SH="$code_path/../../viralflow_GUI"
-ICON_RELATIVE_PATH="/ViralFlow/docs/source/img/viralflow_logo.png"
+# Detecta caminho atual do script
+code_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Resolver caminhos absolutos
-SCRIPT_SH_PATH=$(realpath "$SCRIPT_SH")
-ICON_FULL_PATH="$(getent passwd $SUDO_USER | cut -d: -f6)$ICON_RELATIVE_PATH"
+# Tenta identificar onde está o executável viralflow_GUI
+caminhos_possiveis=(
+    "$code_path/../../viralflow_GUI"
+    "$code_path/../viralflow_GUI"
+    "$code_path/viralflow_GUI"
+)
 
-if [[ ! -f "$SCRIPT_SH_PATH" ]]; then
-# Verificar se os arquivos existem
-    echo "Erro: Arquivo viralflow_GUI não encontrado em $SCRIPT_SH_PATH"
+SCRIPT_SH_PATH=""
+for path in "${caminhos_possiveis[@]}"; do
+    if [[ -f "$path" ]]; then
+        SCRIPT_SH_PATH=$(realpath "$path")
+        break
+    fi
+done
+
+# Verifica se encontrou o executável
+if [[ -z "$SCRIPT_SH_PATH" ]]; then
+    echo "Erro: Arquivo viralflow_GUI não encontrado em nenhum dos caminhos esperados."
     exit 1
 fi
 
-# Criar o arquivo .desktop
-DESKTOP_FILE="/viralflow_GUI.desktop"
+# Caminhos para ícone
+ICON_RELATIVE_PATH="/ViralFlow/docs/source/img/viralflow_logo.png"
+ICON_FULL_PATH="$(getent passwd $SUDO_USER | cut -d: -f6)$ICON_RELATIVE_PATH"
+
+# Verifica se o ícone existe
+if [[ ! -f "$ICON_FULL_PATH" ]]; then
+    echo "Aviso: Ícone não encontrado em $ICON_FULL_PATH. Usando ícone padrão do sistema."
+    ICON_FULL_PATH=utilities/icons/default.png  # ou deixe em branco, se preferir
+fi
+
+# Criar o arquivo .desktop temporário
+DESKTOP_FILE="/tmp/viralflow_GUI.desktop"
 
 cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
@@ -31,6 +51,11 @@ Terminal=true
 Categories=Science;Biology;
 EOF
 
-# Copiar para o diretório de aplicações
-cp "$DESKTOP_FILE" $(getent passwd $SUDO_USER | cut -d: -f6)/.local/share/applications/
-echo "Desktop file criado com sucesso e copiado para ~/.local/share/applications"
+# Copiar para a pasta do usuário
+destino="$(getent passwd $SUDO_USER | cut -d: -f6)/.local/share/applications/"
+mkdir -p "$destino"
+cp "$DESKTOP_FILE" "$destino"
+
+echo ""
+echo "Arquivo .desktop criado e copiado com sucesso para:"
+echo "$destino"
