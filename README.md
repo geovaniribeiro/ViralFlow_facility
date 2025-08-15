@@ -1,4 +1,4 @@
-# ViralFlow GUI — Manual (README)
+# Manual ViralFlow GUI
 
 > Interface gráfica para facilitar a execução do **ViralFlow** e a geração de relatórios de acordo com o padrão da Rede Nacional de Sequenciamento Genético (RNSG).
 
