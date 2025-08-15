@@ -1,7 +1,6 @@
 # ViralFlow GUI — Manual (README)
 
-> Interface gráfica para facilitar a execução do **ViralFlow** e a geração de relatórios (RNSG).  
-> Este README foi convertido e adaptado a partir do manual em PDF para uso direto no GitHub.
+> Interface gráfica para facilitar a execução do **ViralFlow** e a geração de relatórios de acordo com o padrão da Rede Nacional de Sequenciamento Genético (RNSG).
 
 ## Sumário
 - [Requisitos e Pré‑instalação](#requisitos-e-pré-instalação)
