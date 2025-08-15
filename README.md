@@ -1,50 +1,187 @@
-# Manual de Instalação e Uso - ViralFlow GUI
+# ViralFlow GUI — Manual (README)
 
-## Instalação
+> Interface gráfica para facilitar a execução do **ViralFlow** e a geração de relatórios (RNSG).  
+> Este README foi convertido e adaptado a partir do manual em PDF para uso direto no GitHub.
 
-### Passo 1: Acessar o Diretório de Instalação
-1. Navegue até o local onde a pasta `ViralFlow_Facility` foi salva.
-2. Entre na pasta `Installer`.
-3. Pressione `Ctrl + Shift` e clique com o botão direito do mouse.
-4. Selecione a opção `Abrir Terminal`.
-
-### Passo 2: Executar o Script de Instalação
-No terminal, digite o comando correspondente e pressione `Enter`:
-
-- Para instalação completa (**ViralFlow + Interface Gráfica**):
-  ```sh
-  ./viralflow_full.sh
-  ```
-- Para instalar apenas a **interface gráfica** (caso o ViralFlow já esteja instalado):
-  ```sh
-  ./viralflow_GUI_setup.sh
-  ```
-
-### Passo 3: Concluir a Instalação
-- Insira a senha de `sudo` (a mesma senha do usuário) e pressione `Enter`.
-- Ao final da instalação, uma mensagem de conclusão será exibida.
-
-## Abrindo a Interface Gráfica
-1. Pressione o botão `Iniciar` no teclado.
-2. No campo de busca, digite `ViralFlow GUI`.
-3. Clique no ícone correspondente para abrir a interface gráfica.
-
-## ⚠️ Avisos Importantes
-O uso desta ferramenta requer o pareamento de informações entre arquivos **FASTQ** e dados obtidos do **GAL**. Para evitar erros:
-
-- **Baixe** o arquivo os metadados do GAL no formato **CSV** (*módulo Sequenciamento ou "Vírus, Biologia Médica/Sequenciamento"*).
-- **Não edite** o arquivo CSV para evitar problemas de formatação e codificação.
-- O **nome das amostras cadastradas no sequenciador** deve corresponder aos *Códigos das Amostras* ou *Requisição* oriundas do GAL (*coluna `Código de Amostra` ou `Requisição`*).
-
-## 🚀 Principais Funcionalidades
-1. **📥 Baixar Atualizações** diretamente do repositório do ViralFlow.
-2. **🔄 Atualizar Bancos de Dados** do Pangolin e Nextclade.
-3. **🦠 Selecionar o Vírus** de interesse para análise.
-4. **🔬 Ir para Tela de Montagem** para iniciar a análise.
-5. **❌ Finalizar a Interface Gráfica** ao concluir o uso.
-
-## 📌 Atualização de Bancos de Dados
-Para manter a análise precisa, utilize a opção de atualização dos bancos de dados do **Pangolin** e **Nextclade** sempre que possível.
+## Sumário
+- [Requisitos e Pré‑instalação](#requisitos-e-pré-instalação)
+- [Instalação do ViralFlow](#instalação-do-viralflow)
+- [Instalação da Interface Gráfica](#instalação-da-interface-gráfica)
+- [Iniciando a Interface](#iniciando-a-interface)
+- [Menu Inicial](#menu-inicial)
+- [Utilitários](#utilitários)
+- [Metadados e Avisos](#metadados-e-avisos)
+  - [Ajuste do `config.yaml`](#ajuste-do-configyaml)
+  - [Metadados do GAL](#metadados-do-gal)
+- [Análise de SARS‑CoV‑2](#análise-de-sars-cov-2)
+  - [Entradas Obrigatórias e Opcionais](#entradas-obrigatórias-e-opcionais)
+  - [Selecionando Pastas/Arquivos](#selecionando-pastasarquivos)
+  - [Parâmetros](#parâmetros)
+  - [Execução](#execução)
+  - [Saída e Estrutura de Resultados](#saída-e-estrutura-de-resultados)
+  - [Conteúdo da pasta `RNSG_REPORT`](#conteúdo-da-pasta-rnsg_report)
+- [Análise de DENV / CHIKV](#análise-de-denv--chikv)
+- [Documentação Oficial](#documentação-oficial)
 
 ---
-Este manual fornece as informações necessárias para a **instalação e uso** da interface gráfica do ViralFlow. Para mais detalhes técnicos e suporte, consulte a documentação oficial do projeto (Em contrução)
+
+## Requisitos e Pré‑instalação
+
+> [!IMPORTANT]
+> Para executar os instaladores `.AppImage` em sistemas baseados em Debian/Ubuntu, instale a biblioteca **libfuse2**.
+
+```bash
+sudo apt update
+sudo apt install -y libfuse2
+```
+
+---
+
+## Instalação do ViralFlow
+
+1. (Opcional, se já instalado) Acesse a pasta `ViralFlow_facility/setup` e execute:
+   - **Linux (GUI/duplo clique):** `ViralFlow_installer.AppImage`
+2. Um terminal será aberto. Pressione **Enter** para iniciar a instalação.
+3. Sua senha de usuário poderá ser solicitada.
+4. Ao final, uma mensagem de sucesso será exibida no terminal.
+
+---
+
+## Instalação da Interface Gráfica
+
+1. Na pasta `ViralFlow_facility/setup`, execute:
+   - **Linux (GUI/duplo clique):** `ViralFlowGUI_installer.AppImage`
+2. O terminal abrirá automaticamente. Pressione **Enter** para iniciar.
+3. A senha do usuário poderá ser solicitada.
+4. Ao término, uma mensagem de sucesso será exibida.
+
+---
+
+## Iniciando a Interface
+
+1. Pressione a tecla **Iniciar** (Super/Windows).  
+2. Pesquise por **“ViralFlow GUI”**.  
+3. Clique no ícone para abrir.
+
+> [!NOTE]
+> Um terminal é aberto junto com a interface para acompanhar o progresso das análises. **Não feche o terminal** enquanto houver processamento.
+
+---
+
+## Menu Inicial
+
+1. **Atualizar ViralFlow** — baixa a versão mais recente do repositório dos desenvolvedores.  
+2. **Atualizar bancos** — atualiza *pangolin* e *nextclade*.  
+3. **Selecionar vírus** — define o organismo alvo da análise.  
+4. **Ir para Análise** — abre a tela de análise conforme o vírus selecionado.  
+5. **Sair** — fecha a interface.
+
+---
+
+## Utilitários
+
+### Atualização do ViralFlow
+Atualiza o pipeline para a versão estável mais recente.
+
+### Atualização de Banco de Dados
+Atualiza as classificações do *pangolin* (SARS‑CoV‑2) e o *nextclade* quando aplicável.
+
+---
+
+## Metadados e Avisos
+
+A interface executa o **ViralFlow** (montagem, variantes e classificação) e **gera artefatos complementares**: relatório de qualidade, planilhas de resultados e arquivos para submissão no **GISAID** (detalhes abaixo).
+
+São usados **dois arquivos** para integrar montagem + dados epidemiológicos/usuário:
+
+- `config.yaml`
+- CSV de metadados exportado do **GAL**
+
+### Ajuste do `config.yaml`
+
+Edite o arquivo `ViralFlow_facility/config.yaml` e ajuste as chaves:
+
+- `submitter`: usuário responsável pela submissão ao GISAID  
+- `subm_lab`: nome do laboratório que submete  
+- `subm_lab_addr`: endereço do laboratório  
+- `authors`: lista de autores (responsáveis e chefias)
+
+> [!WARNING]
+> **Não remova as aspas** onde houver (linhas `subm_lab`, `subm_lab_addr` e `authors`). Salve o arquivo após as alterações.
+
+### Metadados do GAL
+
+1. Baixe o CSV em **Biologia Médica/Sequenciamento** (ou **Vírus / Sequenciamento**).  
+2. **Não edite** o CSV para evitar problemas de codificação.  
+3. **Correspondência de nomes**: o nome da amostra no sequenciador deve bater com o **código da amostra** ou **número de requisição** do GAL.  
+4. Use a aba **Relatório Epidemiológico por Exame** → **Selecionar Campos: Marcar Todos** → defina o intervalo de datas → **Gerar**.  
+5. Faça o download do `.zip` e **extraia** para obter o CSV a ser usado na análise.
+
+---
+
+## Análise de SARS‑CoV‑2
+
+### Entradas Obrigatórias e Opcionais
+
+- **Obrigatórios**
+  - **Arquivo BED**
+  - **Pasta de Entrada** (FASTQs)
+  - **Pasta de Saída** (resultados)
+
+- **Opcionais**
+  - **Metadados (CSV)** do GAL
+  - **Arquivo de Configuração (`config.yaml`)**
+
+> Se os opcionais não forem fornecidos, a interface fará **apenas a montagem** (sem gerar FASTA/CSV de submissão ao GISAID e sem planilha de resultados).
+
+### Selecionando Pastas/Arquivos
+
+- Use o botão **Browse** para navegar e **Open/Choose** para selecionar.  
+- Para voltar um nível, use **Diretório Parental**.  
+- Na **Pasta de Saída**, crie uma nova pasta (ex.: `run_YYYYMMDD`) e selecione **Choose**.
+
+### Parâmetros
+
+- Clique em **Configurar Parâmetros** para ajustar as flags do ViralFlow.  
+- A descrição completa dos parâmetros está na documentação oficial.
+
+### Execução
+
+- Com as entradas definidas, clique em **Executar ViralFlow**.  
+- Acompanhe o progresso no terminal aberto junto à GUI.  
+- Ao final, o terminal exibirá mensagem de conclusão, indicando sucesso ou erro.
+
+### Saída e Estrutura de Resultados
+
+Na **Pasta de Saída**, o ViralFlow cria:
+
+1. **Diretórios por amostra**: `prefixo_results` (um por amostra).  
+   - `prefixo` é derivado do nome do arquivo FASTQ.  
+2. **`COMPILED_OUTPUT/`**: resultados compilados de toda a corrida.  
+3. **`RNSG_REPORT/`**: artefatos processados para validação e submissões.
+
+> A lista detalhada de artefatos do `COMPILED_OUTPUT` está na documentação do projeto.
+
+### Conteúdo da pasta `RNSG_REPORT`
+
+- `EpiCov.csv` — CSV pronto para submissão ao **GISAID EpiCoV**.  
+- `LACEN_seq.fasta` — FASTA formatado para submissão (apenas genomas com **> 90% de cobertura**).  
+- `Planilha_de_Resultado.xlsx` — planilha para envio à **CGLAB** (revise e complete colunas como *Data do Ensaio*, *Versão Primer*, *Responsável Técnico*, etc.).  
+- `Quality_check.png` — gráficos para inspeção da qualidade (profundidade, % de cobertura e leituras por amostra).
+
+---
+
+## Análise de DENV / CHIKV
+
+- Processo idêntico ao de SARS‑CoV‑2, **com um campo adicional**: **Código RefSeq**.  
+- Informe o código do genoma de referência (DENV1/2/3/4 ou CHIKV).  
+- A lista de códigos está em `ViralFlow_facility/resources/refseq_codes.txt`.  
+- Os arquivos `.bed` dos primers fornecidos pela CGLAB à RNSG também estão em `resources/`.
+
+**Diferença nos artefatos**: além dos itens padrão, é gerado o arquivo **`EpiArbo.csv`** para submissão na plataforma **GISAID EpiArbo**.
+
+---
+
+## Documentação Oficial
+
+- **ViralFlow Docs:** <https://viralflow.github.io/>
