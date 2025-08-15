@@ -81,7 +81,7 @@ sudo apt install -y libfuse2
 ## Utilitários
 
 ### Atualização do ViralFlow
-Atualiza o pipeline para a versão estável mais recente.
+Atualiza o ViralFlow para a versão estável mais recente (https://viralflow.github.io/).
 
 ### Atualização de Banco de Dados
 Atualiza as classificações do *pangolin* (SARS‑CoV‑2) e o *nextclade* quando aplicável.
@@ -90,7 +90,7 @@ Atualiza as classificações do *pangolin* (SARS‑CoV‑2) e o *nextclade* quan
 
 ## Metadados e Avisos
 
-A interface executa o **ViralFlow** (montagem, variantes e classificação) e **gera artefatos complementares**: relatório de qualidade, planilhas de resultados e arquivos para submissão no **GISAID** (detalhes abaixo).
+A interface executa o **ViralFlow** (montagem, variantes e classificação) e **gera arquivos complementares**: relatório de qualidade, planilhas de resultados e arquivos para submissão no **GISAID** (detalhes abaixo).
 
 São usados **dois arquivos** para integrar montagem + dados epidemiológicos/usuário:
 
@@ -132,7 +132,7 @@ Edite o arquivo `ViralFlow_facility/config.yaml` e ajuste as chaves:
   - **Metadados (CSV)** do GAL
   - **Arquivo de Configuração (`config.yaml`)**
 
-> Se os opcionais não forem fornecidos, a interface fará **apenas a montagem** (sem gerar FASTA/CSV de submissão ao GISAID e sem planilha de resultados).
+> Se os opcionais não forem fornecidos, a interface fará **apenas a montagem** (sem gerar arquivos de submissão ao GISAID e sem planilha de resultados).
 
 ### Selecionando Pastas/Arquivos
 
@@ -160,7 +160,7 @@ Na **Pasta de Saída**, o ViralFlow cria:
 2. **`COMPILED_OUTPUT/`**: resultados compilados de toda a corrida.  
 3. **`RNSG_REPORT/`**: artefatos processados para validação e submissões.
 
-> A lista detalhada de artefatos do `COMPILED_OUTPUT` está na documentação do projeto.
+> A lista detalhada de arquivos do `COMPILED_OUTPUT` está na documentação do projeto viralflow (https://viralflow.github.io/).
 
 ### Conteúdo da pasta `RNSG_REPORT`
 
@@ -176,12 +176,9 @@ Na **Pasta de Saída**, o ViralFlow cria:
 - Processo idêntico ao de SARS‑CoV‑2, **com um campo adicional**: **Código RefSeq**.  
 - Informe o código do genoma de referência (DENV1/2/3/4 ou CHIKV).  
 - A lista de códigos está em `ViralFlow_facility/resources/refseq_codes.txt`.  
-- Os arquivos `.bed` dos primers fornecidos pela CGLAB à RNSG também estão em `resources/`.
+- Os arquivos `.bed` dos primers fornecidos pela CGLAB à RNSG também estão em `ViralFlow_facility/resources/`.
 
-**Diferença nos artefatos**: além dos itens padrão, é gerado o arquivo **`EpiArbo.csv`** para submissão na plataforma **GISAID EpiArbo**.
+Além dos itens padrão, é gerado o arquivo **`EpiArbo.csv`** para submissão na plataforma **GISAID EpiArbo**.
 
 ---
 
-## Documentação Oficial
-
-- **ViralFlow Docs:** <https://viralflow.github.io/>
