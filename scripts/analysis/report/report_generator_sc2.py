@@ -158,7 +158,7 @@ def gerar_arquivo_fasta(records, metadata, final_df, output_folder, cnes_codes='
     df_combine_sequence = pd.merge(df_sequence, metadata, left_on="id", right_on="Código_da_Amostra", suffixes=('', '_dup'))
 
     #Controle de qualidade (cobertura)
-    final_df = final_df.loc[final_df['Coverage'] >= 80]
+    final_df = final_df.loc[final_df['Coverage'] >= 90]
 
     final_df = final_df.astype(str)
 
