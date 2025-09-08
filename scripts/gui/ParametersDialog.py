@@ -98,7 +98,21 @@ class ParametersDialog(QDialog):
 
         self.setLayout(layout)
 
+    def set_parameters(self, params):
+        if not params:
+            return
+        self.run_snp_eff.setChecked(params.get("run_snp_eff", True))
+        self.write_mapped_reads.setChecked(params.get("write_mapped_reads", True))
+        self.min_len.setValue(params.get("min_len", 75))
+        self.depth.setValue(params.get("depth", 20))
+        self.min_dp_intrahost.setValue(params.get("min_dp_intrahost", 100))
+        self.nextflow_sim_calls.setValue(params.get("nextflow_sim_calls", 12))
+        self.fastp_threads.setValue(params.get("fastp_threads", 12))
+        self.bwa_threads.setValue(params.get("bwa_threads", 12))
+        self.mafft_threads.setValue(params.get("mafft_threads", 12))
+
     def get_parameters(self):
+        """Retorna os valores atuais do diálogo como dicionário."""
         return {
             "run_snp_eff": self.run_snp_eff.isChecked(),
             "write_mapped_reads": self.write_mapped_reads.isChecked(),
@@ -110,4 +124,3 @@ class ParametersDialog(QDialog):
             "bwa_threads": self.bwa_threads.value(),
             "mafft_threads": self.mafft_threads.value(),
         }
-

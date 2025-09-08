@@ -120,7 +120,6 @@ class ViralFlowGUI(QWidget):
             layout.addLayout(row_layout)
             self.entries[field_name] = entry
 
-        # Botão para configurar os parâmetros adicionais
         params_button = QPushButton("Configurar Parâmetros", self)
         params_button.clicked.connect(self.configure_parameters)
         layout.addWidget(params_button)
@@ -165,9 +164,10 @@ class ViralFlowGUI(QWidget):
             entry.setText(folder_path)
 
     def configure_parameters(self):
-        dialog = ParametersDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            self.parameters = dialog.get_parameters()
+        #dialog = ParametersDialog(self)
+        #if dialog.exec_() == QDialog.Accepted:
+         #   self.parameters = dialog.get_parameters()
+        self.param_manager.configure_parameters(self)
 
     #Função que irá gerar relatorio apenas quando metadata e config.yml for informado
     def post_processing(self):
@@ -206,14 +206,18 @@ class ViralFlowGUI(QWidget):
             f"micromamba run -n viralflow bash ~/ViralFlow//vfnext/containers/add_entries_SnpeffDB.sh custom {params['refGenomeCode']}"
             )
 
-        # Construir o comando
+        # Acessar parâmetros do ParametersManager
         command_viralflow = (
             f"micromamba run -n viralflow "
-            f"{nextflow_path} run ~/ViralFlow//vfnext/main.nf --primersBED {params['primersBED']} "
-            f"--outDir {params['outDir']} --inDir {params['inDir']} --virus custom "
+            f"{nextflow_path} run ~/ViralFlow//vfnext/main.nf "
+            f"--primersBED {params['primersBED']} "
+            f"--outDir {params['outDir']} "
+            f"--inDir {params['inDir']} "
+            f"--virus custom "
             f"--runSnpEff {'true' if self.param_manager.parameters['run_snp_eff'] else 'false'} "
             f"--writeMappedReads {'true' if self.param_manager.parameters['write_mapped_reads'] else 'false'} "
-            f"--minLen {self.param_manager.parameters['min_len']} --depth {self.param_manager.parameters['depth']} "
+            f"--minLen {self.param_manager.parameters['min_len']} "
+            f"--depth {self.param_manager.parameters['depth']} "
             f"--minDpIntrahost {self.param_manager.parameters['min_dp_intrahost']} "
             f"--nextflowSimCalls {self.param_manager.parameters['nextflow_sim_calls']} "
             f"--fastp_threads {self.param_manager.parameters['fastp_threads']} "
@@ -222,7 +226,7 @@ class ViralFlowGUI(QWidget):
             f"--trimLen 0 --refGenomeCode {params['refGenomeCode']} --referenceGFF null "
             f"--referenceGenome null -resume"
         )
-        
+
         # Iniciar o thread para executar o processo
         self.thread = AssemblerRun_custom(snpeff_custom, command_viralflow,
                                     os.path.join(params['outDir'], "COMPILED_OUTPUT"),

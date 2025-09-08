@@ -1,0 +1,11 @@
+{
+    "run_snp_eff": true,
+    "write_mapped_reads": true,
+    "min_len": 75,
+    "depth": 25,
+    "min_dp_intrahost": 100,
+    "nextflow_sim_calls": 12,
+    "fastp_threads": 12,
+    "bwa_threads": 12,
+    "mafft_threads": 12
+}
