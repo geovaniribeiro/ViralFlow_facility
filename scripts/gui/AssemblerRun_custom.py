@@ -3,46 +3,34 @@
 import sys
 import os
 import subprocess
-
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QDialog
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QLineEdit, QPushButton, QFileDialog, QMessageBox, QComboBox
 )
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSignal
 
-
-# Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-#Import classes instances
-from scripts.gui.ParametersDialog import ParametersDialog #Classe dos parametros ViralFlow
-from scripts.gui.ParametersManager import ParametersManager #Classe parametros Deafult do ViralFlow
-from scripts.analysis.assembler.assembler_thread import AssemblerThread #Classe para iniciar uma nova thread no processo
-from scripts.analysis.rename_fastq import rename_fastq_files #Função para renomear arquivos para codigo de amostras, se necessario
-from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor  #Importa funções para gerar relatorio de qualidade
+from scripts.gui.ParametersDialog import ParametersDialog
+from scripts.gui.ParametersManager import ParametersManager
+from scripts.analysis.assembler.assembler_thread import AssemblerThread
+from scripts.analysis.rename_fastq import rename_fastq_files
+from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
 
-# Classe para executar o processo em um thread separado
 class AssemblerRun_custom(AssemblerThread):
     def __init__(self, snpeff_custom, command_viralflow, output_folder, input_path, metadata_path, config_path):
-        
-        # Verifica se os caminhos foram fornecidos antes de tentar renomear os arquivos
         if metadata_path and input_path:
             try:
                 rename_fastq_files(metadata_path, input_path)
-                print("\nRenomeação de arquivos FASTQ concluída com sucesso!\n")
+                print("\nRenomeação de arquivos FASTQ concluída!\n")
             except Exception as e:
-                print(f"Erro ao renomear arquivos FASTQ: {str(e)}\n")
-        else:
-            print("Aviso: metadata_path ou input_path não foram fornecidos. Pulando a renomeação de arquivos.\n")
-        
-        # Define os comandos após garantir a renomeação dos arquivos
+                print(f"Erro: {e}\n")
         commands = [
             (snpeff_custom, "Iniciando snpeff_custom..."),
             (command_viralflow, "Executando ViralFlow...")
         ]
         super().__init__(commands)
-        
         self.output_folder = output_folder
         self.metadata_path = metadata_path
         self.config_path = config_path
@@ -50,99 +38,80 @@ class AssemblerRun_custom(AssemblerThread):
 
     def run(self):
         try:
-            super().run()  # Executa os comandos principais
-            # Emitir o sinal de finalização com mensagem de sucesso
+            super().run()
             self.process_finished.emit("ViralFlow executado com sucesso!")
-            print("")
         except Exception as e:
-            # Emitir o sinal de finalização com mensagem de erro
-            self.process_finished.emit(f"Erro durante a execução: {str(e)}")
+            self.process_finished.emit(f"Erro: {str(e)}")
+
 
 class ViralFlowGUI(QWidget):
-    
     process_finished = pyqtSignal(str)
 
-    def __init__(self, menu_inicial):
+    def __init__(self, menu_inicial, virus="CUSTOM"):
         super().__init__()
-
-        # Armazena referência da tela inicial
         self.menu_inicial = menu_inicial
+        self.virus = virus  # Novo parâmetro para filtrar BED
 
-
-        # Inicializar a janela
         self.setWindowTitle("ViralFlow GUI")
         self.setGeometry(100, 100, 500, 250)
-
-        # Gerenciar os parâmetros
-        self.param_manager = ParametersManager()
-
-
         self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))
-        
-        # Criar o layout principal
+
+        self.param_manager = ParametersManager()
         layout = QVBoxLayout()
 
-        # Definir os campos de entrada
+        # Criar campos
+        self.entries = {}
         self.fields = [
             ("Arquivo bed (Primers)", "primersBED", True),
             ("Pasta de entrada", "inDir", False),
             ("Pasta de saída", "outDir", False),
             ("Código refseq", "refGenomeCode", False),
-            ("Arquivo metadados (.csv) [Opcional]", "metadata", True),
-            ("Arquivo configuração (.yaml) [Opcional]", "config_file", True),
+            ("Metadados (.csv) [Opcional]", "metadata", True),
+            ("Submission_info (.yaml) [Opcional]", "config_file", True),
         ]
 
-        # Criar dicionário para armazenar os campos de entrada
-        self.entries = {}
-
-        # Criar os campos de entrada e botões "Browse"
         for label_text, field_name, is_file in self.fields:
             row_layout = QHBoxLayout()
-
-            # Adicionar o rótulo
             label = QLabel(label_text)
             row_layout.addWidget(label)
 
-            # Adicionar o campo de texto
-            entry = QLineEdit(self)
-            row_layout.addWidget(entry)
+            if field_name == "primersBED":
+                combo = QComboBox()
+                self.populate_bed_files(combo)
+                row_layout.addWidget(combo)
+                self.entries[field_name] = combo
+            else:
+                entry = QLineEdit(self)
+                row_layout.addWidget(entry)
+                if field_name != "refGenomeCode":
+                    btn = QPushButton("Browse", self)
+                    if is_file:
+                        btn.clicked.connect(lambda checked, e=entry: self.select_file(e))
+                    else:
+                        btn.clicked.connect(lambda checked, e=entry: self.select_folder(e))
+                    row_layout.addWidget(btn)
+                self.entries[field_name] = entry
 
-            # Adicionar o botão "Browse" (exceto para refGenomeCode)
-            if field_name != "refGenomeCode":
-                browse_button = QPushButton("Browse", self)
-                if is_file:
-                    browse_button.clicked.connect(lambda checked, e=entry: self.select_file(e))
-                else:
-                    browse_button.clicked.connect(lambda checked, e=entry: self.select_folder(e))
-                row_layout.addWidget(browse_button)
-
-            # Adicionar a linha ao layout principal
             layout.addLayout(row_layout)
-            self.entries[field_name] = entry
 
-        params_button = QPushButton("Configurar Parâmetros", self)
+        # Botões
+        params_button = QPushButton("Configurar Parâmetros")
         params_button.clicked.connect(self.configure_parameters)
         layout.addWidget(params_button)
 
-        # Botão para executar o comando
-        run_button = QPushButton("Executar ViralFlow", self)
+        run_button = QPushButton("Executar ViralFlow")
         run_button.clicked.connect(self.run_command)
         layout.addWidget(run_button)
 
-        # Botão para retornar ao menu inicial
         menu_button = QPushButton("Voltar ao Menu Inicial")
         menu_button.clicked.connect(self.voltar_menu_inicial)
         layout.addWidget(menu_button)
 
-
-        # Botão para sair
         exit_button = QPushButton("Sair")
         exit_button.clicked.connect(self.sair)
         layout.addWidget(exit_button)
 
         self.setLayout(layout)
-
-        # Inicializar parâmetros padrão
         self.parameters = {
             "run_snp_eff": True,
             "write_mapped_reads": True,
@@ -150,8 +119,18 @@ class ViralFlowGUI(QWidget):
             "depth": 10,
             "min_dp_intrahost": 100,
         }
-
         self.thread = None
+
+    def populate_bed_files(self, combo):
+        resources_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "resources")
+        for f in os.listdir(resources_dir):
+            if f.endswith(".bed"):
+                if self.virus.upper() == "DENV" and f.startswith("denv"):
+                    combo.addItem(f, os.path.join(resources_dir, f))
+                elif self.virus.upper() == "CHIKV" and f.startswith("chikv"):
+                    combo.addItem(f, os.path.join(resources_dir, f))
+                elif self.virus.upper() == "CUSTOM":
+                    combo.addItem(f, os.path.join(resources_dir, f))
 
     def select_file(self, entry):
         file_path, _ = QFileDialog.getOpenFileName(self, "Selecione um arquivo")
@@ -164,52 +143,36 @@ class ViralFlowGUI(QWidget):
             entry.setText(folder_path)
 
     def configure_parameters(self):
-        #dialog = ParametersDialog(self)
-        #if dialog.exec_() == QDialog.Accepted:
-         #   self.parameters = dialog.get_parameters()
         self.param_manager.configure_parameters(self)
 
-    #Função que irá gerar relatorio apenas quando metadata e config.yml for informado
     def post_processing(self):
-        """Executa o processamento de dados após a finalização do assembler."""
         try:
             reads, coverage = data_processing(os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
             mod_pasta(os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
             Quality_monitor(coverage, reads, os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
-            print("")
             print("Quality check realizado!")
         except Exception as e:
-            print(f"Erro ao executar data_processing, mod_pasta ou Quality_monitor: {e}")
+            print(f"Erro: {e}")
 
     def get_nextflow_path(self):
-        """Descobre o caminho correto do Nextflow dentro do ambiente Micromamba"""
-    
         try:
-            result = subprocess.run(
-                ["which", "nextflow"],
-                capture_output=True, text=True, check=True
-            )
-            return result.stdout.strip()  # Retorna o caminho completo do Nextflow
+            result = subprocess.run(["which", "nextflow"], capture_output=True, text=True, check=True)
+            return result.stdout.strip()
         except subprocess.CalledProcessError:
-            return "nextflow"  # Se falhar, tenta rodar "nextflow" normalmente
-
-
+            return "nextflow"
 
     def run_command(self):
-        """Constrói e executa o comando com os parâmetros da GUI."""
-        params = {key: entry.text() for key, entry in self.entries.items()}
+        params = {}
+        for key, entry in self.entries.items():
+            if isinstance(entry, QLineEdit):
+                params[key] = entry.text()
+            elif isinstance(entry, QComboBox):
+                params[key] = entry.currentData()  # Caminho do .bed
 
-        nextflow_path = self.get_nextflow_path()  
-
-        # Customizing the snpEff database
-        snpeff_custom = (
-            f"micromamba run -n viralflow bash ~/ViralFlow//vfnext/containers/add_entries_SnpeffDB.sh custom {params['refGenomeCode']}"
-            )
-
-        # Acessar parâmetros do ParametersManager
+        nextflow_path = self.get_nextflow_path()
+        snpeff_custom = f"micromamba run -n viralflow bash ~/ViralFlow/vfnext/containers/add_entries_SnpeffDB.sh custom {params['refGenomeCode']}"
         command_viralflow = (
-            f"micromamba run -n viralflow "
-            f"{nextflow_path} run ~/ViralFlow//vfnext/main.nf "
+            f"micromamba run -n viralflow {nextflow_path} run ~/ViralFlow/vfnext/main.nf "
             f"--primersBED {params['primersBED']} "
             f"--outDir {params['outDir']} "
             f"--inDir {params['inDir']} "
@@ -227,53 +190,32 @@ class ViralFlowGUI(QWidget):
             f"--referenceGenome null -resume"
         )
 
-        # Iniciar o thread para executar o processo
         self.thread = AssemblerRun_custom(snpeff_custom, command_viralflow,
-                                    os.path.join(params['outDir'], "COMPILED_OUTPUT"),
-                                    metadata_path=params['metadata'],
-                                    config_path=params['config_file'],
-                                    input_path=params['inDir'])
-
-        # Conectar os sinais do thread com as funções da GUI
+                                          os.path.join(params['outDir'], "COMPILED_OUTPUT"),
+                                          metadata_path=params.get('metadata'),
+                                          config_path=params.get('config_file'),
+                                          input_path=params.get('inDir'))
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
-
-        # Se metadata_path e config_path forem válidos, gerar relatório ao finalizar o processo
-        if params.get('metadata') and params.get('config_file'):
-            self.thread.process_finished.connect(self.report_generator)
-        else:
-            print("Aviso: metadata_path ou config_path não foram definidos, pulando a geração do relatório.")
-            # Executar pós-processamento quando o thread finalizar
-            self.thread.process_finished.connect(self.post_processing)
-
-        # Iniciar o thread
+        self.thread.process_finished.connect(self.post_processing)
         self.thread.start()
 
     def update_status(self, message):
-        """Atualiza a interface com as mensagens do processo."""
         print(message)
 
     def voltar_menu_inicial(self):
-        self.close()  # Fecha a janela atual
-        self.menu_inicial.show()  # Reabre o Menu Inicial
-
+        self.close()
+        self.menu_inicial.show()
 
     def sair(self):
-        confirm = QMessageBox.question(
-            self,
-            "Confirmação",
-            "Tem certeza de que deseja sair?",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if confirm == QMessageBox.Yes:
+        if QMessageBox.question(self, "Confirmação", "Deseja sair?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             QApplication.quit()
 
 def main():
     app = QApplication(sys.argv)
-    window = ViralFlowGUI()
+    window = ViralFlowGUI(menu_inicial=None)
     window.show()
     sys.exit(app.exec_())
-
 
 if __name__ == "__main__":
     main()

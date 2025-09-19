@@ -9,12 +9,11 @@ import subprocess
 import os
 import sys
 import matplotlib
-matplotlib.use('Agg')  # Configura o backend sem GUI antes de qualquer uso do Matplotlib
+matplotlib.use('Agg')  
 
-# Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from scripts.gui.AssemblerRun_SC2 import ViralFlowGUI as ViralFlowGUI_SC2  # Interface para SARS-CoV-2
+from scripts.gui.AssemblerRun_SC2 import ViralFlowGUI_SC2  # Interface para SARS-CoV-2
 from scripts.gui.AssemblerRun_custom import ViralFlowGUI as ViralFlowGUI_custom  # Interface para vírus customizados
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
@@ -43,52 +42,41 @@ class WorkerThread(QThread):
 class MenuInicial(QWidget):
     def __init__(self):
         super().__init__()
-
-        # Configurações da janela
         self.setWindowTitle("Menu Inicial - ViralFlow GUI")
         self.setGeometry(200, 200, 600, 300)
+        self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))
 
-        # Define o ícone da janela
-        self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))  # Substitua pelo caminho do ícone
-
-        # Layout principal
         layout = QVBoxLayout()
+        layout.addWidget(QLabel("Escolha uma opção:"))
 
-        # Mensagem inicial
-        label = QLabel("Escolha uma opção:")
-        layout.addWidget(label)
-
-        # Botão para atualizar GUI
+        # Botões de atualização
         update_button = QPushButton("Atualizar Interface")
         update_button.clicked.connect(self.atualizar_GUI)
         layout.addWidget(update_button)
 
-        # Botão para atualizar ViralFlow
-        update_button = QPushButton("Atualizar ViralFlow")
-        update_button.clicked.connect(self.atualizar_viralflow)
-        layout.addWidget(update_button)
+        update_viralflow_btn = QPushButton("Atualizar ViralFlow")
+        update_viralflow_btn.clicked.connect(self.atualizar_viralflow)
+        layout.addWidget(update_viralflow_btn)
 
-        # Botão para atualizar banco de dados
         db_update_button = QPushButton("Atualizar Banco de dados")
         db_update_button.clicked.connect(self.atualizar_banco_dados)
         layout.addWidget(db_update_button)
 
-        # Grupo de botões de seleção para vírus
+        # Botões de seleção de vírus
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_denv = QRadioButton("DENV")
         self.radio_chikv = QRadioButton("CHIKV")
         self.radio_outro_virus = QRadioButton("OUTRO VÍRUS")
+
         layout.addWidget(self.radio_sc2)
         layout.addWidget(self.radio_denv)
         layout.addWidget(self.radio_chikv)
         layout.addWidget(self.radio_outro_virus)
 
-        # Botão para confirmar
         confirm_button = QPushButton("Iniciar Análise")
         confirm_button.clicked.connect(self.executar_analise)
         layout.addWidget(confirm_button)
 
-        # Botão para sair
         exit_button = QPushButton("Sair")
         exit_button.clicked.connect(self.sair)
         layout.addWidget(exit_button)
@@ -96,31 +84,22 @@ class MenuInicial(QWidget):
         self.setLayout(layout)
 
     def atualizar_GUI(self):
-        confirm = QMessageBox.question(self, "Confirmação", "Você deseja atualizar a interface", QMessageBox.Yes | QMessageBox.No)
-        if confirm == QMessageBox.Yes:
+        if QMessageBox.question(self, "Confirmação", "Você deseja atualizar a interface?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.thread = WorkerThread(atualizar_GUI)
             self.thread.error.connect(lambda msg: QMessageBox.critical(self, "Erro", msg))
             self.thread.start()
 
-
     def atualizar_viralflow(self):
-        confirm = QMessageBox.question(self, "Confirmação", "Você deseja atualizar o ViralFlow?", QMessageBox.Yes | QMessageBox.No)
-        if confirm == QMessageBox.Yes:
+        if QMessageBox.question(self, "Confirmação", "Você deseja atualizar o ViralFlow?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.thread = WorkerThread(atualizar_viralflow)
             self.thread.error.connect(lambda msg: QMessageBox.critical(self, "Erro", msg))
             self.thread.start()
 
     def atualizar_banco_dados(self):
-        confirm = QMessageBox.question(
-            self,
-            "Confirmação",
-            "Você deseja atualizar o banco de dados?\nIsso pode levar algum tempo.",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if confirm == QMessageBox.Yes:
+        if QMessageBox.question(self, "Confirmação", "Atualizar banco de dados? Isso pode levar algum tempo.", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.thread_banco = WorkerThread(atualizar_banco_dados)
-            self.thread_banco.finished.connect(lambda: QMessageBox.information(self, "Sucesso", "Banco de dados atualizado com sucesso!"))
-            self.thread_banco.error.connect(lambda msg: QMessageBox.critical(self, "Erro", f"Erro ao atualizar o banco de dados:\n{msg}"))
+            self.thread_banco.finished.connect(lambda: QMessageBox.information(self, "Sucesso", "Banco de dados atualizado!"))
+            self.thread_banco.error.connect(lambda msg: QMessageBox.critical(self, "Erro", msg))
             self.thread_banco.start()
 
     def executar_analise(self):
@@ -130,90 +109,24 @@ class MenuInicial(QWidget):
             self.tela_assembly.show()
         elif self.radio_denv.isChecked():
             self.close()
-            self.tela_assembly = ViralFlowDENV(self)
+            self.tela_assembly = ViralFlowGUI_custom(self, virus="DENV")
             self.tela_assembly.show()
         elif self.radio_chikv.isChecked():
             self.close()
-            self.tela_assembly = ViralFlowCHIKV(self)
+            self.tela_assembly = ViralFlowGUI_custom(self, virus="CHIKV")
             self.tela_assembly.show()
         elif self.radio_outro_virus.isChecked():
             self.close()
-            self.tela_assembly = ViralFlowGUI_custom(self)
+            self.tela_assembly = ViralFlowGUI_custom(self, virus="CUSTOM")
             self.tela_assembly.show()
 
-
     def sair(self):
-        confirm = QMessageBox.question(
-            self,
-            "Confirmação",
-            "Tem certeza de que deseja sair?",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if confirm == QMessageBox.Yes:
-            subprocess.run("exit", shell=True, check=True)
+        if QMessageBox.question(self, "Confirmação", "Deseja sair?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             QApplication.quit()
-
-class ViralFlowDENV(ViralFlowGUI_custom):
-    def __init__(self, menu_inicial=None):
-        super().__init__(menu_inicial)
-        self.menu_principal = menu_inicial  # Armazena referência do menu principal, se fornecida
-
-    def report_generator(self, message):
-        """Sobrescreve a finalização com lógica específica para DENV."""
-        
-        try:
-            # Extrair os valores diretamente dos campos da GUI
-            metadata_path = self.entries['metadata'].text()
-            config_path = self.entries['config_file'].text()
-            output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
-
-            print("")
-            print("Gerando relatório DENV...")
-            # Criar uma instância para executar o NextClade
-            processor = DenvNextclade(output_folder)
-            processor.execute_pipeline()
-
-            #Executa o script de relatório
-            generate_report_denv(metadata_path, config_path, output_folder)
-            print("")
-            print("")
-            print("Relatório gerado com sucesso")
-        except KeyError as e:
-            QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
-        except Exception as e:
-            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório DENV: {str(e)}")
-
-class ViralFlowCHIKV(ViralFlowGUI_custom):
-    def __init__(self, menu_inicial=None):
-        super().__init__(menu_inicial)
-        self.menu_principal = menu_inicial  # Armazena referência do menu principal, se fornecida
-
-    def report_generator(self, message):
-        """Sobrescreve a finalização com lógica específica para DENV."""
-        
-        try:
-            # Extrair os valores diretamente dos campos da GUI
-            metadata_path = self.entries['metadata'].text()
-            config_path = self.entries['config_file'].text()
-            output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
-
-            print("")
-            print("Gerando relatório CHIKV...")
-
-            #Executa o script de relatório
-            generate_report_chikv(metadata_path, config_path, output_folder)
-            print("")
-            print("")
-            print("Relatório gerado com sucesso")
-        except KeyError as e:
-            QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
-        except Exception as e:
-            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório DENV: {str(e)}")
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
     menu = MenuInicial()
     menu.show()
     sys.exit(app.exec_())
