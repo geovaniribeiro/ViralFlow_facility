@@ -126,6 +126,9 @@ class ViralFlowGUI(QWidget):
 
             input_layout.addLayout(row_layout)
 
+        self.entries["inDir"].textChanged.connect(self.validate_fields)
+        self.entries["outDir"].textChanged.connect(self.validate_fields)
+
         input_group.setLayout(input_layout)
         main_layout.addWidget(input_group)
 
@@ -139,7 +142,8 @@ class ViralFlowGUI(QWidget):
         params_button.clicked.connect(lambda: self.param_manager.configure_parameters(self))
         exec_layout.addWidget(params_button)
 
-        self.run_button = QPushButton("Executar ViralFlow")
+        self.run_button = QPushButton("Executar ViralFlow", self)
+        self.run_button.setEnabled(False)  # começa desabilitado
         self.run_button.clicked.connect(self.run_command)
         exec_layout.addWidget(self.run_button)
 
@@ -360,3 +364,26 @@ class ViralFlowGUI(QWidget):
                     break
         except Exception:
             pass
+
+
+    def validate_fields(self):
+        """Habilita Executar ViralFlow apenas se inDir e outDir forem preenchidos."""
+        inDir = self.entries["inDir"].text().strip()
+        outDir = self.entries["outDir"].text().strip()
+
+        if inDir and outDir:
+            self.run_button.setEnabled(True)
+            self.entries["inDir"].setStyleSheet("")
+            self.entries["outDir"].setStyleSheet("")
+        else:
+            self.run_button.setEnabled(False)
+            # Destaca os campos vazios em vermelho
+            if not inDir:
+                self.entries["inDir"].setStyleSheet("background-color: #ffcccc;")
+            else:
+                self.entries["inDir"].setStyleSheet("")
+            if not outDir:
+                self.entries["outDir"].setStyleSheet("background-color: #ffcccc;")
+            else:
+                self.entries["outDir"].setStyleSheet("")
+
