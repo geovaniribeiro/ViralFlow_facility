@@ -66,12 +66,10 @@ class MenuInicial(QWidget):
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_denv = QRadioButton("DENV")
         self.radio_chikv = QRadioButton("CHIKV")
-        #self.radio_outro_virus = QRadioButton("OUTRO VÍRUS")
 
         layout.addWidget(self.radio_sc2)
         layout.addWidget(self.radio_denv)
         layout.addWidget(self.radio_chikv)
-        #layout.addWidget(self.radio_outro_virus)
 
         confirm_button = QPushButton("Iniciar Análise")
         confirm_button.clicked.connect(self.executar_analise)
@@ -109,12 +107,15 @@ class MenuInicial(QWidget):
             self.tela_assembly.show()
         elif self.radio_denv.isChecked():
             self.close()
+            # instanciar a subclasse DENV que contém report_generator + nextclade call
             self.tela_assembly = ViralFlowDENV(self)
             self.tela_assembly.show()
         elif self.radio_chikv.isChecked():
             self.close()
+            # instanciar a subclasse CHIKV que contém report_generator
             self.tela_assembly = ViralFlowCHIKV(self)
             self.tela_assembly.show()
+
     def sair(self):
         if QMessageBox.question(self, "Confirmação", "Deseja sair?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             QApplication.quit()
@@ -126,7 +127,6 @@ class ViralFlowDENV(ViralFlowGUI_custom):
 
     def report_generator(self, message):
         """Sobrescreve a finalização com lógica específica para DENV."""
-        
         try:
             # Extrair os valores diretamente dos campos da GUI
             metadata_path = self.entries['metadata'].text()
@@ -144,6 +144,7 @@ class ViralFlowDENV(ViralFlowGUI_custom):
             print("")
             print("")
             print("Relatório gerado com sucesso")
+            QMessageBox.information(self, "Relatório", "Relatório DENV gerado com sucesso.")
         except KeyError as e:
             QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
         except Exception as e:
@@ -155,10 +156,8 @@ class ViralFlowCHIKV(ViralFlowGUI_custom):
         self.menu_principal = menu_inicial   # Armazena referência do menu principal, se fornecida
 
     def report_generator(self, message):
-        """Sobrescreve a finalização com lógica específica para DENV."""
-        
+        """Sobrescreve a finalização com lógica específica para CHIKV."""
         try:
-            # Extrair os valores diretamente dos campos da GUI
             metadata_path = self.entries['metadata'].text()
             config_path = self.entries['config_file'].text()
             output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
@@ -171,10 +170,11 @@ class ViralFlowCHIKV(ViralFlowGUI_custom):
             print("")
             print("")
             print("Relatório gerado com sucesso")
+            QMessageBox.information(self, "Relatório", "Relatório CHIKV gerado com sucesso.")
         except KeyError as e:
             QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
         except Exception as e:
-            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório DENV: {str(e)}")
+            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório CHIKV: {str(e)}")
 
 
 if __name__ == "__main__":
