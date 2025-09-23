@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import subprocess
-from PyQt5.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox
 
 def atualizar_banco_dados():
     try:
@@ -14,7 +14,7 @@ def atualizar_banco_dados():
 
         subprocess.run(comando, check=True)
 
-        QMessageBox.information(None, "Sucesso", "Banco de dados atualizado com sucesso!")
+        #QMessageBox.information(None, "Sucesso", "Banco de dados atualizado com sucesso!")
 
     except subprocess.CalledProcessError as e:
         QMessageBox.critical(None, "Erro", f"Falha ao atualizar o banco de dados:\n{e}")

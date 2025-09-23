@@ -2,7 +2,7 @@ import subprocess
 import os
 import shutil
 import sys
-from PyQt5.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox
 
 def atualizar_GUI():
     try:

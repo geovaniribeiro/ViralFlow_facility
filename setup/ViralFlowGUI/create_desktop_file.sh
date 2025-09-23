@@ -47,8 +47,9 @@ Name=ViralFlow GUI
 Comment=Execute the ViralFlow pipeline
 Exec=$SCRIPT_SH_PATH
 Icon=$ICON_FULL_PATH
-Terminal=true
+Terminal=false
 Categories=Science;Biology;
+StartupWMClass=ViralFlowGUI
 EOF
 
 # Copiar para a pasta do usuário

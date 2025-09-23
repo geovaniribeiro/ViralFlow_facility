@@ -167,6 +167,7 @@ class ViralFlowCHIKV(ViralFlowGUI_custom):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setApplicationName("ViralFlowGUI")
     menu = MenuInicial()
     menu.show()
     sys.exit(app.exec())
