@@ -5,7 +5,7 @@ import subprocess
 import os
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QDialog, QComboBox
+    QPushButton, QFileDialog, QMessageBox, QComboBox, QGroupBox
 )
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSignal
@@ -13,26 +13,23 @@ from PyQt5.QtCore import pyqtSignal
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-#Import classes instances
-from scripts.gui.ParametersDialog import ParametersDialog #Classe dos parametros ViralFlow
-from scripts.gui.ParametersManager import ParametersManager #Classe parametros Deafult do ViralFlow
-from scripts.analysis.assembler.assembler_thread import AssemblerThread #Instancia para iniciar uma nova thread no processo
-from scripts.analysis.report.report_generator_sc2 import generate_report #Função para gerar relatorio e arquivos de SC2
-from scripts.analysis.rename_fastq import rename_fastq_files #Função para renomear arquivos para codigo de amostras, se necessario
-from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor #Importa funções para gerar relatorio de qualidade
+# Importações
+from scripts.gui.ParametersDialog import ParametersDialog
+from scripts.gui.ParametersManager import ParametersManager
+from scripts.analysis.assembler.assembler_thread import AssemblerThread
+from scripts.analysis.report.report_generator_sc2 import generate_report
+from scripts.analysis.rename_fastq import rename_fastq_files
+from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
 
 
 class AssemblerRun_SC2(AssemblerThread):
     def __init__(self, command_viralflow, output_folder, metadata_path, config_path, input_path):
-        # Renomear FASTQs se possível
         if metadata_path and input_path:
             try:
                 rename_fastq_files(metadata_path, input_path)
-                print("\nRenomeação de arquivos FASTQ concluída com sucesso!\n")
+                print("\nRenomeação de arquivos FASTQ concluída!\n")
             except Exception as e:
                 print(f"Erro ao renomear arquivos FASTQ: {str(e)}\n")
-        else:
-            print("Aviso: metadata_path ou input_path não fornecidos, pulando renomeação.\n")
 
         commands = [(command_viralflow, "Executando ViralFlow...")]
         super().__init__(commands)
@@ -49,11 +46,10 @@ class AssemblerRun_SC2(AssemblerThread):
         except Exception as e:
             self.process_finished.emit(f"Erro durante a execução: {str(e)}")
 
-        # Gerar relatório se metadata e config existirem
         if self.metadata_path and self.config_path:
             self.generate_report()
         else:
-            print("Metadados ou configuração ausentes, executando apenas Quality_monitor.")
+            print("Metadados ou configuração ausentes → executando apenas Quality_monitor.")
             try:
                 reads, coverage = data_processing(self.output_folder)
                 mod_pasta(self.output_folder)
@@ -62,7 +58,7 @@ class AssemblerRun_SC2(AssemblerThread):
                 print(f"Erro no Quality_monitor: {e}")
 
     def generate_report(self):
-        self.process_started.emit("Gerando o relatório...")
+        self.process_started.emit("Gerando relatório SC2...")
         generate_report(
             output_folder=self.output_folder,
             metadata_path=self.metadata_path,
@@ -79,26 +75,35 @@ class ViralFlowGUI_SC2(QWidget):
         self.menu_inicial = menu_inicial
 
         self.setWindowTitle("ViralFlow GUI - SARS-CoV-2")
-        self.setGeometry(100, 100, 500, 250)
+        self.setGeometry(100, 100, 600, 380)
         self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))
 
         self.param_manager = ParametersManager()
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
 
         # Pasta resources
         self.resources_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
-    "resources"
-)
-        
-        # Campo BED como menu flutuante
-        bed_label = QLabel("Arquivo bed (Primers)")
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "resources"
+        )
+
+        # -------------------------
+        # Grupo: Dados de entrada
+        # -------------------------
+        input_group = QGroupBox("Dados de entrada")
+        input_layout = QVBoxLayout()
+
+        # Campo BED
+        row_layout = QHBoxLayout()
+        row_layout.addWidget(QLabel("Arquivo bed (Primers)"))
         self.bed_combo = QComboBox()
-        bed_files = [f for f in os.listdir(self.resources_path)
-                     if f.startswith("SARS-CoV-2") and f.endswith(".bed")]
+        bed_files = sorted(
+            f for f in os.listdir(self.resources_path)
+            if f.startswith("SARS-CoV-2") and f.endswith(".bed")
+        )
         self.bed_combo.addItems(bed_files)
-        layout.addWidget(bed_label)
-        layout.addWidget(self.bed_combo)
+        row_layout.addWidget(self.bed_combo)
+        input_layout.addLayout(row_layout)
 
         # Campos adicionais
         self.fields = [
@@ -110,39 +115,47 @@ class ViralFlowGUI_SC2(QWidget):
         self.entries = {}
         for label_text, field_name, is_file in self.fields:
             row_layout = QHBoxLayout()
-            label = QLabel(label_text)
-            row_layout.addWidget(label)
+            row_layout.addWidget(QLabel(label_text))
             entry = QLineEdit(self)
             row_layout.addWidget(entry)
+            browse_button = QPushButton("Browse", self)
             if is_file:
-                browse_button = QPushButton("Browse", self)
                 browse_button.clicked.connect(lambda checked, e=entry: self.select_file(e))
-                row_layout.addWidget(browse_button)
             else:
-                browse_button = QPushButton("Browse", self)
                 browse_button.clicked.connect(lambda checked, e=entry: self.select_folder(e))
-                row_layout.addWidget(browse_button)
-            layout.addLayout(row_layout)
+            row_layout.addWidget(browse_button)
             self.entries[field_name] = entry
+            input_layout.addLayout(row_layout)
 
-        # Botões de parâmetros, execução e menu
+        input_group.setLayout(input_layout)
+        main_layout.addWidget(input_group)
+
+        # -------------------------
+        # Grupo: Execução
+        # -------------------------
+        exec_group = QGroupBox("Execução")
+        exec_layout = QVBoxLayout()
+
         params_button = QPushButton("Configurar Parâmetros")
         params_button.clicked.connect(lambda: self.param_manager.configure_parameters(self))
-        layout.addWidget(params_button)
+        exec_layout.addWidget(params_button)
 
         run_button = QPushButton("Executar ViralFlow", self)
         run_button.clicked.connect(self.run_command)
-        layout.addWidget(run_button)
+        exec_layout.addWidget(run_button)
 
         menu_button = QPushButton("Voltar ao Menu Inicial")
         menu_button.clicked.connect(self.voltar_menu_inicial)
-        layout.addWidget(menu_button)
+        exec_layout.addWidget(menu_button)
 
         exit_button = QPushButton("Sair")
         exit_button.clicked.connect(self.sair)
-        layout.addWidget(exit_button)
+        exec_layout.addWidget(exit_button)
 
-        self.setLayout(layout)
+        exec_group.setLayout(exec_layout)
+        main_layout.addWidget(exec_group)
+
+        self.setLayout(main_layout)
         self.thread = None
 
     def select_file(self, entry):
@@ -169,7 +182,7 @@ class ViralFlowGUI_SC2(QWidget):
 
         command_viralflow = (
             f"micromamba run -n viralflow "
-            f"{nextflow_path} run ~/ViralFlow//vfnext/main.nf "
+            f"{nextflow_path} run {os.path.expanduser('~/ViralFlow/vfnext/main.nf')} "
             f"--primersBED {bed_file} "
             f"--outDir {params['outDir']} "
             f"--inDir {params['inDir']} "
@@ -183,8 +196,8 @@ class ViralFlowGUI_SC2(QWidget):
             f"--fastp_threads {self.param_manager.parameters['fastp_threads']} "
             f"--bwa_threads {self.param_manager.parameters['bwa_threads']} "
             f"--mafft_threads {self.param_manager.parameters['mafft_threads']} "
-            f"--trimLen 0 --refGenomeCode null --referenceGFF null "
-            f"--referenceGenome null -resume"
+            f"--trimLen 0 --refGenomeCode null "
+            f"--referenceGFF null --referenceGenome null -resume"
         )
 
         self.thread = AssemblerRun_SC2(
@@ -204,7 +217,8 @@ class ViralFlowGUI_SC2(QWidget):
 
     def voltar_menu_inicial(self):
         self.close()
-        self.menu_inicial.show()
+        if self.menu_inicial:
+            self.menu_inicial.show()
 
     def sair(self):
         confirm = QMessageBox.question(
