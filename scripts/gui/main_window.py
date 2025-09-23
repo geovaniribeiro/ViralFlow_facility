@@ -66,12 +66,12 @@ class MenuInicial(QWidget):
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_denv = QRadioButton("DENV")
         self.radio_chikv = QRadioButton("CHIKV")
-        self.radio_outro_virus = QRadioButton("OUTRO VÍRUS")
+        #self.radio_outro_virus = QRadioButton("OUTRO VÍRUS")
 
         layout.addWidget(self.radio_sc2)
         layout.addWidget(self.radio_denv)
         layout.addWidget(self.radio_chikv)
-        layout.addWidget(self.radio_outro_virus)
+        #layout.addWidget(self.radio_outro_virus)
 
         confirm_button = QPushButton("Iniciar Análise")
         confirm_button.clicked.connect(self.executar_analise)
@@ -115,10 +115,10 @@ class MenuInicial(QWidget):
             self.close()
             self.tela_assembly = ViralFlowGUI_custom(self, virus="CHIKV")
             self.tela_assembly.show()
-        elif self.radio_outro_virus.isChecked():
-            self.close()
-            self.tela_assembly = ViralFlowGUI_custom(self, virus="CUSTOM")
-            self.tela_assembly.show()
+        #elif self.radio_outro_virus.isChecked():
+         #   self.close()
+          #  self.tela_assembly = ViralFlowGUI_custom(self, virus="CUSTOM")
+           # self.tela_assembly.show()
 
     def sair(self):
         if QMessageBox.question(self, "Confirmação", "Deseja sair?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
