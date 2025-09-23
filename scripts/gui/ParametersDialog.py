@@ -2,11 +2,11 @@
 
 import os
 
-from PyQt5.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QDialog, QCheckBox, QSpinBox
 )
-from PyQt5.QtGui import QIcon
+from PySide6.QtGui import QIcon
 
 
 class ParametersDialog(QDialog):

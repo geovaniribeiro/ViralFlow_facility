@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
-from PyQt5.QtWidgets import QDialog
+from PySide6.QtWidgets import QDialog
 from scripts.gui.ParametersDialog import ParametersDialog
 
 class ParametersManager:

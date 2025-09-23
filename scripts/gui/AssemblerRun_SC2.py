@@ -3,12 +3,12 @@
 import sys
 import subprocess
 import os
-from PyQt5.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QFileDialog, QMessageBox, QComboBox, QGroupBox
 )
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import Signal
 
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -68,7 +68,7 @@ class AssemblerRun_SC2(AssemblerThread):
 
 
 class ViralFlowGUI_SC2(QWidget):
-    process_finished = pyqtSignal(str)
+    process_finished = Signal(str)
 
     def __init__(self, menu_inicial):
         super().__init__()
@@ -144,10 +144,6 @@ class ViralFlowGUI_SC2(QWidget):
         params_button = QPushButton("Configurar Parâmetros")
         params_button.clicked.connect(lambda: self.param_manager.configure_parameters(self))
         exec_layout.addWidget(params_button)
-
-        #run_button = QPushButton("Executar ViralFlow", self)
-        #run_button.clicked.connect(self.run_command)
-        #exec_layout.addWidget(run_button)
 
         self.run_button = QPushButton("Executar ViralFlow", self)
         self.run_button.setEnabled(False)  # começa desabilitado
@@ -264,7 +260,7 @@ def main():
     app = QApplication(sys.argv)
     window = ViralFlowGUI_SC2(None)
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

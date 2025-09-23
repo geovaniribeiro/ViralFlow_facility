@@ -3,12 +3,12 @@
 import sys
 import os
 import subprocess
-from PyQt5.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QLineEdit, QPushButton, QFileDialog, QMessageBox, QComboBox, QGroupBox
 )
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal, QSettings
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import Signal, QSettings
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -52,7 +52,7 @@ class AssemblerRun_custom(AssemblerThread):
 # Interface gráfica principal
 # -----------------------------
 class ViralFlowGUI(QWidget):
-    process_finished = pyqtSignal(str)
+    process_finished = Signal(str)
 
     def __init__(self, menu_inicial, virus="DENV"):
         super().__init__()
@@ -204,7 +204,7 @@ class ViralFlowGUI(QWidget):
 
     def configure_parameters(self):
         dialog = ParametersDialog(self.param_manager.parameters, self)
-        if dialog.exec_():
+        if dialog.exec():
             self.param_manager.parameters = dialog.get_parameters()
 
     def post_processing(self):
