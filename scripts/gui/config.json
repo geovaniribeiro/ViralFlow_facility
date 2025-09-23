@@ -1,6 +1,6 @@
 {
-    "run_snp_eff": true,
-    "write_mapped_reads": true,
+    "run_snp_eff": false,
+    "write_mapped_reads": false,
     "min_len": 75,
     "depth": 25,
     "min_dp_intrahost": 100,
