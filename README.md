@@ -20,7 +20,6 @@
   - [Saída e Estrutura de Resultados](#saída-e-estrutura-de-resultados)
   - [Conteúdo da pasta `RNSG_REPORT`](#conteúdo-da-pasta-rnsg_report)
 - [Análise de DENV / CHIKV](#análise-de-denv--chikv)
-- [Documentação Oficial](#documentação-oficial)
 
 ---
 
@@ -180,27 +179,4 @@ Na **Pasta de Saída**, o ViralFlow cria:
 Além dos itens padrão, é gerado o arquivo **`EpiArbo.csv`** para submissão na plataforma **GISAID EpiArbo**.
 
 ---
-## Proteção de Dados e Distribuição
-
-> [!IMPORTANT]
-> O **ViralFlow GUI** é distribuído gratuitamente para fins acadêmicos, científicos e de saúde pública.
-
-### Proteção de Dados
-- Os dados analisados por esta ferramenta podem conter **informações sensíveis** de saúde.  
-- É responsabilidade do usuário garantir que:
-  - A manipulação dos arquivos respeite a **LGPD (Lei Geral de Proteção de Dados, Lei nº 13.709/2018)** ou legislação equivalente no seu país.
-- Os desenvolvedores **não se responsabilizam** por uso indevido ou divulgação não autorizada de dados.
-
-### Distribuição e Uso
-- Este software é distribuído **gratuitamente** e **sem garantias** (AS IS), conforme previsto pela licença.
-- É proibida a comercialização direta do software ou sua redistribuição paga sem autorização expressa dos desenvolvedores.
-- É permitida a cópia, uso e modificação, desde que mantidos os créditos e a mesma licença.
-
-### Licença
-Este projeto segue a licença **MIT** (ou outra indicada no repositório), permitindo:
-- Uso pessoal
-- Modificação
-- Distribuição
-- Uso privado
-
 
