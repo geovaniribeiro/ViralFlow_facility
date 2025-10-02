@@ -125,6 +125,4 @@ Na **Pasta de Saída**, o ViralFlow cria:
 ## Análise de DENV / CHIKV
 
 - Processo idêntico ao de SARS‑CoV‑2, **com um campo adicional**: **Código RefSeq**.  
-- Informe o código do genoma de referência (DENV1/2/3/4 ou CHIKV).  
-- A lista de códigos está em `ViralFlow_facility/resources/refseq_codes.txt`.  
-- Os arquivos `.bed` dos primers fornecidos pela CGLAB à RNSG também estão em `ViralFlow_facility/resources/`.
+- Informe o código do genoma de referência (DENV1/2/3/4 ou CHIKV).
