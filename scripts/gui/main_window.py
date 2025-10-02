@@ -18,9 +18,6 @@ from scripts.gui.AssemblerRun_custom import ViralFlowGUI as ViralFlowGUI_custom 
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
 from scripts.utilities.update_GUI import atualizar_GUI  # Função para atualizar viralflow
-from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
-from scripts.analysis.report.report_generator_chikv import generate_report_chikv  # Classe para geração de relatórios
-from scripts.analysis.DenvNextclade import DenvNextclade # Classe para rodar DenvNext (genotyping e linhagem)
 
 
 class WorkerThread(QThread):
@@ -66,12 +63,10 @@ class MenuInicial(QWidget):
 
         # Botões de seleção de vírus
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
-        self.radio_denv = QRadioButton("DENV")
-        self.radio_chikv = QRadioButton("CHIKV")
+        self.radio_outro_virus = QRadioButton("OUTRO VÍRUS")
 
         layout.addWidget(self.radio_sc2)
-        layout.addWidget(self.radio_denv)
-        layout.addWidget(self.radio_chikv)
+        layout.addWidget(self.radio_outro_virus)
 
         confirm_button = QPushButton("Iniciar Análise")
         confirm_button.clicked.connect(self.executar_analise)
@@ -107,62 +102,15 @@ class MenuInicial(QWidget):
             self.close()
             self.tela_assembly = ViralFlowGUI_SC2(self)
             self.tela_assembly.show()
-        elif self.radio_denv.isChecked():
+        elif self.radio_outro_virus.isChecked():
             self.close()
-            self.tela_assembly = ViralFlowDENV(self)
-            self.tela_assembly.show()
-        elif self.radio_chikv.isChecked():
-            self.close()
-            self.tela_assembly = ViralFlowCHIKV(self)
+            self.tela_assembly = ViralFlowGUI_custom(self)
             self.tela_assembly.show()
 
     def sair(self):
         if QMessageBox.question(self, "Confirmação", "Deseja sair?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             QApplication.quit()
 
-
-class ViralFlowDENV(ViralFlowGUI_custom):
-    def __init__(self, menu_inicial=None):
-        super().__init__(menu_inicial, virus="DENV")
-        self.menu_principal = menu_inicial
-
-    def report_generator(self, message):
-        try:
-            metadata_path = self.entries['metadata'].text()
-            config_path = self.entries['config_file'].text()
-            output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
-
-            print("\nGerando relatório DENV...")
-            processor = DenvNextclade(output_folder)
-            processor.execute_pipeline()
-            generate_report_denv(metadata_path, config_path, output_folder)
-            print("\nRelatório gerado com sucesso")
-            QMessageBox.information(self, "Relatório", "Relatório DENV gerado com sucesso.")
-        except KeyError as e:
-            QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
-        except Exception as e:
-            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório DENV: {str(e)}")
-
-
-class ViralFlowCHIKV(ViralFlowGUI_custom):
-    def __init__(self, menu_inicial=None):
-        super().__init__(menu_inicial, virus="CHIKV")
-        self.menu_principal = menu_inicial
-
-    def report_generator(self, message):
-        try:
-            metadata_path = self.entries['metadata'].text()
-            config_path = self.entries['config_file'].text()
-            output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
-
-            print("\nGerando relatório CHIKV...")
-            generate_report_chikv(metadata_path, config_path, output_folder)
-            print("\nRelatório gerado com sucesso")
-            QMessageBox.information(self, "Relatório", "Relatório CHIKV gerado com sucesso.")
-        except KeyError as e:
-            QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
-        except Exception as e:
-            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório CHIKV: {str(e)}")
 
 
 if __name__ == "__main__":

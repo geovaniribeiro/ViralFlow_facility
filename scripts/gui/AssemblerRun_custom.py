@@ -10,34 +10,21 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Signal, QSettings
 
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from scripts.gui.ParametersDialog import ParametersDialog
 from scripts.gui.ParametersManager import ParametersManager
 from scripts.analysis.assembler.assembler_thread import AssemblerThread
-from scripts.analysis.rename_fastq import rename_fastq_files
-from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
 
-
-# -----------------------------
-# Classe que executa os comandos
-# -----------------------------
 class AssemblerRun_custom(AssemblerThread):
-    def __init__(self, command_viralflow, output_folder, input_path, metadata_path, config_path):
-        if metadata_path and input_path:
-            try:
-                rename_fastq_files(metadata_path, input_path)
-                print("\nRenomeação de arquivos FASTQ concluída!\n")
-            except Exception as e:
-                print(f"Erro ao renomear arquivos FASTQ: {str(e)}\n")
-
+    def __init__(self, snpeff_custom, command_viralflow, output_folder, input_path):
         commands = [
+            (snpeff_custom, "Iniciando snpeff_custom..."),
             (command_viralflow, "Executando ViralFlow...")
         ]
         super().__init__(commands)
         self.output_folder = output_folder
-        self.metadata_path = metadata_path
-        self.config_path = config_path
         self.input_path = input_path
 
     def run(self):
@@ -45,90 +32,65 @@ class AssemblerRun_custom(AssemblerThread):
             super().run()
             self.process_finished.emit("ViralFlow executado com sucesso!")
         except Exception as e:
-            self.process_finished.emit(f"Erro durante a execução: {str(e)}")
+            self.process_finished.emit(f"Erro: {str(e)}")
 
 
-# -----------------------------
-# Interface gráfica principal
-# -----------------------------
 class ViralFlowGUI(QWidget):
     process_finished = Signal(str)
 
-    def __init__(self, menu_inicial, virus="DENV"):
+    def __init__(self, menu_inicial):
         super().__init__()
         self.menu_inicial = menu_inicial
-        self.virus = virus  # define o vírus em execução (DENV ou CHIKV)
-
-        self.settings = QSettings("ViralFlowGUI", "ViralFlow")
 
         self.setWindowTitle("ViralFlow GUI")
-        self.setGeometry(100, 100, 600, 380)
+        self.setGeometry(100, 100, 500, 250)
         self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))
 
         self.param_manager = ParametersManager()
         main_layout = QVBoxLayout()
         self.entries = {}
 
+
         # -------------------------
         # Grupo: Dados de entrada
         # -------------------------
+        
         input_group = QGroupBox("Dados de entrada")
         input_layout = QVBoxLayout()
-
+        
         self.fields = [
             ("Código refseq", "refGenomeCode", False),
             ("Arquivo bed (Primers)", "primersBED", True),
             ("Pasta de entrada", "inDir", False),
-            ("Pasta de saída", "outDir", False),
-            ("Metadados (.csv) [Opcional]", "metadata", True),
-            ("Submission_info (.yaml) [Opcional]", "config_file", True),
+            ("Pasta de saída", "outDir", False)
         ]
 
+        self.entries = {}
+
         for label_text, field_name, is_file in self.fields:
-            row_layout = QHBoxLayout()
-            label = QLabel(label_text)
-            row_layout.addWidget(label)
+                    row_layout = QHBoxLayout()
+                    row_layout.addWidget(QLabel(label_text))
+                    entry = QLineEdit(self)
+                    row_layout.addWidget(entry)
+                    
+                    if field_name != "refGenomeCode":
+                        # CRIA o botão apenas se NÃO for 'refGenomeCode'
+                        browse_button = QPushButton("Browse", self)
+                        
+                        # Configura a ação do botão
+                        if is_file:
+                            browse_button.clicked.connect(lambda checked, e=entry: self.select_file(e))
+                        else:
+                            browse_button.clicked.connect(lambda checked, e=entry: self.select_folder(e))
+                            
+                        row_layout.addWidget(browse_button)
 
-            if field_name == "primersBED":
-                combo = QComboBox()
-                self.populate_bed_files(combo)
-                row_layout.addWidget(combo)
-                combo.currentIndexChanged.connect(self.on_primers_changed)
-                self.entries[field_name] = combo
-
-            elif field_name == "refGenomeCode":
-                if self.virus.upper() == "DENV":
-                    combo = QComboBox()
-                    combo.addItem("DENV1 (NC_001477.1)", "NC_001477.1")
-                    combo.addItem("DENV2 (NC_001474.2)", "NC_001474.2")
-                    combo.addItem("DENV3 (NC_001475.2)", "NC_001475.2")
-                    combo.addItem("DENV4 (NC_002640.1)", "NC_002640.1")
-                    combo.currentIndexChanged.connect(self.on_refseq_changed)
-                    row_layout.addWidget(combo)
-                    self.entries[field_name] = combo
-                elif self.virus.upper() == "CHIKV":
-                    hidden_entry = QLineEdit()
-                    hidden_entry.setText("NC_004162.2")
-                    hidden_entry.setVisible(False)
-                    self.entries[field_name] = hidden_entry
-
-            else:
-                entry = QLineEdit(self)
-                row_layout.addWidget(entry)
-                if field_name not in ["refGenomeCode"]:
-                    btn = QPushButton("Browse", self)
-                    if is_file:
-                        btn.clicked.connect(lambda checked, e=entry: self.select_file(e))
-                    else:
-                        btn.clicked.connect(lambda checked, e=entry: self.select_folder(e))
-                    row_layout.addWidget(btn)
-                self.entries[field_name] = entry
-
-            input_layout.addLayout(row_layout)
+                    self.entries[field_name] = entry
+                    input_layout.addLayout(row_layout)
 
         self.entries["inDir"].textChanged.connect(self.validate_fields)
         self.entries["outDir"].textChanged.connect(self.validate_fields)
-
+        
         input_group.setLayout(input_layout)
         main_layout.addWidget(input_group)
 
@@ -138,8 +100,9 @@ class ViralFlowGUI(QWidget):
         exec_group = QGroupBox("Execução")
         exec_layout = QVBoxLayout()
 
+        # Botões
         params_button = QPushButton("Configurar Parâmetros")
-        params_button.clicked.connect(lambda: self.param_manager.configure_parameters(self))
+        params_button.clicked.connect(self.configure_parameters)
         exec_layout.addWidget(params_button)
 
         self.run_button = QPushButton("Executar ViralFlow", self)
@@ -155,6 +118,16 @@ class ViralFlowGUI(QWidget):
         exit_button.clicked.connect(self.sair)
         exec_layout.addWidget(exit_button)
 
+        self.setLayout(exec_layout)
+        self.parameters = {
+            "run_snp_eff": True,
+            "write_mapped_reads": True,
+            "min_len": 75,
+            "depth": 10,
+            "min_dp_intrahost": 100,
+        }
+        self.thread = None
+
         exec_group.setLayout(exec_layout)
         main_layout.addWidget(exec_group)
 
@@ -164,57 +137,19 @@ class ViralFlowGUI(QWidget):
     # -----------------------------
     # Métodos auxiliares
     # -----------------------------
-    def populate_bed_files(self, combo):
-        resources_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-            "resources"
-        )
-        if not os.path.isdir(resources_dir):
-            return
-        beds = []
-        for f in os.listdir(resources_dir):
-            if f.endswith(".bed"):
-                if self.virus.upper() == "DENV" and f.lower().startswith("denv"):
-                    beds.append(f)
-                elif self.virus.upper() == "CHIKV" and f.lower().startswith("chikv"):
-                    beds.append(f)
-        beds.sort(key=lambda s: s.lower())
-        for f in beds:
-            combo.addItem(f, os.path.join(resources_dir, f))
-
-        try:
-            if "refGenomeCode" in self.entries and isinstance(self.entries["refGenomeCode"], QComboBox):
-                self.sync_bed_with_refseq()
-        except Exception:
-            pass
 
     def select_file(self, entry):
-        start = entry.text() or self.settings.value("last_browse_dir", os.path.expanduser("~"))
-        file_path, _ = QFileDialog.getOpenFileName(self, "Selecione um arquivo", start)
+        file_path, _ = QFileDialog.getOpenFileName(self, "Selecione um arquivo")
         if file_path:
             entry.setText(file_path)
-            self.settings.setValue("last_browse_dir", os.path.dirname(file_path))
 
     def select_folder(self, entry):
-        start = entry.text() or self.settings.value("last_browse_dir", os.path.expanduser("~"))
-        folder_path = QFileDialog.getExistingDirectory(self, "Selecione uma pasta", start)
+        folder_path = QFileDialog.getExistingDirectory(self, "Selecione uma pasta")
         if folder_path:
             entry.setText(folder_path)
-            self.settings.setValue("last_browse_dir", folder_path)
 
     def configure_parameters(self):
-        dialog = ParametersDialog(self.param_manager.parameters, self)
-        if dialog.exec():
-            self.param_manager.parameters = dialog.get_parameters()
-
-    def post_processing(self):
-        try:
-            reads, coverage = data_processing(os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
-            mod_pasta(os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
-            Quality_monitor(coverage, reads, os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT"))
-            print("Quality check realizado!")
-        except Exception as e:
-            print(f"Erro ao executar pós-processamento: {e}")
+        self.param_manager.configure_parameters(self)
 
     def get_nextflow_path(self):
         try:
@@ -224,28 +159,22 @@ class ViralFlowGUI(QWidget):
             return "nextflow"
 
     def run_command(self):
-        params = {}
-        for key, entry in self.entries.items():
-            if isinstance(entry, QLineEdit):
-                params[key] = entry.text()
-            elif isinstance(entry, QComboBox):
-                params[key] = entry.currentData()
-
-        ref_code = None
-        ref_entry = self.entries.get('refGenomeCode')
-        if isinstance(ref_entry, QComboBox):
-            ref_code = ref_entry.currentData() or ref_entry.currentText()
-        elif isinstance(ref_entry, QLineEdit):
-            ref_code = ref_entry.text()
-        params['refGenomeCode'] = ref_code
+        params = {key: entry.text() for key, entry in self.entries.items()}
 
         nextflow_path = self.get_nextflow_path()
+        snpeff_custom = f"micromamba run -n viralflow bash ~/ViralFlow/vfnext/containers/add_entries_SnpeffDB.sh custom {params['refGenomeCode']}"
+
+        #Arquivo bed como opcional
+        primers_bed_path = params.get('primersBED', '').strip() 
+        primers_bed_param = ""
+        if primers_bed_path:
+            primers_bed_param = f"--primersBED {primers_bed_path} "
 
         command_viralflow = (
             f"micromamba run -n viralflow {nextflow_path} run ~/ViralFlow/vfnext/main.nf "
-            f"--primersBED {params.get('primersBED','')} "
-            f"--outDir {params.get('outDir','')} "
-            f"--inDir {params.get('inDir','')} "
+            f"{primers_bed_param}" 
+            f"--outDir {params['outDir']} "
+            f"--inDir {params['inDir']} "
             f"--virus custom "
             f"--runSnpEff {'true' if self.param_manager.parameters['run_snp_eff'] else 'false'} "
             f"--writeMappedReads {'true' if self.param_manager.parameters['write_mapped_reads'] else 'false'} "
@@ -256,29 +185,15 @@ class ViralFlowGUI(QWidget):
             f"--fastp_threads {self.param_manager.parameters['fastp_threads']} "
             f"--bwa_threads {self.param_manager.parameters['bwa_threads']} "
             f"--mafft_threads {self.param_manager.parameters['mafft_threads']} "
-            f"--trimLen 0 --refGenomeCode {params.get('refGenomeCode','')} "
-            f"--referenceGFF null --referenceGenome null -resume"
+            f"--trimLen 0 --refGenomeCode {params['refGenomeCode']} --referenceGFF null "
+            f"--referenceGenome null -resume"
         )
 
-        print("Comando montado, iniciando execução...")
-
-        self.thread = AssemblerRun_custom(
-            command_viralflow,
-            os.path.join(params.get('outDir', ""), "COMPILED_OUTPUT"),
-            metadata_path=params.get('metadata'),
-            config_path=params.get('config_file'),
-            input_path=params.get('inDir')
-        )
-
+        self.thread = AssemblerRun_custom(snpeff_custom, command_viralflow,
+                                          os.path.join(params['outDir'], "COMPILED_OUTPUT"),
+                                          input_path=params.get('inDir'))
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
-        
-        if params.get('metadata') and params.get('config_file'):
-            if hasattr(self, "report_generator") and callable(getattr(self, "report_generator")):
-                self.thread.process_finished.connect(self.report_generator)
-        else:
-             print("Aviso: metadata_path ou config_path não foram definidos, pulando a geração do relatório.")
-
         self.thread.start()
 
     def update_status(self, message):
@@ -286,85 +201,11 @@ class ViralFlowGUI(QWidget):
 
     def voltar_menu_inicial(self):
         self.close()
-        if self.menu_inicial:
-            self.menu_inicial.show()
+        self.menu_inicial.show()
 
     def sair(self):
         if QMessageBox.question(self, "Confirmação", "Deseja sair?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             QApplication.quit()
-
-    # -----------------------------
-    # Sincronização RefSeq <-> BED
-    # -----------------------------
-    def on_refseq_changed(self, index):
-        try:
-            ref_combo = self.entries.get('refGenomeCode')
-            bed_combo = self.entries.get('primersBED')
-            if not (isinstance(ref_combo, QComboBox) and isinstance(bed_combo, QComboBox)):
-                return
-            accession = ref_combo.itemData(index)
-            acc_map = {
-                "NC_001477.1": "1",
-                "NC_001474.2": "2",
-                "NC_001475.2": "3",
-                "NC_002640.1": "4",
-            }
-            sor = acc_map.get(accession)
-            if not sor:
-                return
-            for i in range(bed_combo.count()):
-                text = bed_combo.itemText(i).lower()
-                if f"_{sor}" in text or f"denv{sor}" in text:
-                    bed_combo.setCurrentIndex(i)
-                    break
-        except Exception as e:
-            print(f"Erro na sincronização refseq->bed: {e}")
-
-    def on_primers_changed(self, index):
-        try:
-            bed_combo = self.entries.get('primersBED')
-            ref_combo = self.entries.get('refGenomeCode')
-            if not (isinstance(bed_combo, QComboBox) and isinstance(ref_combo, QComboBox)):
-                return
-            bed_name = bed_combo.itemText(index).lower()
-            for acc, sor in {
-                "NC_001477.1": "1",
-                "NC_001474.2": "2",
-                "NC_001475.2": "3",
-                "NC_002640.1": "4"
-            }.items():
-                if f"_{sor}" in bed_name or f"denv{sor}" in bed_name:
-                    for i in range(ref_combo.count()):
-                        if ref_combo.itemData(i) == acc:
-                            ref_combo.setCurrentIndex(i)
-                            return
-        except Exception as e:
-            print(f"Erro na sincronização bed->refseq: {e}")
-
-    def sync_bed_with_refseq(self):
-        try:
-            ref_combo = self.entries.get('refGenomeCode')
-            bed_combo = self.entries.get('primersBED')
-            if not (isinstance(ref_combo, QComboBox) and isinstance(bed_combo, QComboBox)):
-                return
-            accession = ref_combo.currentData()
-            acc_map = {
-                "NC_001477.1": "1",
-                "NC_001474.2": "2",
-                "NC_001475.2": "3",
-                "NC_002640.1": "4",
-            }
-            sor = acc_map.get(accession)
-            if not sor:
-                return
-            for i in range(bed_combo.count()):
-                text = bed_combo.itemText(i).lower()
-                if f"_{sor}" in text or f"denv{sor}" in text:
-                    bed_combo.setCurrentIndex(i)
-                    break
-        except Exception:
-            pass
-
 
     def validate_fields(self):
         """Habilita Executar ViralFlow apenas se inDir e outDir forem preenchidos."""
@@ -387,3 +228,11 @@ class ViralFlowGUI(QWidget):
             else:
                 self.entries["outDir"].setStyleSheet("")
 
+def main():
+    app = QApplication(sys.argv)
+    window = ViralFlowGUI(None)
+    window.show()
+    sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()
