@@ -14,7 +14,6 @@
   - [Selecionando Pastas/Arquivos](#selecionando-pastasarquivos)
   - [Parâmetros](#parâmetros)
   - [Execução](#execução)
-  - [Saída e Estrutura de Resultados](#saída-e-estrutura-de-resultados)
 - [Análise de DENV / CHIKV](#análise-de-denv--chikv)
 
 ---
