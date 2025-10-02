@@ -1,6 +1,6 @@
 # Manual ViralFlow GUI
 
-> Interface gráfica para facilitar a execução do **ViralFlow** e a geração de relatórios de acordo com o padrão da Rede Nacional de Sequenciamento Genético (RNSG).
+> Interface gráfica para facilitar a execução do **ViralFlow** e a geração de relatórios de resultados.
 
 ## Sumário
 - [Requisitos e Pré‑instalação](#requisitos-e-pré-instalação)
@@ -164,17 +164,15 @@ Na **Pasta de Saída**, o ViralFlow cria:
 
 - `EpiCov.csv` — CSV pronto para submissão ao **GISAID EpiCoV**.  
 - `LACEN_seq.fasta` — FASTA formatado para submissão (apenas genomas com **> 90% de cobertura**).  
-- `Planilha_de_Resultado.xlsx` — planilha para envio à **CGLAB** (revise e complete colunas como *Data do Ensaio*, *Versão Primer*, *Responsável Técnico*, etc.).  
+- `Planilha_de_Resultado.xlsx` — planilha de resultados.  
 - `Quality_check.png` — gráficos para inspeção da qualidade (profundidade, % de cobertura e leituras por amostra).
 
 ---
 
 ## Análise de DENV / CHIKV
 
-- Processo idêntico ao de SARS‑CoV‑2, **com um campo adicional**: **Código RefSeq**.  
-- Informe o código do genoma de referência (DENV1/2/3/4 ou CHIKV).  
-- A lista de códigos está em `ViralFlow_facility/resources/refseq_codes.txt`.  
-- Os arquivos `.bed` dos primers fornecidos pela CGLAB à RNSG também estão em `ViralFlow_facility/resources/`.
+- Processo idêntico ao de SARS‑CoV‑2, **com um campo adicional**: **RefSeq**.  
+- Selecione genoma de referência (DENV1/2/3/4 ou CHIKV).
 
 Além dos itens padrão, é gerado o arquivo **`EpiArbo.csv`** para submissão na plataforma **GISAID EpiArbo**.
 
