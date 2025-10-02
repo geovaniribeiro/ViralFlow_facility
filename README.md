@@ -1,6 +1,6 @@
 # Manual ViralFlow GUI
 
-> Interface gráfica para facilitar a execução do **ViralFlow** e a geração de relatórios de acordo com o padrão da Rede Nacional de Sequenciamento Genético (RNSG).
+> Interface gráfica para facilitar a execução do **ViralFlow**.
 
 ## Sumário
 - [Requisitos e Pré‑instalação](#requisitos-e-pré-instalação)
@@ -9,18 +9,13 @@
 - [Iniciando a Interface](#iniciando-a-interface)
 - [Menu Inicial](#menu-inicial)
 - [Utilitários](#utilitários)
-- [Metadados e Avisos](#metadados-e-avisos)
-  - [Ajuste do `config.yaml`](#ajuste-do-configyaml)
-  - [Metadados do GAL](#metadados-do-gal)
 - [Análise de SARS‑CoV‑2](#análise-de-sars-cov-2)
   - [Entradas Obrigatórias e Opcionais](#entradas-obrigatórias-e-opcionais)
   - [Selecionando Pastas/Arquivos](#selecionando-pastasarquivos)
   - [Parâmetros](#parâmetros)
   - [Execução](#execução)
   - [Saída e Estrutura de Resultados](#saída-e-estrutura-de-resultados)
-  - [Conteúdo da pasta `RNSG_REPORT`](#conteúdo-da-pasta-rnsg_report)
 - [Análise de DENV / CHIKV](#análise-de-denv--chikv)
-- [Documentação Oficial](#documentação-oficial)
 
 ---
 
@@ -89,49 +84,15 @@ Atualiza as classificações do *pangolin* (SARS‑CoV‑2) e o *nextclade* quan
 
 ## Metadados e Avisos
 
-A interface executa o **ViralFlow** (montagem, variantes e classificação) e **gera arquivos complementares**: relatório de qualidade, planilhas de resultados e arquivos para submissão no **GISAID** (detalhes abaixo).
-
-São usados **dois arquivos** para integrar montagem + dados epidemiológicos/usuário:
-
-- `config.yaml`
-- CSV de metadados exportado do **GAL**
-
-### Ajuste do `config.yaml`
-
-Edite o arquivo `ViralFlow_facility/config.yaml` e ajuste as chaves:
-
-- `submitter`: usuário responsável pela submissão ao GISAID  
-- `subm_lab`: nome do laboratório que submete  
-- `subm_lab_addr`: endereço do laboratório  
-- `authors`: lista de autores (responsáveis e chefias)
-
-> [!WARNING]
-> **Não remova as aspas** onde houver (linhas `subm_lab`, `subm_lab_addr` e `authors`). Salve o arquivo após as alterações.
-
-### Metadados do GAL
-
-1. Baixe o CSV em **Biologia Médica/Sequenciamento** (ou **Vírus / Sequenciamento**).  
-2. **Não edite** o CSV para evitar problemas de codificação.  
-3. **Correspondência de nomes**: o nome da amostra no sequenciador deve bater com o **código da amostra** ou **número de requisição** do GAL.  
-4. Use a aba **Relatório Epidemiológico por Exame** → **Selecionar Campos: Marcar Todos** → defina o intervalo de datas → **Gerar**.  
-5. Faça o download do `.zip` e **extraia** para obter o CSV a ser usado na análise.
-
----
+A interface executa o **ViralFlow** (montagem, variantes e classificação).
 
 ## Análise de SARS‑CoV‑2
 
 ### Entradas Obrigatórias e Opcionais
 
 - **Obrigatórios**
-  - **Arquivo BED**
   - **Pasta de Entrada** (FASTQs)
   - **Pasta de Saída** (resultados)
-
-- **Opcionais**
-  - **Metadados (CSV)** do GAL
-  - **Arquivo de Configuração (`config.yaml`)**
-
-> Se os opcionais não forem fornecidos, a interface fará **apenas a montagem** (sem gerar arquivos de submissão ao GISAID e sem planilha de resultados).
 
 ### Selecionando Pastas/Arquivos
 
@@ -157,16 +118,8 @@ Na **Pasta de Saída**, o ViralFlow cria:
 1. **Diretórios por amostra**: `prefixo_results` (um por amostra).  
    - `prefixo` é derivado do nome do arquivo FASTQ.  
 2. **`COMPILED_OUTPUT/`**: resultados compilados de toda a corrida.  
-3. **`RNSG_REPORT/`**: artefatos processados para validação e submissões.
 
 > A lista detalhada de arquivos do `COMPILED_OUTPUT` está na documentação do projeto viralflow (https://viralflow.github.io/).
-
-### Conteúdo da pasta `RNSG_REPORT`
-
-- `EpiCov.csv` — CSV pronto para submissão ao **GISAID EpiCoV**.  
-- `LACEN_seq.fasta` — FASTA formatado para submissão (apenas genomas com **> 90% de cobertura**).  
-- `Planilha_de_Resultado.xlsx` — planilha para envio à **CGLAB** (revise e complete colunas como *Data do Ensaio*, *Versão Primer*, *Responsável Técnico*, etc.).  
-- `Quality_check.png` — gráficos para inspeção da qualidade (profundidade, % de cobertura e leituras por amostra).
 
 ---
 
@@ -176,31 +129,3 @@ Na **Pasta de Saída**, o ViralFlow cria:
 - Informe o código do genoma de referência (DENV1/2/3/4 ou CHIKV).  
 - A lista de códigos está em `ViralFlow_facility/resources/refseq_codes.txt`.  
 - Os arquivos `.bed` dos primers fornecidos pela CGLAB à RNSG também estão em `ViralFlow_facility/resources/`.
-
-Além dos itens padrão, é gerado o arquivo **`EpiArbo.csv`** para submissão na plataforma **GISAID EpiArbo**.
-
----
-## Proteção de Dados e Distribuição
-
-> [!IMPORTANT]
-> O **ViralFlow GUI** é distribuído gratuitamente para fins acadêmicos, científicos e de saúde pública.
-
-### Proteção de Dados
-- Os dados analisados por esta ferramenta podem conter **informações sensíveis** de saúde.  
-- É responsabilidade do usuário garantir que:
-  - A manipulação dos arquivos respeite a **LGPD (Lei Geral de Proteção de Dados, Lei nº 13.709/2018)** ou legislação equivalente no seu país.
-- Os desenvolvedores **não se responsabilizam** por uso indevido ou divulgação não autorizada de dados.
-
-### Distribuição e Uso
-- Este software é distribuído **gratuitamente** e **sem garantias** (AS IS), conforme previsto pela licença.
-- É proibida a comercialização direta do software ou sua redistribuição paga sem autorização expressa dos desenvolvedores.
-- É permitida a cópia, uso e modificação, desde que mantidos os créditos e a mesma licença.
-
-### Licença
-Este projeto segue a licença **MIT** (ou outra indicada no repositório), permitindo:
-- Uso pessoal
-- Modificação
-- Distribuição
-- Uso privado
-
-
