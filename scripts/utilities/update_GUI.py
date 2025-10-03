@@ -8,7 +8,7 @@ def atualizar_GUI():
     try:
         # Repositório GitHub
         repo_url = "https://github.com/geovaniribeiro/ViralFlow_facility"
-        branch = "main"
+        branch = "lite"
 
         # Caminho do diretório do script atual (scripts/utilities/)
         script_exec_dir = os.path.dirname(os.path.abspath(__file__))
