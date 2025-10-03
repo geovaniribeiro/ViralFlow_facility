@@ -1,11 +1,13 @@
 {
     "run_snp_eff": false,
     "write_mapped_reads": false,
+    "dedup_check": false,
     "min_len": 75,
     "depth": 25,
     "min_dp_intrahost": 100,
     "nextflow_sim_calls": 12,
     "fastp_threads": 12,
     "bwa_threads": 12,
-    "mafft_threads": 12
+    "mafft_threads": 12,
+    "ndedup": 3
 }

@@ -29,6 +29,10 @@ class ParametersDialog(QDialog):
         self.write_mapped_reads.setChecked(True)
         layout.addWidget(self.write_mapped_reads)
 
+        self.dedup_check = QCheckBox("Habilitar --dedup")
+        self.dedup_check.setChecked(False)
+        layout.addWidget(self.dedup_check)
+
         # Parâmetros numéricos (SpinBox)
         self.min_len_label = QLabel("Valor para --minLen")
         layout.addWidget(self.min_len_label)
@@ -86,6 +90,14 @@ class ParametersDialog(QDialog):
         self.mafft_threads.setValue(12)
         layout.addWidget(self.mafft_threads)
 
+        self.ndedup_label = QLabel("Valor para --ndedup")
+        layout.addWidget(self.ndedup_label)
+        self.ndedup = QSpinBox()
+        self.ndedup.setMinimum(1)
+        self.ndedup.setMaximum(6)
+        self.ndedup.setValue(3)
+        layout.addWidget(self.ndedup)
+
         # Botões
         button_layout = QHBoxLayout()
         save_button = QPushButton("Salvar")
@@ -103,6 +115,7 @@ class ParametersDialog(QDialog):
             return
         self.run_snp_eff.setChecked(params.get("run_snp_eff", True))
         self.write_mapped_reads.setChecked(params.get("write_mapped_reads", True))
+        self.dedup_check.setChecked(params.get("dedup_check", False))
         self.min_len.setValue(params.get("min_len", 75))
         self.depth.setValue(params.get("depth", 20))
         self.min_dp_intrahost.setValue(params.get("min_dp_intrahost", 100))
@@ -110,12 +123,14 @@ class ParametersDialog(QDialog):
         self.fastp_threads.setValue(params.get("fastp_threads", 12))
         self.bwa_threads.setValue(params.get("bwa_threads", 12))
         self.mafft_threads.setValue(params.get("mafft_threads", 12))
+        self.ndedup.setValue(params.get("ndedup", 3))
 
     def get_parameters(self):
         """Retorna os valores atuais do diálogo como dicionário."""
         return {
             "run_snp_eff": self.run_snp_eff.isChecked(),
             "write_mapped_reads": self.write_mapped_reads.isChecked(),
+            "dedup_check": self.dedup_check.isChecked(),
             "min_len": self.min_len.value(),
             "depth": self.depth.value(),
             "min_dp_intrahost": self.min_dp_intrahost.value(),
@@ -123,4 +138,5 @@ class ParametersDialog(QDialog):
             "fastp_threads": self.fastp_threads.value(),
             "bwa_threads": self.bwa_threads.value(),
             "mafft_threads": self.mafft_threads.value(),
+            "ndedup": self.ndedup.value()
         }
