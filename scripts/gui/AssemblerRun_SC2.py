@@ -142,10 +142,16 @@ class ViralFlowGUI_SC2(QWidget):
         params = {key: entry.text() for key, entry in self.entries.items()}
         nextflow_path = self.get_nextflow_path()
 
+        #Arquivo bed como opcional
+        primers_bed_path = params.get('primersBED', '').strip() 
+        primers_bed_param = ""
+        if primers_bed_path:
+            primers_bed_param = f"--primersBED {primers_bed_path} "
+
         command_viralflow = (
             f"micromamba run -n viralflow "
             f"{nextflow_path} run {os.path.expanduser('~/ViralFlow/vfnext/main.nf')} "
-            f"--primersBED {params['primersBED']} "
+            f"{primers_bed_param}"
             f"--outDir {params['outDir']} "
             f"--inDir {params['inDir']} "
             f"--virus sars-cov2 "
