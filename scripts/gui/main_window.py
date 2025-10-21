@@ -21,6 +21,7 @@ from scripts.utilities.update_GUI import atualizar_GUI  # Função para atualiza
 from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
 from scripts.analysis.report.report_generator_chikv import generate_report_chikv  # Classe para geração de relatórios
 from scripts.analysis.DenvNextclade import DenvNextclade # Classe para rodar DenvNext (genotyping e linhagem)
+from scripts.analysis.ChikvNextclade import ChikvNextclade # Classe para rodar ChikvNextclade (genotyping e linhagem)
 
 
 class WorkerThread(QThread):
@@ -156,6 +157,8 @@ class ViralFlowCHIKV(ViralFlowGUI_custom):
             output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
 
             print("\nGerando relatório CHIKV...")
+            processor = ChikvNextclade(output_folder)
+            processor.execute_pipeline()
             generate_report_chikv(metadata_path, config_path, output_folder)
             print("\nRelatório gerado com sucesso")
             QMessageBox.information(self, "Relatório", "Relatório CHIKV gerado com sucesso.")
