@@ -13,6 +13,20 @@ from scripts.analysis.report.modules_general import load_config, mod_pasta, Qual
 from scripts.analysis.report.modules_EpiArbo import filter_depth, format_virus_name 
 from scripts.analysis.report.report_generator_denv import gerar_arquivo_fasta, arquivo_epiarbo
 
+# Load serotype and genotype files
+def genotype_chikv(output_folder):
+    # Construct the file path for the genotype CSV file
+    genotype_path = os.path.join(output_folder, "genotype.csv")
+    genotype = pd.read_csv(genotype_path, sep=';')
+
+    # Process genotype DataFrame
+    genotype['seqName'] = genotype['seqName'].replace(to_replace='_.*', value='', regex=True)
+    genotype.rename(columns={'seqName': 'cod', 'clade': 'lineage'}, inplace=True)
+    genotype['lineage'] = genotype['lineage'].str.split('_').str[0]
+    genotype = genotype[['cod', 'lineage']]
+
+    return genotype
+
 def planilha_resultado(arbo_virus_name, final_df, output_folder):
 
     #print("planilha_resultado")
@@ -29,7 +43,7 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
     result_table["LACEN Executor"] = ""
     result_table["Unidade Federativa (UF)"] = ""
     result_table["Responsável envio dos dados"] = ""
-    result_table["Genótipo"] = ""
+    #result_table["Genótipo"] = ""
     result_table["Data sequenciamento"] = ""
     result_table["Vírus"] = "CHIKV"
     result_table["CT"] = ""
@@ -64,7 +78,8 @@ rename_columns = {'cod': 'Código Amostra',
                   'Material_Biológico': 'Tipo Amostra',
                   'Municipio_do_Solicitante': 'Município',
                   'Data_da_Coleta': 'Data Coleta',
-                  'Sexo': 'Sexo'}
+                  'Sexo': 'Sexo',
+                  'lineage': 'Genótipo'}
 
 def generate_report_chikv(metadata_path, config_path, output_folder):
 
@@ -75,9 +90,10 @@ def generate_report_chikv(metadata_path, config_path, output_folder):
     
     # Processar os arquivos na pasta de entrada
     metadata, sequence, records, reads, coverage, errors = input_folder(output_folder, metadata_path)
+    genotype = genotype_chikv(output_folder)
 
     df_combine_sequence = process_and_combine_data(metadata, reads, coverage, errors,
-                                                   output_folder, rename_columns)
+                                                   output_folder, rename_columns, genotype)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")
