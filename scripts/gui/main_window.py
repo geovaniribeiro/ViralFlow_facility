@@ -9,7 +9,7 @@ import subprocess
 import os
 import sys
 import matplotlib
-matplotlib.use('Agg')  
+matplotlib.use('Agg')
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -20,8 +20,7 @@ from scripts.utilities.update_viralflow import atualizar_viralflow  # Função p
 from scripts.utilities.update_GUI import atualizar_GUI  # Função para atualizar viralflow
 from scripts.analysis.report.report_generator_denv import generate_report_denv  # Classe para geração de relatórios
 from scripts.analysis.report.report_generator_chikv import generate_report_chikv  # Classe para geração de relatórios
-from scripts.analysis.DenvNextclade import DenvNextclade # Classe para rodar DenvNext (genotyping e linhagem)
-from scripts.analysis.ChikvNextclade import ChikvNextclade # Classe para rodar ChikvNextclade (genotyping e linhagem)
+from scripts.analysis.nextclade_runners import DenvNextclade, ChikvNextclade # Classes para rodar Nextclade (genotyping e linhagem)
 
 
 class WorkerThread(QThread):
@@ -122,51 +121,54 @@ class MenuInicial(QWidget):
             QApplication.quit()
 
 
-class ViralFlowDENV(ViralFlowGUI_custom):
+class ViralFlowVirusHandler(ViralFlowGUI_custom):
+    def __init__(self, menu_inicial=None, virus=None):
+        super().__init__(menu_inicial, virus=virus)
+        self.menu_principal = menu_inicial
+        
+        # Dicionário de configuração para cada vírus
+        self.virus_config = {
+            "DENV": {"processor": DenvNextclade, "report_func": generate_report_denv},
+            "CHIKV": {"processor": ChikvNextclade, "report_func": generate_report_chikv}
+        }
+
+    def report_generator(self, message):
+        """
+        Este método usa o dicionário de configuração para chamar o processador e a função de relatório.
+        """
+        config = self.virus_config.get(self.virus)
+        if not config:
+            QMessageBox.critical(self, "Erro", f"Configuração para o vírus '{self.virus}' não encontrada.")
+            return
+
+        try:
+            metadata_path = self.entries['metadata'].text()
+            config_path = self.entries['config_file'].text()
+            output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
+
+            print(f"\nGerando relatório {self.virus}...")
+            
+            processor = config["processor"](output_folder)
+            processor.execute_pipeline()
+            
+            config["report_func"](metadata_path, config_path, output_folder)
+            
+            print("\nRelatório gerado com sucesso")
+            QMessageBox.information(self, "Relatório", f"Relatório {self.virus} gerado com sucesso.")
+        except KeyError as e:
+            QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório {self.virus}: {str(e)}")
+
+
+class ViralFlowDENV(ViralFlowVirusHandler):
     def __init__(self, menu_inicial=None):
         super().__init__(menu_inicial, virus="DENV")
-        self.menu_principal = menu_inicial
-
-    def report_generator(self, message):
-        try:
-            metadata_path = self.entries['metadata'].text()
-            config_path = self.entries['config_file'].text()
-            output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
-
-            print("\nGerando relatório DENV...")
-            processor = DenvNextclade(output_folder)
-            processor.execute_pipeline()
-            generate_report_denv(metadata_path, config_path, output_folder)
-            print("\nRelatório gerado com sucesso")
-            QMessageBox.information(self, "Relatório", "Relatório DENV gerado com sucesso.")
-        except KeyError as e:
-            QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
-        except Exception as e:
-            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório DENV: {str(e)}")
 
 
-class ViralFlowCHIKV(ViralFlowGUI_custom):
+class ViralFlowCHIKV(ViralFlowVirusHandler):
     def __init__(self, menu_inicial=None):
         super().__init__(menu_inicial, virus="CHIKV")
-        self.menu_principal = menu_inicial
-
-    def report_generator(self, message):
-        try:
-            metadata_path = self.entries['metadata'].text()
-            config_path = self.entries['config_file'].text()
-            output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
-
-            print("\nGerando relatório CHIKV...")
-            processor = ChikvNextclade(output_folder)
-            processor.execute_pipeline()
-            generate_report_chikv(metadata_path, config_path, output_folder)
-            print("\nRelatório gerado com sucesso")
-            QMessageBox.information(self, "Relatório", "Relatório CHIKV gerado com sucesso.")
-        except KeyError as e:
-            QMessageBox.critical(self, "Erro", f"Campo não encontrado: {str(e)}")
-        except Exception as e:
-            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatório CHIKV: {str(e)}")
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
