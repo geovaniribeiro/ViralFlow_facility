@@ -6,6 +6,16 @@ from unidecode import unidecode
 import seaborn as sns
 import re
 
+'''
+Este script contém funções diversas relacionadas ao processamento de Arbovírus: CHIKV, DENV, ZIKV e OROV;
+1) filter_depth: Defini cobertura horizontal mínima para geração de arquivo fasta e EpiArbo.csv
+2) format_virus_name: reformata o nome encontrado da seguinte forma:
+        Primeira letra → maiúscula
+        Letras do meio → minúsculas
+        Última letra → maiúscula
+        Ex: DenV, ZikV, OroV
+'''
+
 #A função 'filter_depth' gera um arquivo intermediário 'tabela_resultados_filt.csv' com informações apenas das amostras com cobertua > 60%
 def filter_depth(resultado_df, output_folder):
 

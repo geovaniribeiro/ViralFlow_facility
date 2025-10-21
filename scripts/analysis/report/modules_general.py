@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 #Carregar todas as lib usadas ao longo de todo script
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -12,6 +11,21 @@ import shutil
 import yaml
 from unidecode import unidecode
 import seaborn as sns
+
+
+'''
+Este script contém diversas funções, afim de otimizar a manutenção e refatoração do código:
+1) padronizar_colunas: Padroniza o nome das colunas que tem variações nos banco de dados regionais
+2) load_config: Lê um arquivo de configuração .yaml (submission_info.yaml) e retorna seu conteúdo como um dicionário Python.
+3) input_folder: Carrega e prepara os principais arquivos de entrada (metadados, sequencia, reads_count,
+                short_summary, arquivos erros)
+4) data_processing: Carrega e processa os arquivos reads_count.csv e short_summary.csv
+5) process_and_combine_data: Combina os diferentes conjuntos de dados (metadata, reads, coverage, errors e opcionalmente lineage) 
+                em uma única tabela consolidada
+6) mod_pasta: Cria (ou recria) a subpasta RNSG_REPORT dentro da pasta de saída.
+7) Quality_monitor: Gera um relatório gráfico de controle de qualidade das amostras
+8) remover_csv: Remove arquivos intermediários gerados durante a execução do script
+'''
 
 colunas_mapeadas = {
     "Código_da_Amostra": [r"C[oó]digo\s*(?:da\s*)?Amostra"],
