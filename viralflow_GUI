@@ -1,34 +1,35 @@
 #!/bin/bash
 
-# Caminho absoluto do diretório atual
+# Garante que o script pare em caso de erro
+set -e
+
+# Caminho absoluto do diretório da aplicação
 path=$(realpath "$(dirname "$0")")
 
-# Adiciona o micromamba ao PATH explicitamente
-export PATH="$HOME/bin:$PATH"
-
-# Inicializa o shell para micromamba
-eval "$(micromamba shell hook --shell bash)"
-
-# Carregar manualmente as alterações feitas no ~/.bashrc no ambiente atual
+# Inicializa o Micromamba de forma robusta (apenas uma vez)
+# Esta é a forma recomendada para scripts não interativos
 export MAMBA_EXE="$HOME/bin/micromamba"
 export MAMBA_ROOT_PREFIX="$HOME/micromamba"
 __mamba_setup="$("$MAMBA_EXE" shell hook --shell bash --root-prefix "$MAMBA_ROOT_PREFIX" 2> /dev/null)"
 if [ $? -eq 0 ]; then
     eval "$__mamba_setup"
 else
-    alias micromamba="$MAMBA_EXE"  # Fallback para ativar manualmente, se necessário
+    echo "Erro: Não foi possível inicializar o Micromamba." >&2
+    exit 1
 fi
 unset __mamba_setup
 
-micromamba activate
-
-# Ativa o ambiente
-micromamba activate viralflow_gui
-
-
+# Abre o gnome-terminal e, dentro dele, executa o comando para
+# ativar o ambiente e rodar o script Python.
 gnome-terminal -- bash -c "
-echo '###################################################################';
-echo '######################## Interface Gráfica ########################';
-echo '###################################################################';                                                                                                     
-python3 ${path}/scripts/gui/main_window.py;
+echo '#######################################################################';
+echo '############### Viralflow | Interface Gráfica em Execução #############';
+echo '#######################################################################';
+echo '';
+echo 'Iniciando a aplicação...';
+micromamba run -n viralflow_gui python3 '${path}/scripts/gui/main_window.py';
+echo '';
+echo 'Aplicação finalizada';
 exec bash"
+
+exit 0
