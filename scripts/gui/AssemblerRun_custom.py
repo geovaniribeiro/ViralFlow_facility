@@ -229,7 +229,11 @@ class ViralFlowGUI(QWidget):
             if isinstance(entry, QLineEdit):
                 params[key] = entry.text()
             elif isinstance(entry, QComboBox):
-                params[key] = entry.currentData()
+                if key == 'primersBED':
+                    params[key] = entry.currentData() # O caminho completo
+                    self.selected_primer_name = entry.currentText()
+                else:
+                    params[key] = entry.currentData()
 
         ref_code = None
         ref_entry = self.entries.get('refGenomeCode')

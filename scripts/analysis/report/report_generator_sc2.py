@@ -27,7 +27,7 @@ def lineage_sc2(output_folder):
 ##Contem as seguintes colunas: Gal Sequenciamento, Código Amostra, Nome da Sequencia, CT, Tipo Amostra, Município,
     #Data Coleta, Sexo, Reads, Cobertura, Profundidade Média, Linhagem
 
-def planilha_resultado(covv_virus_name, final_df, output_folder):
+def planilha_resultado(covv_virus_name, final_df, output_folder, primer_version):
 
     #print("planilha_resultado")
 
@@ -45,7 +45,8 @@ def planilha_resultado(covv_virus_name, final_df, output_folder):
     result_table["CT"] = ""
     result_table["Software Montagem"] = "ViralFlow"
     result_table["Versão software"] = ""
-    result_table["Versão primer"] = "Artic 5.3.2"
+    #result_table["Versão primer"] = "Artic 5.3.2"
+    result_table["Versão primer"] = primer_version.replace('.bed', '')
     result_table["Versão Pangolin"] = ""
 
     #Change order header
@@ -543,7 +544,7 @@ rename_columns = {
         'Sexo': 'Sexo'
     }
 
-def generate_report(metadata_path, config_path, output_folder):
+def generate_report(metadata_path, config_path, output_folder, primer_version):
 
     # Carregar configurações
     config = load_config(config_path)
@@ -583,7 +584,7 @@ def generate_report(metadata_path, config_path, output_folder):
     covv_virus_name_file = os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx')
     if os.path.exists(covv_virus_name_file):
         covv_virus_name = pd.read_excel(covv_virus_name_file)
-        planilha_resultado(covv_virus_name, final_df, output_folder)
+        planilha_resultado(covv_virus_name, final_df, output_folder, primer_version)
     else:
         raise FileNotFoundError(f"Arquivo {covv_virus_name_file} não encontrado!")
 
