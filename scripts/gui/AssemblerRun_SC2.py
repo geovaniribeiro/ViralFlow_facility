@@ -23,7 +23,7 @@ from scripts.analysis.report.modules_general import data_processing, mod_pasta, 
 
 
 class AssemblerRun_SC2(AssemblerThread):
-    def __init__(self, command_viralflow, output_folder, metadata_path, config_path, input_path):
+    def __init__(self, command_viralflow, output_folder, metadata_path, config_path, input_path, primer_version):
         if metadata_path and input_path:
             try:
                 rename_fastq_files(metadata_path, input_path)
@@ -38,6 +38,7 @@ class AssemblerRun_SC2(AssemblerThread):
         self.metadata_path = metadata_path
         self.config_path = config_path
         self.input_path = input_path
+        self.primer_version = primer_version
 
     def run(self):
         try:
@@ -62,7 +63,8 @@ class AssemblerRun_SC2(AssemblerThread):
         generate_report(
             output_folder=self.output_folder,
             metadata_path=self.metadata_path,
-            config_path=self.config_path
+            config_path=self.config_path,
+            primer_version=self.primer_version
         )
         self.process_started.emit("Relatório gerado com sucesso!\n")
 
@@ -183,6 +185,7 @@ class ViralFlowGUI_SC2(QWidget):
 
     def run_command(self):
         params = {key: entry.text() for key, entry in self.entries.items()}
+        primer_version = self.bed_combo.currentText()
         bed_file = os.path.join(self.resources_path, self.bed_combo.currentText())
         nextflow_path = self.get_nextflow_path()
 
@@ -211,7 +214,8 @@ class ViralFlowGUI_SC2(QWidget):
             os.path.join(params['outDir'], "COMPILED_OUTPUT"),
             metadata_path=params['metadata'],
             config_path=params['config_file'],
-            input_path=params['inDir']
+            input_path=params['inDir'],
+            primer_version=primer_version
         )
 
         self.thread.process_started.connect(self.update_status)

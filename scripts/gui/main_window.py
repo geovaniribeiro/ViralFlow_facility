@@ -145,13 +145,14 @@ class ViralFlowVirusHandler(ViralFlowGUI_custom):
             metadata_path = self.entries['metadata'].text()
             config_path = self.entries['config_file'].text()
             output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
+            primer_version = self.selected_primer_name
 
             print(f"\nGerando relatório {self.virus}...")
             
             processor = config["processor"](output_folder)
             processor.execute_pipeline()
             
-            config["report_func"](metadata_path, config_path, output_folder)
+            config["report_func"](metadata_path, config_path, output_folder, primer_version)
             
             print("\nRelatório gerado com sucesso")
             QMessageBox.information(self, "Relatório", f"Relatório {self.virus} gerado com sucesso.")

@@ -38,7 +38,7 @@ def genotype_denv(output_folder):
 
     return genotype
 
-def planilha_resultado(arbo_virus_name, final_df, output_folder):
+def planilha_resultado(arbo_virus_name, final_df, output_folder, primer_version):
 
     #print("planilha_resultado")
 
@@ -59,7 +59,7 @@ def planilha_resultado(arbo_virus_name, final_df, output_folder):
     result_table["CT"] = ""
     result_table["Software Montagem"] = "ViralFlow"
     result_table["Versão software"] = "1.3"
-    result_table["Versão primer"] = "ZDC_CADDE 1.0"
+    result_table["Versão primer"] = primer_version.replace('.bed', '')
 
     #Change order header
     result_table = result_table[["LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
@@ -579,7 +579,7 @@ rename_columns = {'cod': 'Código Amostra',
         'Data_da_Coleta': 'Data Coleta',
         'Sexo': 'Sexo'}
 
-def generate_report_denv(metadata_path, config_path, output_folder):
+def generate_report_denv(metadata_path, config_path, output_folder, primer_version):
 
     # Carregar configurações
     config = load_config(config_path)
@@ -621,7 +621,7 @@ def generate_report_denv(metadata_path, config_path, output_folder):
     arbo_virus_name = os.path.join(output_folder, 'RNSG_REPORT/Planilha_de_Resultado.xlsx')
     if os.path.exists(arbo_virus_name):
         covv_virus_name = pd.read_excel(arbo_virus_name)
-        planilha_resultado(covv_virus_name, final_df, output_folder)
+        planilha_resultado(covv_virus_name, final_df, output_folder, primer_version)
     else:
         raise FileNotFoundError(f"Arquivo {arbo_virus_name} não encontrado!")
 
