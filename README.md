@@ -25,6 +25,19 @@
 
 ## Requisitos e Pré‑instalação
 
+### Baixar e Extrair o ZIP do GitHub
+Para obter a ferramenta diretamente do repositório, você pode baixar o arquivo ZIP da versão mais recente e extrair seu conteúdo.
+
+1.  Acesse a página de Lançamento (Release) e clique no link para a versão v0.1.0-beta no GitHub: '[https://github.com/geovaniribeiro/ViralFlow_facility/releases/tag/v0.1.0-beta]'
+
+2.  Na seção Assets (Ativos) da página de release, localize e clique em 'ViralFlow_facility-0.1.0-beta.zip' para iniciar o download.
+3.  Descompacte o arquivo ViralFlow_facility-0.1.0-beta.zip para uma pasta de sua preferência (exemplo: ~/Documentos).
+
+> [!NOTE]
+> Certifique-se de que a estrutura de pastas extraída contenha o diretório `ViralFlow_facility-0.1.0-beta/setup` para prosseguir com os próximos passos de instalação.
+
+---
+
 > [!IMPORTANT]
 > Para executar os instaladores `.AppImage` em sistemas baseados em Debian/Ubuntu, instale a biblioteca **libfuse2**.
 
@@ -68,21 +81,25 @@ sudo apt install -y libfuse2
 
 ## Menu Inicial
 
-1. **Atualizar ViralFlow** — baixa a versão mais recente do repositório dos desenvolvedores.  
-2. **Atualizar bancos** — atualiza *pangolin* e *nextclade*.  
-3. **Selecionar vírus** — define o organismo alvo da análise.  
-4. **Ir para Análise** — abre a tela de análise conforme o vírus selecionado.  
-5. **Sair** — fecha a interface.
+1. **Atualizar Interface** — baixa a versão mais recente da interface gráfica.  
+2. **Atualizar ViralFlow** — baixa a versão mais recente do ViralFlow diretamente do repositório dos desenvolvedores.
+3. **Atualizar bancos** — atualiza o bando de dados do *pangolin*.  
+4. **Selecionar vírus** — define o organismo alvo da análise.  
+5. **Ir para Análise** — abre a tela de análise conforme o vírus selecionado.  
+6. **Sair** — fecha a interface.
 
 ---
 
 ## Utilitários
 
+### Atualização da Interface
+Atualiza a Interface Gráfica para a versão estável mais recente (https://github.com/geovaniribeiro/ViralFlow_facility/).
+
 ### Atualização do ViralFlow
 Atualiza o ViralFlow para a versão estável mais recente (https://viralflow.github.io/).
 
 ### Atualização de Banco de Dados
-Atualiza as classificações do *pangolin* (SARS‑CoV‑2) e o *nextclade* quando aplicável.
+Atualiza as classificações do *pangolin* (SARS‑CoV‑2) quando aplicável.
 
 ---
 
@@ -92,12 +109,12 @@ A interface executa o **ViralFlow** (montagem, variantes e classificação) e **
 
 São usados **dois arquivos** para integrar montagem + dados epidemiológicos/usuário:
 
-- `config.yaml`
+- `Submission_info.yaml`
 - CSV de metadados exportado do **GAL**
 
-### Ajuste do `config.yaml`
+### Ajuste do `Submission_info.yaml`
 
-Edite o arquivo `ViralFlow_facility/config.yaml` e ajuste as chaves:
+Edite o arquivo `ViralFlow_facility/Submission_info.yaml` e ajuste as chaves:
 
 - `submitter`: usuário responsável pela submissão ao GISAID  
 - `subm_lab`: nome do laboratório que submete  
@@ -128,7 +145,7 @@ Edite o arquivo `ViralFlow_facility/config.yaml` e ajuste as chaves:
 
 - **Opcionais**
   - **Metadados (CSV)** do GAL
-  - **Arquivo de Configuração (`config.yaml`)**
+  - **Arquivo de Informação para submissão (`Submission_info.yaml`)**
 
 > Se os opcionais não forem fornecidos, a interface fará **apenas a montagem** (sem gerar arquivos de submissão ao GISAID e sem planilha de resultados).
 
@@ -141,7 +158,7 @@ Edite o arquivo `ViralFlow_facility/config.yaml` e ajuste as chaves:
 ### Parâmetros
 
 - Clique em **Configurar Parâmetros** para ajustar as flags do ViralFlow.  
-- A descrição completa dos parâmetros está na documentação oficial.
+- A descrição completa dos parâmetros está na documentação oficial (https://viralflow.github.io/) .
 
 ### Execução
 
