@@ -28,10 +28,9 @@
 ### Baixar e Extrair o ZIP do GitHub
 Para obter a ferramenta diretamente do repositório, você pode baixar o arquivo ZIP da versão mais recente e extrair seu conteúdo.
 
-1.  Acesse a página de Lançamento (Release) e clique no link para a versão v0.1.0-beta no GitHub: '[https://github.com/geovaniribeiro/ViralFlow_facility/releases/tag/v0.1.0-beta]'
-
-2.  Na seção Assets (Ativos) da página de release, localize e clique em 'ViralFlow_facility-0.1.0-beta.zip' para iniciar o download.
-3.  Descompacte o arquivo ViralFlow_facility-0.1.0-beta.zip para uma pasta de sua preferência (exemplo: ~/Documentos).
+1.  Acesse a página de Lançamento (Release) e clique no link para a versão v0.1.0-beta no GitHub: [https://github.com/geovaniribeiro/ViralFlow_facility/releases/tag/v0.1.0-beta]
+2.  Na seção Assets (Ativos) da página de release, localize e clique em `ViralFlow_facility-0.1.0-beta.zip` para iniciar o download.
+3.  Descompacte o arquivo `ViralFlow_facility-0.1.0-beta.zip` para uma pasta de sua preferência (exemplo: ~/Documentos).
 
 > [!NOTE]
 > Certifique-se de que a estrutura de pastas extraída contenha o diretório `ViralFlow_facility-0.1.0-beta/setup` para prosseguir com os próximos passos de instalação.
@@ -50,7 +49,7 @@ sudo apt install -y libfuse2
 
 ## Instalação do ViralFlow
 
-1. (Opcional, se já instalado) Acesse a pasta `ViralFlow_facility/setup` e execute:
+1. (Opcional, se já instalado) Acesse a pasta `ViralFlow_facility/setup` e execute com um duplo-clique:
    - **Linux (GUI/duplo clique):** `ViralFlow_installer.AppImage`
 2. Um terminal será aberto. Pressione **Enter** para iniciar a instalação.
 3. Sua senha de usuário poderá ser solicitada.
