@@ -14,14 +14,22 @@ from scripts.analysis.report.modules_general import load_config, mod_pasta, Qual
 
 def lineage_sc2(output_folder):
 
-    # Construct the file path for the CSV file
+    # Load lineage from major_summary
     lineage_path = os.path.join(output_folder, "major_summary.csv")
 
     lineage = pd.read_csv(lineage_path, sep =',')
 
     lineage['cod'] = lineage['cod'].replace(to_replace ='_.*', value = '', regex = True)
 
-    return lineage
+    # Load pango version from pango.csv
+    pangolin_path = os.path.join(output_folder, "pango.csv")
+
+    pangolin_version = pd.read_csv(pangolin_path, sep =',')
+    pangolin_version = pangolin_version[~pangolin_version['taxon'].str.contains('_minor', na=False)]
+
+    pangolin_version['cod'] = pangolin_version['cod'].replace(to_replace ='_.*', value = '', regex = True)
+
+    return lineage, pangolin_version
 
 #A função 'planilha_resultado' cria um arquivo chamado 'Planilha_de_Resultado.xlsx' que contem os resultados em formato de planilha xlsx.
 ##Contem as seguintes colunas: Gal Sequenciamento, Código Amostra, Nome da Sequencia, CT, Tipo Amostra, Município,
@@ -45,9 +53,7 @@ def planilha_resultado(covv_virus_name, final_df, output_folder, primer_version)
     result_table["CT"] = ""
     result_table["Software Montagem"] = "ViralFlow"
     result_table["Versão software"] = ""
-    #result_table["Versão primer"] = "Artic 5.3.2"
     result_table["Versão primer"] = primer_version.replace('.bed', '')
-    result_table["Versão Pangolin"] = ""
 
     #Change order header
     result_table = result_table[["LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
@@ -535,8 +541,9 @@ rename_columns = {
         'cod': 'Código Amostra',
         'mepf_reads_aligned': 'Reads',
         'coverage_breadth': 'Coverage',
-        'mean_depth_coverage_x': 'Depth of Coverage',
+        'mean_depth_coverage': 'Depth of Coverage',
         'lineage': 'Linhagem',
+        'pangolin_version' : 'Versão Pangolin', 
         'Requisição': 'Requisição',
         'Material_Biológico': 'Tipo Amostra',
         'Municipio_do_Solicitante': 'Município',
@@ -553,9 +560,9 @@ def generate_report(metadata_path, config_path, output_folder, primer_version):
     
     # Processar os arquivos na pasta de entrada
     metadata, sequence, records, reads, coverage, errors = input_folder(output_folder, metadata_path)
-    lineage = lineage_sc2(output_folder)
+    lineage, pangolin_version = lineage_sc2(output_folder)
     df_combine_sequence = process_and_combine_data(metadata, reads, coverage, errors,
-                                                   output_folder, rename_columns, lineage)
+                                                   output_folder, rename_columns, lineage, pangolin_version)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")

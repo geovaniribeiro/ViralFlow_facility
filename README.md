@@ -127,7 +127,7 @@ Edite o arquivo `ViralFlow_facility/Submission_info.yaml` e ajuste as chaves:
 
 1. Baixe o CSV em **Biologia Médica/Sequenciamento** (ou **Vírus / Sequenciamento**).  
 2. **Não edite** o CSV para evitar problemas de codificação.  
-3. **Correspondência de nomes**: o nome da amostra no sequenciador deve bater com o **código da amostra** ou **número de requisição** do GAL.  
+3. **Correspondência de nomes**: o nome da amostra no sequenciador deve coincidir com o **código da amostra** ou **número de requisição** do *GAL SEQUENCIAMENTO*.  
 4. Use a aba **Relatório Epidemiológico por Exame** → **Selecionar Campos: Marcar Todos** → defina o intervalo de datas → **Gerar**.  
 5. Faça o download do `.zip` e **extraia** para obter o CSV a ser usado na análise.
 
