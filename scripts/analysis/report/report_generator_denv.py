@@ -36,7 +36,7 @@ def genotype_denv(output_folder):
     # Combine serotype and genotype filtered DataFrames
     genotype = pd.merge(serotype_filtered, genotype_filtered, on='cod', how='outer')
 
-    return genotype
+    return serotype, genotype
 
 def planilha_resultado(arbo_virus_name, final_df, output_folder, primer_version):
 
@@ -588,10 +588,11 @@ def generate_report_denv(metadata_path, config_path, output_folder, primer_versi
     
     # Processar os arquivos na pasta de entrada
     metadata, sequence, records, reads, coverage, errors = input_folder(output_folder, metadata_path)
-    genotype = genotype_denv(output_folder)
+    serotype, genotype = genotype_denv(output_folder)
 
     df_combine_sequence = process_and_combine_data(metadata, reads, coverage, errors,
-                                                   output_folder, rename_columns, genotype)
+                                                   output_folder, rename_columns,
+                                                   lineage=genotype, serotype=serotype)
 
     # Trabalhar com arquivos de resultados
     resultado_file = os.path.join(output_folder, "tabela_resultados.csv")

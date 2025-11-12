@@ -140,75 +140,79 @@ def data_processing(output_folder):
     return reads, coverage
 
 
-def process_and_combine_data(metadata, reads, coverage, errors, output_folder, rename_columns, lineage = None):
+def process_and_combine_data(metadata, reads, coverage, errors, output_folder, rename_columns,
+                             lineage=None, pangolin_version=None, serotype=None):
     """
-    Combina os dados de diferentes fontes (metadata, reads, coverage e lineage) e processa os resultados
-    para gerar um arquivo consolidado em formato CSV.
-
-    Parâmetros:
-    - metadata (DataFrame): Dados de metadados do GAL.
-    - reads (DataFrame): Dados de leituras de sequência.
-    - coverage (DataFrame): Dados de cobertura de sequência.
-    - lineage (DataFrame): Dados de linhagens ou sorotipos.
-    - output_folder (str): Caminho para salvar o arquivo de resultados.
-    - rename_columns (dict): Dicionário de mapeamento de nomes de colunas para renomeação.
-    - result_cols (list): Lista com a ordem final das colunas do DataFrame.
+    Combina os dados de diferentes fontes (metadata, reads, coverage e lineage/pangolin_version)
+    e processa os resultados para gerar um arquivo consolidado em formato CSV.
     """
 
-    # Remover redundância no nome do tipo de amostra
+    # --- Limpeza e formatação do metadata ---
     metadata['Material_Biológico'] = metadata['Material_Biológico'].replace(to_replace=' .*', value='', regex=True)
-
-    # Formatar as datas corretamente
     metadata['Data_da_Coleta'] = pd.to_datetime(metadata['Data_da_Coleta'], dayfirst=True, errors='coerce').dt.strftime('%d-%m-%Y')
 
-    # Selecionar e renomear colunas do metadata
     metadata = metadata[['Código_da_Amostra', 'Requisição', 'Material_Biológico',
-                         'Municipio_do_Solicitante', "Idade", "Tipo_Idade",'Estado_do_Solicitante', 'Data_da_Coleta', 'Sexo']]
+                         'Municipio_do_Solicitante', "Idade", "Tipo_Idade",
+                         'Estado_do_Solicitante', 'Data_da_Coleta', 'Sexo']]
 
-    # Atualizar dados de coverage
     coverage_update = coverage[['cod', 'coverage_breadth', 'mean_depth_coverage']]
-
-    #Atualizar erros
     errors = errors[['cod']]
 
-    # Juntar dados: reads, coverage e lineage se lineage foi fornecido, adicionar na junção
+    # --- Criação base do combined_data ---
+    combined_data = pd.merge(reads, coverage_update, on='cod', how='outer')
+
+    # Adicionar lineage se fornecido
     if lineage is not None:
-        combined_data = pd.merge(reads, coverage_update, on='cod', how='outer')
-        combined_data = pd.merge(combined_data, lineage, on='cod', how='outer')
-        combined_data = pd.merge(combined_data, errors, on='cod', how='outer') 
-    elif lineage is None:
-        combined_data = pd.merge(reads, coverage_update, on='cod', how='outer')
+        lineage_cols = [c for c in lineage.columns if c in ['cod', 'lineage']]
+        combined_data = pd.merge(combined_data, lineage[lineage_cols], on='cod', how='outer')
+
+
+    # Adicionar pangolin_version se fornecido
+    if pangolin_version is not None:
+        pangolin_cols = ['cod', 'pangolin_version', 'lineage', 'scorpio_call']
+        pangolin_version = pangolin_version[pangolin_cols].copy()
+
+        # Se houver colunas duplicadas, renomeie-as
+        pangolin_version = pangolin_version.rename(columns={
+            'lineage': 'lineage_pango',
+            'scorpio_call': 'scorpio_call_pango'
+        })
+
+        combined_data = pd.merge(combined_data, pangolin_version, on='cod', how='outer')
+        # Sempre adicionar erros
         combined_data = pd.merge(combined_data, errors, on='cod', how='outer')
 
+    if serotype is not None:
+        combined_data = pd.merge(combined_data, serotype, on='cod', how='outer')
+
+    combined_data = pd.merge(combined_data, errors, on='cod', how='outer')
+
+    # --- Garantir tipos corretos para merge ---
     combined_data['cod'] = combined_data['cod'].astype(str)
-    # Garantir que não há warnings
-    metadata = metadata.copy()  # Faça isso apenas se necessário
-    metadata.loc[:, 'Código_da_Amostra'] = metadata['Código_da_Amostra'].astype(str)
+    metadata = metadata.copy()
     metadata['Código_da_Amostra'] = metadata['Código_da_Amostra'].astype(str)
-    
-    metadata.loc[:, 'Requisição'] = metadata['Requisição'].astype(str)
     metadata['Requisição'] = metadata['Requisição'].astype(str)
 
-    # Juntar com metadata
+    # --- Merge final com metadados ---
     final_df = pd.merge(combined_data, metadata, left_on="cod", right_on="Código_da_Amostra")
 
-    # Renomear colunas
+    # --- Renomear e formatar ---
     final_df.rename(columns=rename_columns, inplace=True)
- 
-    # Reordenar colunas
-    #final_df = final_df[result_cols]
 
-    # Ajustar valores de Coverage para porcentagem e arredondar Depth of Coverage
-    final_df['Coverage'] = final_df['Coverage'].astype(float).multiply(100).round(2)
-    final_df['Depth of Coverage'] = final_df['Depth of Coverage'].astype(float).round(2)
+    # Ajustar valores de cobertura
+    if 'Coverage' in final_df.columns:
+        final_df['Coverage'] = final_df['Coverage'].astype(float).multiply(100).round(2)
+    if 'Depth of Coverage' in final_df.columns:
+        final_df['Depth of Coverage'] = final_df['Depth of Coverage'].astype(float).round(2)
 
-    # Configurar a coluna de índice
+    # Definir índice
     final_df.set_index('Requisição', inplace=True)
 
-    # Salvar arquivo final
+    # --- Salvar resultado ---
     final_df.to_csv(os.path.join(output_folder, "tabela_resultados.csv"))
 
     return final_df
+
 
 
 #Adiciona a pasta de RNSG_REPORT, a qual serao a adiciona os graficos, planilha, e outros
