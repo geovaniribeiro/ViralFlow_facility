@@ -21,6 +21,8 @@ from scripts.analysis.report.report_generator_sc2 import generate_report
 from scripts.analysis.rename_fastq import rename_fastq_files
 from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
 
+CONFIG_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SUBMISSION_INFO_PATH = os.path.join(CONFIG_DIR, "submission_info.yaml")
 
 class AssemblerRun_SC2(AssemblerThread):
     def __init__(self, command_viralflow, output_folder, metadata_path, config_path, input_path, primer_version):
@@ -112,7 +114,6 @@ class ViralFlowGUI_SC2(QWidget):
             ("Pasta de entrada", "inDir", False),
             ("Pasta de saída", "outDir", False),
             ("Metadados (.csv) [Opcional]", "metadata", True),
-            ("Submission_info (.yaml) [Opcional]", "config_file", True),
         ]
         
         self.entries = {}
@@ -213,7 +214,7 @@ class ViralFlowGUI_SC2(QWidget):
             command_viralflow,
             os.path.join(params['outDir'], "COMPILED_OUTPUT"),
             metadata_path=params['metadata'],
-            config_path=params['config_file'],
+            config_path=SUBMISSION_INFO_PATH,
             input_path=params['inDir'],
             primer_version=primer_version
         )

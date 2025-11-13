@@ -9,9 +9,7 @@
 - [Iniciando a Interface](#iniciando-a-interface)
 - [Menu Inicial](#menu-inicial)
 - [Utilitários](#utilitários)
-- [Metadados e Avisos](#metadados-e-avisos)
-  - [Ajuste do `config.yaml`](#ajuste-do-configyaml)
-  - [Metadados do GAL](#metadados-do-gal)
+- [Metadados](#metadados-e-avisos)
 - [Análise de SARS‑CoV‑2](#análise-de-sars-cov-2)
   - [Entradas Obrigatórias e Opcionais](#entradas-obrigatórias-e-opcionais)
   - [Selecionando Pastas/Arquivos](#selecionando-pastasarquivos)
@@ -82,10 +80,11 @@ sudo apt install -y libfuse2
 
 1. **Atualizar Interface** — baixa a versão mais recente da interface gráfica.  
 2. **Atualizar ViralFlow** — baixa a versão mais recente do ViralFlow diretamente do repositório dos desenvolvedores.
-3. **Atualizar bancos** — atualiza o bando de dados do *pangolin*.  
-4. **Selecionar vírus** — define o organismo alvo da análise.  
-5. **Ir para Análise** — abre a tela de análise conforme o vírus selecionado.  
-6. **Sair** — fecha a interface.
+3. **Atualizar bancos** — atualiza o bando de dados do *pangolin*.
+4. **Cadastrar Informações** - colocar dados de submissão do GISAID.
+5. **Selecionar vírus** — define o organismo alvo da análise.
+6. **Ir para Análise** — abre a tela de análise conforme o vírus selecionado.  
+7. **Sair** — fecha a interface.
 
 ---
 
@@ -100,30 +99,21 @@ Atualiza o ViralFlow para a versão estável mais recente (https://viralflow.git
 ### Atualização de Banco de Dados
 Atualiza as classificações do *pangolin* (SARS‑CoV‑2) quando aplicável.
 
+### Cadastrar Informações do Submissor
+Informa os dados do submissor, Laboratório e endereço do executor e autores responsáveis pelo sequenciamento.
+- `Submitter`: usuário responsável pela submissão ao GISAID  
+- `Submissor`: nome do laboratório que submete  
+- `Endereço do laboratório`: endereço completo do laboratório  
+- `Autores`: lista de autores (responsáveis e chefias)
+
 ---
 
-## Metadados e Avisos
+## Metadados
 
 A interface executa o **ViralFlow** (montagem, variantes e classificação) e **gera arquivos complementares**: relatório de qualidade, planilhas de resultados e arquivos para submissão no **GISAID** (detalhes abaixo).
 
-São usados **dois arquivos** para integrar montagem + dados epidemiológicos/usuário:
-
-- `Submission_info.yaml`
+Será usado o arquivo do GAL para integrar montagem + dados epidemiológicos:
 - CSV de metadados exportado do **GAL**
-
-### Ajuste do `Submission_info.yaml`
-
-Edite o arquivo `ViralFlow_facility/Submission_info.yaml` e ajuste as chaves:
-
-- `submitter`: usuário responsável pela submissão ao GISAID  
-- `subm_lab`: nome do laboratório que submete  
-- `subm_lab_addr`: endereço do laboratório  
-- `authors`: lista de autores (responsáveis e chefias)
-
-> [!WARNING]
-> **Não remova as aspas** onde houver (linhas `subm_lab`, `subm_lab_addr` e `authors`). Salve o arquivo após as alterações.
-
-### Metadados do GAL
 
 1. Baixe o CSV em **Biologia Médica/Sequenciamento** (ou **Vírus / Sequenciamento**).  
 2. **Não edite** o CSV para evitar problemas de codificação.  
@@ -144,7 +134,6 @@ Edite o arquivo `ViralFlow_facility/Submission_info.yaml` e ajuste as chaves:
 
 - **Opcionais**
   - **Metadados (CSV)** do GAL
-  - **Arquivo de Informação para submissão (`Submission_info.yaml`)**
 
 > Se os opcionais não forem fornecidos, a interface fará **apenas a montagem** (sem gerar arquivos de submissão ao GISAID e sem planilha de resultados).
 

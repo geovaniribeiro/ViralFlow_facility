@@ -368,7 +368,13 @@ def arquivo_epiarbo(config, metadata, df_combine_sequence, output_folder, arbo_v
     #Gender (Male / Female)
     arbo_gender = df_combine_sequence[['id','Sexo']]
 
-    gender = {'MASCULINO':'Male', 'FEMININO':'Female'}
+    # Dicionário de substituição correto
+    gender = {
+        'MASCULINO': 'Male', 'FEMININO': 'Female',
+        'Masculino': 'Male', 'Feminino': 'Female',
+        'masculino': 'Male', 'feminino': 'Female',
+        'M': 'Male', 'F': 'Female'
+    }
 
     arbo_gender.loc[:,'Sexo'] = arbo_gender['Sexo'].replace(gender)
 

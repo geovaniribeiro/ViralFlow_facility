@@ -18,6 +18,8 @@ from scripts.analysis.assembler.assembler_thread import AssemblerThread
 from scripts.analysis.rename_fastq import rename_fastq_files
 from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
 
+CONFIG_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SUBMISSION_INFO_PATH = os.path.join(CONFIG_DIR, "submission_info.yaml")
 
 # -----------------------------
 # Classe que executa os comandos
@@ -80,8 +82,7 @@ class ViralFlowGUI(QWidget):
             ("Arquivo bed (Primers)", "primersBED", True),
             ("Pasta de entrada", "inDir", False),
             ("Pasta de saída", "outDir", False),
-            ("Metadados (.csv) [Opcional]", "metadata", True),
-            ("Submission_info (.yaml) [Opcional]", "config_file", True),
+            ("Metadados (.csv) [Opcional]", "metadata", True)
         ]
 
         for label_text, field_name, is_file in self.fields:
@@ -270,18 +271,18 @@ class ViralFlowGUI(QWidget):
             command_viralflow,
             os.path.join(params.get('outDir', ""), "COMPILED_OUTPUT"),
             metadata_path=params.get('metadata'),
-            config_path=params.get('config_file'),
+            config_path=SUBMISSION_INFO_PATH,
             input_path=params.get('inDir')
         )
 
         self.thread.process_started.connect(self.update_status)
         self.thread.process_finished.connect(self.update_status)
         
-        if params.get('metadata') and params.get('config_file'):
+        if params.get('metadata'):
             if hasattr(self, "report_generator") and callable(getattr(self, "report_generator")):
                 self.thread.process_finished.connect(self.report_generator)
         else:
-             print("Aviso: metadata_path ou config_path não foram definidos, pulando a geração do relatório.")
+             print("Aviso: metadata_path não foi definido, pulando a geração do relatório.")
 
         self.thread.start()
 
