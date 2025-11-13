@@ -26,12 +26,12 @@
 ### Baixar e Extrair o ZIP do GitHub
 Para obter a ferramenta diretamente do repositório, você pode baixar o arquivo ZIP da versão mais recente e extrair seu conteúdo.
 
-1.  Acesse a página de Lançamento (Release) e clique no link para a versão v0.1.0-beta no GitHub: [https://github.com/geovaniribeiro/ViralFlow_facility/releases/tag/v0.1.0-beta]
-2.  Na seção Assets (Ativos) da página de release, localize e clique em `ViralFlow_facility-0.1.0-beta.zip` para iniciar o download.
-3.  Descompacte o arquivo `ViralFlow_facility-0.1.0-beta.zip` para uma pasta de sua preferência (exemplo: ~/Documentos).
+1.  Acesse a página de Lançamento (Release) e clique no link para a versão v0.2.0-beta no GitHub: [https://github.com/geovaniribeiro/ViralFlow_facility/releases/tag/v0.2.0-beta]
+2.  Na seção Assets (Ativos) da página de release, localize e clique em `ViralFlow_facility-0.2.0-beta.zip` para iniciar o download.
+3.  Descompacte o arquivo `ViralFlow_facility-0.2.0-beta.zip` para uma pasta de sua preferência (exemplo: ~/Documentos).
 
 > [!NOTE]
-> Certifique-se de que a estrutura de pastas extraída contenha o diretório `ViralFlow_facility-0.1.0-beta/setup` para prosseguir com os próximos passos de instalação.
+> Certifique-se de que a estrutura de pastas extraída contenha o diretório `ViralFlow_facility-0.2.0-beta/setup` para prosseguir com os próximos passos de instalação.
 
 ---
 
@@ -113,12 +113,12 @@ Informa os dados do submissor, Laboratório e endereço do executor e autores re
 A interface executa o **ViralFlow** (montagem, variantes e classificação) e **gera arquivos complementares**: relatório de qualidade, planilhas de resultados e arquivos para submissão no **GISAID** (detalhes abaixo).
 
 Será usado o arquivo do GAL para integrar montagem + dados epidemiológicos:
-- CSV de metadados exportado do **GAL**
+- Para obter o arquivo de metadados do GAL:
 
-1. Baixe o CSV em **Biologia Médica/Sequenciamento** (ou **Vírus / Sequenciamento**).  
-2. **Não edite** o CSV para evitar problemas de codificação.  
-3. **Correspondência de nomes**: o nome da amostra no sequenciador deve coincidir com o **código da amostra** ou **número de requisição** do *GAL SEQUENCIAMENTO*.  
-4. Use a aba **Relatório Epidemiológico por Exame** → **Selecionar Campos: Marcar Todos** → defina o intervalo de datas → **Gerar**.  
+1. Baixe o CSV em **Biologia Médica/Sequenciamento** (ou **Vírus / Sequenciamento**).
+2. **Não edite** o CSV para evitar problemas de codificação.
+3. **Correspondência de nomes**: o nome da amostra no sequenciador deve coincidir com o **código da amostra** ou **número de requisição** do *GAL SEQUENCIAMENTO*.
+4. Use a aba **Relatório Epidemiológico por Exame** → **Selecionar Campos: Marcar Todos** → defina o intervalo de datas → **Gerar**.
 5. Faça o download do `.zip` e **extraia** para obter o CSV a ser usado na análise.
 
 ---
