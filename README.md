@@ -9,7 +9,7 @@
 - [Iniciando a Interface](#iniciando-a-interface)
 - [Menu Inicial](#menu-inicial)
 - [Utilitários](#utilitários)
-- [Metadados](#metadados-e-avisos)
+- [Metadados](#metadados)
 - [Análise de SARS‑CoV‑2](#análise-de-sars-cov-2)
   - [Entradas Obrigatórias e Opcionais](#entradas-obrigatórias-e-opcionais)
   - [Selecionando Pastas/Arquivos](#selecionando-pastasarquivos)
