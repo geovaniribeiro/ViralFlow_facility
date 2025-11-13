@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import yaml
 from PySide6.QtWidgets import (
-    QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QRadioButton
-)
+    QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QRadioButton,
+    QDialog, QFormLayout, QLineEdit, QDialogButtonBox)
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThread, Signal
 import subprocess
@@ -22,6 +23,21 @@ from scripts.analysis.report.report_generator_denv import generate_report_denv  
 from scripts.analysis.report.report_generator_chikv import generate_report_chikv  # Classe para geração de relatórios
 from scripts.analysis.nextclade_runners import DenvNextclade, ChikvNextclade # Classes para rodar Nextclade (genotyping e linhagem)
 
+# --- Bloco de código para FORÇAR ASPAS no YAML ---
+class ForceQuote(str):
+    pass
+
+def force_quote_representer(dumper, data):
+    """
+    Define um 'representer' para o PyYAML que força aspas duplas (style='"').
+    """
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
+
+yaml.add_representer(ForceQuote, force_quote_representer)
+
+CONFIG_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SUBMISSION_INFO_PATH = os.path.join(CONFIG_DIR, "submission_info.yaml")
+# --- Bloco de código para FORÇAR ASPAS no YAML ---
 
 class WorkerThread(QThread):
     finished = Signal()
@@ -40,6 +56,83 @@ class WorkerThread(QThread):
         except Exception as e:
             self.error.emit(str(e))
 
+class SubmissionInfoDialog(QDialog):
+    """
+    Uma janela de diálogo para carregar, editar e salvar
+    o arquivo Submission_info.yaml.
+    """
+    def __init__(self, file_path, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Informações do Submissor")
+        self.file_path = file_path
+        self.data = {}
+
+        self.setMinimumWidth(600)
+
+        # Layout
+        layout = QVBoxLayout(self)
+        form_layout = QFormLayout()
+
+        # Campos
+        self.fields = {
+            'submitter': QLineEdit(),
+            'subm_lab': QLineEdit(),
+            'subm_lab_addr': QLineEdit(),
+            'authors': QLineEdit()
+        }
+        
+        form_layout.addRow("Submitter (usuário GISAID/EpiArbo):", self.fields['submitter'])
+        form_layout.addRow("Laboratório (submissor):", self.fields['subm_lab'])
+        form_layout.addRow("Endereço do Laboratório:", self.fields['subm_lab_addr'])
+        form_layout.addRow("Autores:", self.fields['authors'])
+
+        layout.addLayout(form_layout)
+
+        # Botões Salvar/Cancelar
+        button_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(self.save_data)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+
+        self.load_data()
+
+    def load_data(self):
+        """Carrega os dados do arquivo YAML, se existir."""
+        try:
+            if os.path.exists(self.file_path):
+                with open(self.file_path, 'r') as f:
+                    self.data = yaml.safe_load(f)
+                
+                info = self.data.get('user_info', {})
+                self.fields['submitter'].setText(info.get('submitter', ''))
+                self.fields['subm_lab'].setText(info.get('subm_lab', ''))
+                self.fields['subm_lab_addr'].setText(info.get('subm_lab_addr', ''))
+                self.fields['authors'].setText(info.get('authors', ''))
+            else:
+                print(f"Arquivo de configuração não encontrado em {self.file_path}. Campos estarão em branco.")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Erro ao Carregar", f"Não foi possível ler o arquivo YAML: {e}")
+
+    def save_data(self):
+        """Salva os dados dos campos de volta no arquivo YAML."""
+        # Garante que o diretório de configuração exista
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+        
+        self.data['user_info'] = {
+            'submitter': self.fields['submitter'].text(),
+            'subm_lab': ForceQuote(self.fields['subm_lab'].text()),
+            'subm_lab_addr': ForceQuote(self.fields['subm_lab_addr'].text()),
+            'authors': ForceQuote(self.fields['authors'].text())}
+
+        try:
+            with open(self.file_path, 'w') as f:
+                yaml.dump(self.data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            
+            QMessageBox.information(self, "Sucesso", "Informações salvas com sucesso!")
+            self.accept()
+        except Exception as e:
+            QMessageBox.critical(self, "Erro ao Salvar", f"Não foi possível salvar o arquivo YAML: {e}")
 
 class MenuInicial(QWidget):
     def __init__(self):
@@ -63,6 +156,11 @@ class MenuInicial(QWidget):
         db_update_button = QPushButton("Atualizar Banco de dados")
         db_update_button.clicked.connect(self.atualizar_banco_dados)
         layout.addWidget(db_update_button)
+
+        #Botão cadastrar informaçõe
+        self.info_button = QPushButton("Cadastrar Informações do Submissor")
+        self.info_button.clicked.connect(self.abrir_info_dialog)
+        layout.addWidget(self.info_button)
 
         # Botões de seleção de vírus
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
@@ -101,6 +199,12 @@ class MenuInicial(QWidget):
             self.thread_banco.finished.connect(lambda: QMessageBox.information(self, "Sucesso", "Banco de dados atualizado!"))
             self.thread_banco.error.connect(lambda msg: QMessageBox.critical(self, "Erro", msg))
             self.thread_banco.start()
+
+    def abrir_info_dialog(self):
+        """Abre a janela de diálogo para editar o Submission_info.yaml."""
+        # SUBMISSION_INFO_PATH foi definido no topo do arquivo
+        dialog = SubmissionInfoDialog(SUBMISSION_INFO_PATH, self)
+        dialog.exec()
 
     def executar_analise(self):
         if self.radio_sc2.isChecked():
@@ -143,7 +247,7 @@ class ViralFlowVirusHandler(ViralFlowGUI_custom):
 
         try:
             metadata_path = self.entries['metadata'].text()
-            config_path = self.entries['config_file'].text()
+            config_path = SUBMISSION_INFO_PATH
             output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
             primer_version = self.selected_primer_name
 
