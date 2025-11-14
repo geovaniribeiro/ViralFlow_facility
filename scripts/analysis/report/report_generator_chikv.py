@@ -9,7 +9,7 @@ from unidecode import unidecode
 import seaborn as sns
 
 from scripts.analysis.report.modules_general import load_config, mod_pasta, Quality_monitor, \
-    remover_csv, input_folder,process_and_combine_data
+    Quality_monitor_interactive, remover_csv, input_folder,process_and_combine_data
 from scripts.analysis.report.modules_EpiArbo import filter_depth, format_virus_name 
 from scripts.analysis.report.report_generator_denv import gerar_arquivo_fasta, arquivo_epiarbo
 
@@ -138,6 +138,21 @@ def generate_report_chikv(metadata_path, config_path, output_folder, primer_vers
         raise FileNotFoundError(f"Arquivo {arbo_virus_name} não encontrado!")
 
     Quality_monitor(coverage, reads, output_folder)
+
+    # Contabiliza os genotipos de genótipo CHIKV em memória
+    try:
+        genotype_summary_chikv = genotype.dropna(subset=['lineage'])['lineage'].value_counts().reset_index()
+        genotype_summary_chikv.columns = ['genotype', 'count']
+
+        summary_path = os.path.join(output_folder, "lineage_summary.csv")
+        genotype_summary_chikv.to_csv(summary_path, index=False)
+
+    except Exception as e:
+        print(f"Aviso: Não foi possível sumarizar dados de genótipo CHIKV. Erro: {e}")
+        genotype_summary_chikv = None
+
+    Quality_monitor_interactive(coverage, reads, output_folder,
+                                lineage_data=genotype_summary_chikv)
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)

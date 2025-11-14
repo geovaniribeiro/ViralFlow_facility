@@ -7,35 +7,45 @@ import os
 import sys
 from unidecode import unidecode
 import seaborn as sns
+import plotly.express as px
 
 from scripts.analysis.report.modules_general import load_config, mod_pasta, Quality_monitor, \
-    remover_csv, input_folder,process_and_combine_data
+    Quality_monitor_interactive, remover_csv, input_folder,process_and_combine_data
 from scripts.analysis.report.modules_EpiArbo import filter_depth, format_virus_name 
 
 # Load serotype and genotype files
 def genotype_denv(output_folder):
-    # Construct the file path for the serotype CSV file
+    # --- Parte do Serotype ---
     serotype_path = os.path.join(output_folder, "serotype.csv")
     serotype = pd.read_csv(serotype_path, sep=';')
-
-    # Process serotype DataFrame
     serotype['seqName'] = serotype['seqName'].replace(to_replace='_.*', value='', regex=True)
     serotype.rename(columns={'seqName': 'cod', 'clade': 'serotype'}, inplace=True)
     serotype_filtered = serotype[['cod', 'serotype']]
 
-    # Construct the file path for the genotype CSV file
+    # --- Parte do Genotype ---
     genotype_path = os.path.join(output_folder, "genotype.csv")
     genotype = pd.read_csv(genotype_path, sep=';')
 
-    # Process genotype DataFrame
+    # Processar o DataFrame de genótipo
     genotype['seqName'] = genotype['seqName'].replace(to_replace='_.*', value='', regex=True)
-    genotype.rename(columns={'seqName': 'cod', 'clade': 'lineage'}, inplace=True)
-    genotype['lineage'] = genotype['lineage'].str.split('_').str[0]
-    genotype_filtered = genotype[['cod', 'lineage']]
+    genotype.rename(columns={'seqName': 'cod', 'clade': 'clade_full'}, inplace=True)
 
-    # Combine serotype and genotype filtered DataFrames
+    # Separar 'clade_full' (ex: 1V_E) em duas colunas
+    split_data = genotype['clade_full'].str.split('_', n=1, expand=True)
+    genotype['genotype'] = split_data[0] # Ex: 1V
+    genotype['lineage'] = split_data[1]  # Ex: E, D.1.1
+    
+    # Preencher linhagens ausentes (caso o 'clade' não tenha '_')
+    genotype['lineage'] = genotype['lineage'].fillna('N/A') 
+    
+    # Manter apenas as colunas necessárias para o merge
+    genotype_filtered = genotype[['cod', 'genotype', 'lineage']]
+
+    # Combinar serótipo e o novo genótipo/linhagem
     genotype = pd.merge(serotype_filtered, genotype_filtered, on='cod', how='outer')
 
+    # Retorna o df de serótipo (usado pelo process_and_combine_data)
+    # E o df combinado com todas as infos de tipagem
     return serotype, genotype
 
 def planilha_resultado(arbo_virus_name, final_df, output_folder, primer_version):
@@ -634,6 +644,31 @@ def generate_report_denv(metadata_path, config_path, output_folder, primer_versi
 
 
     Quality_monitor(coverage, reads, output_folder)
+
+    # --- Criar gráfico Sunburst  ---
+    fig_sunburst = None
+    try:
+        # 1. Contar as combinações de genótipo/linhagem
+        lineage_summary = genotype.dropna(subset=['genotype', 'lineage'])\
+                             .groupby(['genotype', 'lineage'])\
+                             .size().reset_index(name='count')
+        
+        lineage_summary_path = os.path.join(output_folder, "lineage_summary.csv")
+        lineage_summary.to_csv(lineage_summary_path, index=False)
+
+        # 2. Criar a figura do Sunburst
+        fig_sunburst = px.sunburst(
+            lineage_summary,
+            path=['genotype', 'lineage'], # A hierarquia
+            values='count',
+            title='Proporção de Genótipos e Linhagens (DENV)',
+            hover_data=['count']
+        )
+        fig_sunburst.update_traces(textinfo='label+percent entry')
+    except Exception as e:
+        print(f"Aviso: Não foi possível gerar gráfico sunburst para DENV. Erro: {e}")
+
+    Quality_monitor_interactive(coverage, reads, output_folder, custom_fig=fig_sunburst)
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)
