@@ -9,7 +9,7 @@ from unidecode import unidecode
 import seaborn as sns
 
 from scripts.analysis.report.modules_general import load_config, mod_pasta, Quality_monitor, \
-    remover_csv, input_folder, process_and_combine_data
+    Quality_monitor_interactive, remover_csv, input_folder, process_and_combine_data
 
 
 def lineage_sc2(output_folder):
@@ -595,7 +595,13 @@ def generate_report(metadata_path, config_path, output_folder, primer_version):
     else:
         raise FileNotFoundError(f"Arquivo {covv_virus_name_file} não encontrado!")
 
+    #contabiliza as linhagens do major_summary.csv
+    lineage_summary_sc2 = lineage['lineage'].value_counts().reset_index()
+    lineage_summary_sc2.columns = ['lineage', 'count']
+    
     Quality_monitor(coverage, reads, output_folder)
+    Quality_monitor_interactive(coverage, reads, output_folder,
+                                lineage_data=lineage_summary_sc2)
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)
