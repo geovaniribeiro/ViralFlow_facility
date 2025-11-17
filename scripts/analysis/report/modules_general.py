@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #Carregar todas as lib usadas ao longo de todo script
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 from Bio import SeqIO
@@ -306,87 +307,225 @@ def Quality_monitor(coverage, reads, output_folder):
     plt.tight_layout()
     plt.savefig(os.path.join(output_folder, "RNSG_REPORT/Quality_check.png"), format='png', dpi = 300)
 
-def Quality_monitor_interactive(coverage, reads, output_folder, 
+def validate_negative_control(coverage_df, errors_df):
+    """
+    Valida o(s) Controle(s) Negativo(s) (CN) com base nas regras da RNSG.
+    
+    (Versão corrigida que identifica CNs de 'coverage_df' E 'errors_df')
+    """
+    
+    # 1. Identificar CNs e Amostras de AMBOS os arquivos
+    cods_from_coverage = set(coverage_df['cod'])
+    cods_from_errors = set(errors_df['cod'])
+    all_cods = cods_from_coverage.union(cods_from_errors)
+    
+    all_cn_cods = sorted([c for c in all_cods if not c[0].isdigit()])
+    
+    if not all_cn_cods:
+        msg = "<p style='padding: 10px; border: 1px solid #f0ad4e; background-color: #fcf8e3; color: #8a6d3b; border-radius: 5px;'>"
+        msg += "<strong>Atenção:</strong> Nenhum Controle Negativo (CN) foi identificado. "
+        msg += "A validação da corrida não pôde ser realizada.</p>"
+        # Retorna o coverage_df completo, pois não há positivos para filtrar
+        return msg, coverage_df 
+
+    # Amostras positivas são aquelas em 'coverage_df' que NÃO são CNs
+    positive_samples_df = coverage_df[~coverage_df['cod'].isin(all_cn_cods)]
+
+    # 2. Calcular Limiares de Validação (usando apenas amostras positivas)
+    valid_depths = positive_samples_df[positive_samples_df['mean_depth_coverage'] != np.inf]['mean_depth_coverage'].dropna()
+    
+    if not valid_depths.empty:
+        std_dev_positives = valid_depths.std()
+        depth_threshold = std_dev_positives - 50
+    else:
+        std_dev_positives = 0
+        depth_threshold = -50 
+        
+    coverage_threshold = 0.05  # 5% (coverage_breadth é 0-1)
+
+    # 3. Validar cada CN da lista combinada
+    validation_passed = True
+    messages = []
+    
+    for cn_cod in all_cn_cods:
+        cn_messages_list = []
+        cn_has_error = cn_cod in cods_from_errors
+        cn_in_coverage = cn_cod in cods_from_coverage
+        
+        if cn_in_coverage:
+            # Cenário 1: CN está no short_summary.csv (gerou consenso)
+            # Devemos validar as métricas
+            try:
+                cn_row = coverage_df[coverage_df['cod'] == cn_cod].iloc[0]
+                cn_coverage = cn_row['coverage_breadth']
+                cn_depth = cn_row['mean_depth_coverage']
+                cn_lineage = cn_row.get('lineage') 
+
+                # Regra 1: Linhagem
+                if pd.notna(cn_lineage) and cn_lineage != '':
+                    validation_passed = False
+                    cn_messages_list.append(f"<b>Falha:</b> Possui linhagem classificada ({cn_lineage}).")
+                
+                # Regra 2: Cobertura
+                if cn_coverage >= coverage_threshold:
+                    validation_passed = False
+                    cn_messages_list.append(f"<b>Falha:</b> Cobertura >= 5% (Valor: {cn_coverage:.2f}%).")
+                
+                # Regra 3: Profundidade
+                if cn_depth >= depth_threshold:
+                    validation_passed = False
+                    cn_messages_list.append(f"<b>Falha:</b> Profundidade >= {depth_threshold:.2f} (Valor: {cn_depth:.2f}).")
+                
+                if cn_has_error:
+                    cn_messages_list.append("<b>Info:</b> Também detectado no 'errors_detected.csv'.")
+                
+                if not cn_messages_list:
+                    messages.append(f"<li><b>{cn_cod}:</b> Aprovado (Gerou consenso, mas métricas estão abaixo dos limiares).</li>")
+                else:
+                    messages.append(f"<li><b>{cn_cod}:</b><ul><li>{'</li><li>'.join(cn_messages_list)}</li></ul></li>")
+
+            except Exception as e:
+                messages.append(f"<li><b>{cn_cod}:</b> Erro inesperado na validação (short_summary): {e}.</li>")
+                validation_passed = False
+        
+        elif cn_has_error:
+            # Cenário 2: CN está APENAS no errors_detected.csv (falhou)
+            # Este é o resultado ideal para um CN.
+            messages.append(f"<li><b>{cn_cod}:</b> Aprovado (Detectado no 'errors_detected.csv' e não gerou consenso).</li>")
+        
+        else:
+            # Cenário 3: Impossível (mas seguro verificar)
+            messages.append(f"<li><b>{cn_cod}:</b> Erro - CN não encontrado em 'short_summary' ou 'errors_detected'.</li>")
+            validation_passed = False
+
+
+    # 4. Montar Mensagem Final
+    if validation_passed:
+        msg = "<p style='padding: 10px; border: 1px solid #5cb85c; background-color: #dff0d8; color: #3c763d; border-radius: 5px;'>"
+        msg += "<strong>Controle Negativo (CN) Validado:</strong> A corrida parece estar livre de contaminação."
+        msg += f"<ul>{''.join(messages)}</ul></p>"
+    else:
+        msg = "<p style='padding: 10px; border: 1px solid #d9534f; background-color: #f2dede; color: #a94442; border-radius: 5px;'>"
+        msg += "<strong>Atenção - Controle Negativo (CN) REPROVADO:</strong> A corrida pode estar contaminada."
+        msg += f"<ul>{''.join(messages)}</ul></p>"
+
+    # Retorna a mensagem e o DataFrame APENAS com as amostras positivas
+    return msg, positive_samples_df
+
+
+# Em modules_general.py
+
+def Quality_monitor_interactive(coverage, reads, errors, output_folder, 
                                 lineage_data=None, 
-                                custom_fig=None):
+                                custom_fig=None,
+                                eligibility_threshold=60):
     """
     Gera um relatório HTML interativo de controle de qualidade usando Plotly.
-
-    Não lê mais arquivos de linhagem. Em vez disso:
-    - Se 'custom_fig' for fornecido (DENV), ele será exibido.
-    - Se 'lineage_data' (um DataFrame) for fornecido (SC2, CHIKV),
-      ele será usado para criar um gráfico de barras.
+    Agora inclui validação de CN, uma tabela de resumo e um resumo estatístico.
     """
-    print("Gerando relatório de qualidade interativo...")
+    print("Gerando relatório de qualidade...")
     
-    # --- 1. Preparação dos Dados (Violino e Barras) ---
-    coverage['coverage_breadth'] = coverage['coverage_breadth'] * 100
-    coverage['Status'] = coverage['cod'].apply(
-        lambda x: 'Controle Negativo (CN)' if x == 'CN' else 'Amostra'
+    # --- 1. Validação do Controle Negativo (CN) ---
+    cn_validation_message, positive_samples_df = validate_negative_control(coverage, errors)
+
+    # --- 2. Preparação dos Dados para Gráficos ---
+    
+    # Tabela Resumo (Req 1)
+    summary_df = pd.merge(coverage, reads[['cod', 'mepf_reads_aligned']], on='cod', how='left')
+    summary_df['coverage_breadth'] = summary_df['coverage_breadth'] # Converte para %
+    
+    eligibility_col_name = f'Elegível para Depósito (>={eligibility_threshold}%)'
+
+    summary_df[eligibility_col_name] = summary_df['coverage_breadth'].apply(
+        lambda x: 'Sim' if x >= eligibility_threshold else 'Não'
     )
-    reads['unmapped'] = reads['total_reads'] - reads['mepf_reads_aligned']
+    
+    summary_df = summary_df[['cod', 'mepf_reads_aligned', 'coverage_breadth', 'mean_depth_coverage', eligibility_col_name]]
+    summary_df.columns = ['Amostra (cod)', 'Reads Mapeadas', 'Cobertura (%)', 'Profundidade Média', eligibility_col_name]
+    
+    summary_df['Cobertura (%)'] = summary_df['Cobertura (%)'].round(2)
+    summary_df['Profundidade Média'] = summary_df['Profundidade Média'].round(0)
+    
+    summary_table_html = summary_df.to_html(index=False, classes='dataframe table table-striped table-hover', border=0, justify='center')
+    
+    # --- INÍCIO DA NOVA ADIÇÃO ---
+    # 1) Gerar estatísticas de resumo da tabela
+    total_samples = len(summary_df)
+    eligible_col = summary_df.columns[-1] # Pega a coluna de elegibilidade dinamicamente
+    eligible_samples = (summary_df[eligible_col] == 'Sim').sum()
+    
+    if total_samples > 0:
+        percentage = (eligible_samples / total_samples) * 100
+        summary_stats_html = (
+            f"<p style='text-align: left; font-size: 16px; margin-top: 10px; margin-bottom: 20px; margin-left: 5%;'>"
+            f"&bull; <strong>{eligible_samples} de {total_samples}</strong> " # Usei &bull; para um bullet HTML
+            f"({percentage:.1f}%) das amostras estão elegíveis para depósito."
+            f"</p>"
+        )
+    else:
+        summary_stats_html = "<p style='text-align: center; font-size: 16px; margin-top: 10px; margin-bottom: 20px;'>Nenhuma amostra processada.</p>"
+    # --- FIM DA NOVA ADIÇÃO ---
+    
+    
+    # Dados para Violinos (usa apenas amostras positivas)
+    positive_samples_df = positive_samples_df.copy() 
+    positive_samples_df['Status'] = 'Amostra'
+    
+    # Dados para Gráfico de Barras (usa 'reads' completo)
+    reads_df = reads.copy()
+    reads_df['unmapped'] = reads_df['total_reads'] - reads_df['mepf_reads_aligned']
 
-    # --- 2. Criação dos Gráficos (Violinos e Barras) ---
-    color_discrete_map = {'Controle Negativo (CN)': 'red', 'Amostra': '#1f77b4'}
+    # --- 3. Criação dos Gráficos ---
+    color_discrete_map = {'Amostra': '#1f77b4'} # CN já foi filtrado, então só precisamos da cor 'Amostra'
 
-    # Gráfico 1: Violino da Profundidade Média
+    # Gráfico 1: Violino da Profundidade Média (APENAS AMOSTRAS POSITIVAS)
     fig_violin_depth = px.violin(
-        coverage, y='mean_depth_coverage', 
+        positive_samples_df, y='mean_depth_coverage', 
         box=True, points='all', hover_data=['cod'], 
         color='Status', color_discrete_map=color_discrete_map,
-        title='Distribuição da Profundidade Média (mean_depth_coverage)'
+        title='Distribuição da Profundidade Média (Amostras Positivas)'
     )
     fig_violin_depth.update_traces(pointpos=0, jitter=0.4, spanmode='hard')
     fig_violin_depth.update_yaxes(title_text='Profundidade Média')
 
-    # Gráfico 2: Violino da Cobertura Horizontal
+    # Gráfico 2: Violino da Cobertura Horizontal (APENAS AMOSTRAS POSITIVAS)
+    
+    # Multiplicando por 100 para exibir em porcentagem (ex: 90.5) e não em decimal (ex: 0.905)
+    positive_samples_df['coverage_breadth'] = positive_samples_df['coverage_breadth']
+    # --- FIM DA CORREÇÃO ---
+    
     fig_violin_coverage = px.violin(
-        coverage, y='coverage_breadth', 
+        positive_samples_df, y='coverage_breadth', 
         box=True, points='all', hover_data=['cod'], 
         color='Status', color_discrete_map=color_discrete_map,
-        title='Distribuição da Cobertura Horizontal (coverage_breadth)'
+        title='Distribuição da Cobertura Horizontal (Amostras Positivas)'
     )
     fig_violin_coverage.update_traces(pointpos=0, jitter=0.4, spanmode='hard')
     fig_violin_coverage.update_yaxes(title_text='Cobertura (%)')
 
     # Gráfico 3: Hierarquia (Barra ou Sunburst)
     fig_extra = None
-    pie_title = "Proporção de Linhagens/Genótipos" # Título padrão
+    pie_title = "Proporção de Linhagens/Genótipos"
     
     if custom_fig is not None:
-        # Lógica para DENV: usa a figura Sunburst pré-criada
         fig_extra = custom_fig
         if hasattr(custom_fig.layout, 'title') and custom_fig.layout.title.text:
-             pie_title = custom_fig.layout.title.text # Usa o título da figura
+             pie_title = custom_fig.layout.title.text
     
     elif lineage_data is not None:
-        # Lógica para SC2 e CHIKV: constrói o gráfico de barras
         try:
             if not lineage_data.empty:
-                # 1. Calcular porcentagem
                 total_count = lineage_data['count'].sum()
                 lineage_data['percent'] = (lineage_data['count'] / total_count)
                 lineage_data['percent_str'] = lineage_data['percent'].map(lambda p: f"{p:.1%}") 
-                
-                # 2. Ordenar o dataframe
                 lineage_data = lineage_data.sort_values(by='count', ascending=False)
-                
-                # Detecta a coluna de nomes (deve ser a primeira)
                 names_col = lineage_data.columns[0] 
-
-                # 3. Criar o Bar Chart
                 fig_extra = px.bar(
-                    lineage_data,
-                    x=names_col,
-                    y='count',
-                    title=pie_title,
-                    text='percent_str'
+                    lineage_data, x=names_col, y='count',
+                    title=pie_title, text='percent_str'
                 )
-                
-                # 4. Ajustar layout e hover
                 fig_extra.update_traces(
-                    texttemplate='%{text}',
-                    textposition='outside',
+                    texttemplate='%{text}', textposition='outside',
                     hovertemplate="<b>%{x}</b><br>Contagem: %{y}<br>Porcentagem: %{text}<extra></extra>"
                 )
                 fig_extra.update_yaxes(title_text='Contagem (Absoluto)')
@@ -396,10 +535,7 @@ def Quality_monitor_interactive(coverage, reads, output_folder,
     else:
         print("Aviso: Nenhum dado de linhagem ou figura customizada fornecida. Gráfico pulado.")
 
-
-    # Gráfico 4: Gráfico de Barras (Leituras Mapeadas)
-    # (Código do 'fig_reads' permanece o mesmo)
-    reads_df = reads[['cod','mepf_reads_aligned','unmapped']]
+    # Gráfico 4: Gráfico de Barras (Leituras Mapeadas - TODAS AMOSTRAS)
     df_tidy_reads = reads_df.melt(id_vars=['cod'], var_name='Tipo de Leitura', value_name='Contagem')
     df_tidy_reads['Tipo de Leitura'] = df_tidy_reads['Tipo de Leitura'].map({
         'mepf_reads_aligned': 'Leituras Mapeadas',
@@ -414,26 +550,68 @@ def Quality_monitor_interactive(coverage, reads, output_folder,
 
 
     # --- 4. Salvar como um único arquivo HTML ---
+    
     html_path = os.path.join(output_folder, "RNSG_REPORT/Quality_check.html")
 
     with open(html_path, 'w', encoding='utf-8') as f:
-        f.write("<html><head><title>Relatório de Qualidade</title></head>")
-        f.write("<body style='font-family: sans-serif;'>\n")
-        f.write("<h1 style='text-align: center;'>Relatório de Qualidade</h1>\n")
+        f.write("<html><head><title>Relatório de Qualidade</title>")
+        # (CSS permanece o mesmo)
+        f.write("""
+        <style>
+            body { font-family: sans-serif; margin: 20px; }
+            h1 { text-align: center; }
+            h2 { border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 40px; }
+            .dataframe {
+                border-collapse: collapse;
+                width: 90%;
+                margin: 20px auto;
+                font-size: 14px;
+                text-align: left;
+            }
+            .dataframe th, .dataframe td {
+                padding: 10px 12px;
+                border: 1px solid #ddd;
+            }
+            .dataframe th {
+                background-color: #f2f2f2;
+            }
+            .dataframe tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            .dataframe tr:hover {
+                background-color: #f1f1f1;
+            }
+        </style>
+        """)
+        f.write("</head><body>\n")
+        f.write("<h1>Relatório de Qualidade</h1>\n")
         
-        f.write("<h2>Métricas de Cobertura e Profundidade</h2>\n")
+        # 1. Mensagem de Validação do CN
+        f.write("<h2>Validação do Controle Negativo (CN)</h2>\n")
+        f.write(cn_validation_message)
+
+        # 2. Tabela Resumo e Novo Resumo Estatístico
+        f.write("<h2>Resumo da Corrida</h2>\n")
+        f.write(summary_table_html)
+        f.write(summary_stats_html) # <-- ADICIONADO AQUI
+        
+        # 3. Gráficos de Violino
+        f.write("<h2>Métricas de Qualidade (Amostras Positivas)</h2>\n")
         f.write(fig_violin_depth.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig_violin_coverage.to_html(full_html=False, include_plotlyjs=False))
 
-        f.write("<h2>Contagem de Leituras</h2>\n")
+
+        # 4. Gráfico de Leituras (Respeitando sua nova ordem)
+        f.write("<h2>Contagem de Leituras (Todas as Amostras)</h2>\n")
         f.write(fig_reads.to_html(full_html=False, include_plotlyjs=False))
-        f.write("</body></html>\n")
 
-
-        # Escreve o gráfico extra (Barra ou Sunburst)
+        # 5. Gráfico de Linhagem/Genótipo (Respeitando sua nova ordem)
         if fig_extra:
             f.write(f"<h2>{pie_title}</h2>\n")
             f.write(fig_extra.to_html(full_html=False, include_plotlyjs=False))
+
+        
+        f.write("</body></html>\n")
 
 #Função para remover os arquivos intermediários
 def remover_csv(output_folder):

@@ -668,7 +668,7 @@ def generate_report_denv(metadata_path, config_path, output_folder, primer_versi
     except Exception as e:
         print(f"Aviso: Não foi possível gerar gráfico sunburst para DENV. Erro: {e}")
 
-    Quality_monitor_interactive(coverage, reads, output_folder, custom_fig=fig_sunburst)
+    Quality_monitor_interactive(coverage, reads, errors, output_folder, custom_fig=fig_sunburst, eligibility_threshold=60)
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)

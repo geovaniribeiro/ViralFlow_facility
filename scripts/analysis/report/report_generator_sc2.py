@@ -600,8 +600,9 @@ def generate_report(metadata_path, config_path, output_folder, primer_version):
     lineage_summary_sc2.columns = ['lineage', 'count']
     
     Quality_monitor(coverage, reads, output_folder)
-    Quality_monitor_interactive(coverage, reads, output_folder,
-                                lineage_data=lineage_summary_sc2)
+
+    Quality_monitor_interactive(coverage, reads, errors, output_folder,
+                                lineage_data=lineage_summary_sc2, eligibility_threshold=90)
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)
