@@ -642,9 +642,6 @@ def generate_report_denv(metadata_path, config_path, output_folder, primer_versi
     else:
         raise FileNotFoundError(f"Arquivo {arbo_virus_name} não encontrado!")
 
-
-    Quality_monitor(coverage, reads, output_folder)
-
     # --- Criar gráfico Sunburst  ---
     fig_sunburst = None
     try:
@@ -667,6 +664,8 @@ def generate_report_denv(metadata_path, config_path, output_folder, primer_versi
         fig_sunburst.update_traces(textinfo='label+percent entry')
     except Exception as e:
         print(f"Aviso: Não foi possível gerar gráfico sunburst para DENV. Erro: {e}")
+
+    Quality_monitor(coverage, reads, output_folder)
 
     Quality_monitor_interactive(coverage, reads, errors, output_folder, custom_fig=fig_sunburst, eligibility_threshold=60)
 

@@ -136,10 +136,26 @@ def data_processing(output_folder):
 
     coverage = pd.read_csv(coverage_path, sep =',')
     # Remove linhas onde a coluna "taxon" contém "_minor"
-    coverage = coverage[~coverage['taxon'].str.contains('_minor', na=False)]
+        # Remove linhas onde a coluna "taxon" contém "_minor"
+    if 'taxon' in coverage.columns:
+        coverage = coverage[~coverage['taxon'].str.contains('_minor', na=False)]
     coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
+    #coverage = coverage[~coverage['taxon'].str.contains('_minor', na=False)]
+    #coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
 
-    return reads, coverage
+    # Carregar errors_detected.csv somente se não estiver vazio
+    errors_path = os.path.join(output_folder, 'errors_detected.csv')
+    # Verifica se o arquivo existe e não está vazio
+    if os.path.isfile(errors_path) and os.path.getsize(errors_path) > 0:
+        try:
+            errors = pd.read_csv(errors_path, sep=',')
+            errors['cod'] = errors['cod'].replace(to_replace='_.*', value='', regex=True)
+        except pd.errors.EmptyDataError:
+            errors = pd.DataFrame(columns=['cod'])  # Cria DataFrame vazio com coluna esperada
+    else:
+        errors = pd.DataFrame(columns=['cod'])  # Cria DataFrame vazio se arquivo não existe ou está vazio
+
+    return reads, coverage, errors
 
 
 def process_and_combine_data(metadata, reads, coverage, errors, output_folder, rename_columns,
@@ -423,7 +439,7 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
     Gera um relatório HTML interativo de controle de qualidade usando Plotly.
     Agora inclui validação de CN, uma tabela de resumo e um resumo estatístico.
     """
-    print("Gerando relatório de qualidade...")
+    #print("Gerando relatório de qualidade...")
     
     # --- 1. Validação do Controle Negativo (CN) ---
     cn_validation_message, positive_samples_df = validate_negative_control(coverage, errors)
@@ -532,8 +548,8 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
                 fig_extra.update_xaxes(title_text='Linhagem / Genótipo')
         except Exception as e:
             print(f"Aviso: Não foi possível construir o gráfico de barras. Erro: {e}")
-    else:
-        print("Aviso: Nenhum dado de linhagem ou figura customizada fornecida. Gráfico pulado.")
+    #else:
+     #   print("Aviso: Nenhum dado de linhagem fornecido. Gráfico pulado.")
 
     # Gráfico 4: Gráfico de Barras (Leituras Mapeadas - TODAS AMOSTRAS)
     df_tidy_reads = reads_df.melt(id_vars=['cod'], var_name='Tipo de Leitura', value_name='Contagem')

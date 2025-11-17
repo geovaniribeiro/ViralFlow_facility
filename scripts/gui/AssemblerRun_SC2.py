@@ -19,7 +19,7 @@ from scripts.gui.ParametersManager import ParametersManager
 from scripts.analysis.assembler.assembler_thread import AssemblerThread
 from scripts.analysis.report.report_generator_sc2 import generate_report
 from scripts.analysis.rename_fastq import rename_fastq_files
-from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
+from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor, Quality_monitor_interactive
 
 CONFIG_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SUBMISSION_INFO_PATH = os.path.join(CONFIG_DIR, "submission_info.yaml")
@@ -49,14 +49,16 @@ class AssemblerRun_SC2(AssemblerThread):
         except Exception as e:
             self.process_finished.emit(f"Erro durante a execução: {str(e)}")
 
-        if self.metadata_path and self.config_path:
+        if self.metadata_path:
             self.generate_report()
         else:
-            print("Metadados ou configuração ausentes → executando apenas Quality_monitor.")
+            print("Metadados ausentes → executando apenas Quality_monitor.")
             try:
-                reads, coverage = data_processing(self.output_folder)
+                reads, coverage, errors = data_processing(self.output_folder)
                 mod_pasta(self.output_folder)
                 Quality_monitor(coverage, reads, self.output_folder)
+                Quality_monitor_interactive(coverage, reads, errors, self.output_folder,
+                                eligibility_threshold=90)
             except Exception as e:
                 print(f"Erro no Quality_monitor: {e}")
 
