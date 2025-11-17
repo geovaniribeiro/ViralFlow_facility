@@ -100,18 +100,23 @@ class ViralFlowGUI(QWidget):
             elif field_name == "refGenomeCode":
                 if self.virus.upper() == "DENV":
                     combo = QComboBox()
-                    combo.addItem("DENV1", "NC_001477.1")
-                    combo.addItem("DENV2", "NC_001474.2")
-                    combo.addItem("DENV3", "NC_001475.2")
-                    combo.addItem("DENV4", "NC_002640.1")
+                    combo.addItem("DENV1 [NC_001477.1]", "NC_001477.1")
+                    combo.addItem("DENV2 [NC_001474.2]", "NC_001474.2")
+                    combo.addItem("DENV3 [NC_001475.2]", "NC_001475.2")
+                    combo.addItem("DENV4 [NC_002640.1]", "NC_002640.1")
                     combo.currentIndexChanged.connect(self.on_refseq_changed)
                     row_layout.addWidget(combo)
                     self.entries[field_name] = combo
                 elif self.virus.upper() == "CHIKV":
-                    hidden_entry = QLineEdit()
-                    hidden_entry.setText("NC_004162.2")
-                    hidden_entry.setVisible(False)
-                    self.entries[field_name] = hidden_entry
+                    combo = QComboBox()
+                    combo.addItem("CHIKV [NC_004162.2]", "NC_004162.2")
+                    #combo.setEnabled(False)
+                    #hidden_entry = QLineEdit()
+                    #hidden_entry.setText("NC_004162.2")
+                    #hidden_entry.setVisible(False)
+                    #self.entries[field_name] = hidden_entry
+                    row_layout.addWidget(combo)
+                    self.entries[field_name] = combo
 
             else:
                 entry = QLineEdit(self)
