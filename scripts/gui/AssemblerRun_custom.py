@@ -99,17 +99,10 @@ class ViralFlowGUI(QWidget):
             elif field_name == "refGenomeCode":
                 if self.virus.upper() == "DENV":
                     combo = QComboBox()
-<<<<<<< HEAD
-                    combo.addItem("DENV1", "NC_001477.1")
-                    combo.addItem("DENV2", "NC_001474.2")
-                    combo.addItem("DENV3", "NC_001475.2")
-                    combo.addItem("DENV4", "NC_002640.1")
-=======
                     combo.addItem("DENV1 [NC_001477.1]", "NC_001477.1")
                     combo.addItem("DENV2 [NC_001474.2]", "NC_001474.2")
                     combo.addItem("DENV3 [NC_001475.2]", "NC_001475.2")
                     combo.addItem("DENV4 [NC_002640.1]", "NC_002640.1")
->>>>>>> develop
                     combo.currentIndexChanged.connect(self.on_refseq_changed)
                     row_layout.addWidget(combo)
                     self.entries[field_name] = combo
@@ -314,12 +307,6 @@ class ViralFlowGUI(QWidget):
         self.thread.process_finished.connect(self.update_status)
         
         if params.get('metadata'):
-<<<<<<< HEAD
-            if hasattr(self, "report_generator") and callable(getattr(self, "report_generator")):
-                self.thread.process_finished.connect(self.report_generator)
-        else:
-             print("Aviso: metadata_path não foi definido, pulando a geração do relatório.")
-=======
             print("Metadados detectados. Conectando pipeline de relatório completo.")
             if hasattr(self, "report_generator") and callable(getattr(self, "report_generator")):
                 self.thread.process_finished.connect(self.report_generator)
@@ -327,7 +314,6 @@ class ViralFlowGUI(QWidget):
             print("Metadados ausentes. Conectando pipeline de Quality Monitor (apenas).")
             # Conecta o sinal de 'finalizado' à nova função de QC
             self.thread.process_finished.connect(self.run_quality_monitors_only)
->>>>>>> develop
 
         self.thread.start()
 

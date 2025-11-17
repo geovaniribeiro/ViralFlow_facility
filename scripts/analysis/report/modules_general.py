@@ -323,37 +323,6 @@ def Quality_monitor(coverage, reads, output_folder):
     plt.tight_layout()
     plt.savefig(os.path.join(output_folder, "RNSG_REPORT/Quality_check.png"), format='png', dpi = 300)
 
-<<<<<<< HEAD
-def Quality_monitor_interactive(coverage, reads, output_folder, 
-                                lineage_data=None, 
-                                custom_fig=None):
-    """
-    Gera um relatório HTML interativo de controle de qualidade usando Plotly.
-
-    Não lê mais arquivos de linhagem. Em vez disso:
-    - Se 'custom_fig' for fornecido (DENV), ele será exibido.
-    - Se 'lineage_data' (um DataFrame) for fornecido (SC2, CHIKV),
-      ele será usado para criar um gráfico de barras.
-    """
-    print("Gerando relatório de qualidade interativo...")
-    
-    # --- 1. Preparação dos Dados (Violino e Barras) ---
-    coverage['coverage_breadth'] = coverage['coverage_breadth'] * 100
-    coverage['Status'] = coverage['cod'].apply(
-        lambda x: 'Controle Negativo (CN)' if x == 'CN' else 'Amostra'
-    )
-    reads['unmapped'] = reads['total_reads'] - reads['mepf_reads_aligned']
-
-    # --- 2. Criação dos Gráficos (Violinos e Barras) ---
-    color_discrete_map = {'Controle Negativo (CN)': 'red', 'Amostra': '#1f77b4'}
-
-    # Gráfico 1: Violino da Profundidade Média
-    fig_violin_depth = px.violin(
-        coverage, y='mean_depth_coverage', 
-        box=True, points='all', hover_data=['cod'], 
-        color='Status', color_discrete_map=color_discrete_map,
-        title='Distribuição da Profundidade Média (mean_depth_coverage)'
-=======
 def validate_negative_control(coverage_df, errors_df):
     """
     Valida o(s) Controle(s) Negativo(s) (CN) com base nas regras da RNSG.
@@ -531,19 +500,10 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
         box=True, points='all', hover_data=['cod'], 
         color='Status', color_discrete_map=color_discrete_map,
         title='Distribuição da Profundidade Média (Amostras Positivas)'
->>>>>>> develop
     )
     fig_violin_depth.update_traces(pointpos=0, jitter=0.4, spanmode='hard')
     fig_violin_depth.update_yaxes(title_text='Profundidade Média')
 
-<<<<<<< HEAD
-    # Gráfico 2: Violino da Cobertura Horizontal
-    fig_violin_coverage = px.violin(
-        coverage, y='coverage_breadth', 
-        box=True, points='all', hover_data=['cod'], 
-        color='Status', color_discrete_map=color_discrete_map,
-        title='Distribuição da Cobertura Horizontal (coverage_breadth)'
-=======
     # Gráfico 2: Violino da Cobertura Horizontal (APENAS AMOSTRAS POSITIVAS)
     
     # Multiplicando por 100 para exibir em porcentagem (ex: 90.5) e não em decimal (ex: 0.905)
@@ -555,51 +515,12 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
         box=True, points='all', hover_data=['cod'], 
         color='Status', color_discrete_map=color_discrete_map,
         title='Distribuição da Cobertura Horizontal (Amostras Positivas)'
->>>>>>> develop
     )
     fig_violin_coverage.update_traces(pointpos=0, jitter=0.4, spanmode='hard')
     fig_violin_coverage.update_yaxes(title_text='Cobertura (%)')
 
     # Gráfico 3: Hierarquia (Barra ou Sunburst)
     fig_extra = None
-<<<<<<< HEAD
-    pie_title = "Proporção de Linhagens/Genótipos" # Título padrão
-    
-    if custom_fig is not None:
-        # Lógica para DENV: usa a figura Sunburst pré-criada
-        fig_extra = custom_fig
-        if hasattr(custom_fig.layout, 'title') and custom_fig.layout.title.text:
-             pie_title = custom_fig.layout.title.text # Usa o título da figura
-    
-    elif lineage_data is not None:
-        # Lógica para SC2 e CHIKV: constrói o gráfico de barras
-        try:
-            if not lineage_data.empty:
-                # 1. Calcular porcentagem
-                total_count = lineage_data['count'].sum()
-                lineage_data['percent'] = (lineage_data['count'] / total_count)
-                lineage_data['percent_str'] = lineage_data['percent'].map(lambda p: f"{p:.1%}") 
-                
-                # 2. Ordenar o dataframe
-                lineage_data = lineage_data.sort_values(by='count', ascending=False)
-                
-                # Detecta a coluna de nomes (deve ser a primeira)
-                names_col = lineage_data.columns[0] 
-
-                # 3. Criar o Bar Chart
-                fig_extra = px.bar(
-                    lineage_data,
-                    x=names_col,
-                    y='count',
-                    title=pie_title,
-                    text='percent_str'
-                )
-                
-                # 4. Ajustar layout e hover
-                fig_extra.update_traces(
-                    texttemplate='%{text}',
-                    textposition='outside',
-=======
     pie_title = "Proporção de Linhagens/Genótipos"
     
     if custom_fig is not None:
@@ -621,27 +542,16 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
                 )
                 fig_extra.update_traces(
                     texttemplate='%{text}', textposition='outside',
->>>>>>> develop
                     hovertemplate="<b>%{x}</b><br>Contagem: %{y}<br>Porcentagem: %{text}<extra></extra>"
                 )
                 fig_extra.update_yaxes(title_text='Contagem (Absoluto)')
                 fig_extra.update_xaxes(title_text='Linhagem / Genótipo')
         except Exception as e:
             print(f"Aviso: Não foi possível construir o gráfico de barras. Erro: {e}")
-<<<<<<< HEAD
-    else:
-        print("Aviso: Nenhum dado de linhagem ou figura customizada fornecida. Gráfico pulado.")
-
-
-    # Gráfico 4: Gráfico de Barras (Leituras Mapeadas)
-    # (Código do 'fig_reads' permanece o mesmo)
-    reads_df = reads[['cod','mepf_reads_aligned','unmapped']]
-=======
     #else:
      #   print("Aviso: Nenhum dado de linhagem fornecido. Gráfico pulado.")
 
     # Gráfico 4: Gráfico de Barras (Leituras Mapeadas - TODAS AMOSTRAS)
->>>>>>> develop
     df_tidy_reads = reads_df.melt(id_vars=['cod'], var_name='Tipo de Leitura', value_name='Contagem')
     df_tidy_reads['Tipo de Leitura'] = df_tidy_reads['Tipo de Leitura'].map({
         'mepf_reads_aligned': 'Leituras Mapeadas',
@@ -656,28 +566,6 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
 
 
     # --- 4. Salvar como um único arquivo HTML ---
-<<<<<<< HEAD
-    html_path = os.path.join(output_folder, "RNSG_REPORT/Quality_check.html")
-
-    with open(html_path, 'w', encoding='utf-8') as f:
-        f.write("<html><head><title>Relatório de Qualidade</title></head>")
-        f.write("<body style='font-family: sans-serif;'>\n")
-        f.write("<h1 style='text-align: center;'>Relatório de Qualidade</h1>\n")
-        
-        f.write("<h2>Métricas de Cobertura e Profundidade</h2>\n")
-        f.write(fig_violin_depth.to_html(full_html=False, include_plotlyjs='cdn'))
-        f.write(fig_violin_coverage.to_html(full_html=False, include_plotlyjs=False))
-
-        f.write("<h2>Contagem de Leituras</h2>\n")
-        f.write(fig_reads.to_html(full_html=False, include_plotlyjs=False))
-        f.write("</body></html>\n")
-
-
-        # Escreve o gráfico extra (Barra ou Sunburst)
-        if fig_extra:
-            f.write(f"<h2>{pie_title}</h2>\n")
-            f.write(fig_extra.to_html(full_html=False, include_plotlyjs=False))
-=======
     
     html_path = os.path.join(output_folder, "RNSG_REPORT/Quality_check.html")
 
@@ -740,7 +628,6 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
 
         
         f.write("</body></html>\n")
->>>>>>> develop
 
 #Função para remover os arquivos intermediários
 def remover_csv(output_folder):

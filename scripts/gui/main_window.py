@@ -3,11 +3,7 @@
 import yaml
 from PySide6.QtWidgets import (
     QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QRadioButton,
-<<<<<<< HEAD
-    QDialog, QFormLayout, QLineEdit, QDialogButtonBox)
-=======
     QDialog, QFormLayout, QLineEdit, QDialogButtonBox, QGroupBox)
->>>>>>> develop
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThread, Signal
 import subprocess
@@ -162,16 +158,6 @@ class MenuInicial(QWidget):
 
         db_update_button = QPushButton("Atualizar Banco de dados")
         db_update_button.clicked.connect(self.atualizar_banco_dados)
-<<<<<<< HEAD
-        layout.addWidget(db_update_button)
-
-        #Botão cadastrar informaçõe
-        self.info_button = QPushButton("Cadastrar Informações do Submissor")
-        self.info_button.clicked.connect(self.abrir_info_dialog)
-        layout.addWidget(self.info_button)
-
-        # Botões de seleção de vírus
-=======
         util_layout.addWidget(db_update_button)
         
         util_group.setLayout(util_layout)
@@ -192,7 +178,6 @@ class MenuInicial(QWidget):
         analise_group = QGroupBox("Análises")
         analise_layout = QVBoxLayout()
         
->>>>>>> develop
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_denv = QRadioButton("DENV")
         self.radio_chikv = QRadioButton("CHIKV")
@@ -239,10 +224,6 @@ class MenuInicial(QWidget):
 
     def abrir_info_dialog(self):
         """Abre a janela de diálogo para editar o Submission_info.yaml."""
-<<<<<<< HEAD
-        # SUBMISSION_INFO_PATH foi definido no topo do arquivo
-=======
->>>>>>> develop
         dialog = SubmissionInfoDialog(SUBMISSION_INFO_PATH, self)
         dialog.exec()
 

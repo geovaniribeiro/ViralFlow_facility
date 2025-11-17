@@ -151,14 +151,9 @@ def generate_report_chikv(metadata_path, config_path, output_folder, primer_vers
         print(f"Aviso: Não foi possível sumarizar dados de genótipo CHIKV. Erro: {e}")
         genotype_summary_chikv = None
 
-<<<<<<< HEAD
-    Quality_monitor_interactive(coverage, reads, output_folder,
-                                lineage_data=genotype_summary_chikv)
-=======
     Quality_monitor_interactive(coverage, reads, errors, output_folder,
                                 lineage_data=genotype_summary_chikv,
                                 eligibility_threshold=60)
->>>>>>> develop
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)

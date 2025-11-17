@@ -667,34 +667,7 @@ def generate_report_denv(metadata_path, config_path, output_folder, primer_versi
 
     Quality_monitor(coverage, reads, output_folder)
 
-<<<<<<< HEAD
-    # --- Criar gráfico Sunburst  ---
-    fig_sunburst = None
-    try:
-        # 1. Contar as combinações de genótipo/linhagem
-        lineage_summary = genotype.dropna(subset=['genotype', 'lineage'])\
-                             .groupby(['genotype', 'lineage'])\
-                             .size().reset_index(name='count')
-        
-        lineage_summary_path = os.path.join(output_folder, "lineage_summary.csv")
-        lineage_summary.to_csv(lineage_summary_path, index=False)
-
-        # 2. Criar a figura do Sunburst
-        fig_sunburst = px.sunburst(
-            lineage_summary,
-            path=['genotype', 'lineage'], # A hierarquia
-            values='count',
-            title='Proporção de Genótipos e Linhagens (DENV)',
-            hover_data=['count']
-        )
-        fig_sunburst.update_traces(textinfo='label+percent entry')
-    except Exception as e:
-        print(f"Aviso: Não foi possível gerar gráfico sunburst para DENV. Erro: {e}")
-
-    Quality_monitor_interactive(coverage, reads, output_folder, custom_fig=fig_sunburst)
-=======
     Quality_monitor_interactive(coverage, reads, errors, output_folder, custom_fig=fig_sunburst, eligibility_threshold=60)
->>>>>>> develop
 
     # Limpar arquivos temporários e monitorar qualidade
     remover_csv(output_folder)
