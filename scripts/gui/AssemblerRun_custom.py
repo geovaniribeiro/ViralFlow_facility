@@ -16,7 +16,7 @@ from scripts.gui.ParametersDialog import ParametersDialog
 from scripts.gui.ParametersManager import ParametersManager
 from scripts.analysis.assembler.assembler_thread import AssemblerThread
 from scripts.analysis.rename_fastq import rename_fastq_files
-from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor
+from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor, Quality_monitor_interactive
 
 CONFIG_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SUBMISSION_INFO_PATH = os.path.join(CONFIG_DIR, "submission_info.yaml")
@@ -45,10 +45,9 @@ class AssemblerRun_custom(AssemblerThread):
     def run(self):
         try:
             super().run()
-            self.process_finished.emit("ViralFlow executado com sucesso!")
+            self.process_finished.emit("ViralFlow executado com sucesso!\n")
         except Exception as e:
             self.process_finished.emit(f"Erro durante a execução: {str(e)}")
-
 
 # -----------------------------
 # Interface gráfica principal
@@ -63,7 +62,7 @@ class ViralFlowGUI(QWidget):
 
         self.settings = QSettings("ViralFlowGUI", "ViralFlow")
 
-        self.setWindowTitle("ViralFlow GUI")
+        self.setWindowTitle(f"ViralFlow GUI - {virus}") # <-- Título da janela atualizado
         self.setGeometry(100, 100, 600, 380)
         self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))
 
@@ -100,18 +99,26 @@ class ViralFlowGUI(QWidget):
             elif field_name == "refGenomeCode":
                 if self.virus.upper() == "DENV":
                     combo = QComboBox()
+<<<<<<< HEAD
                     combo.addItem("DENV1", "NC_001477.1")
                     combo.addItem("DENV2", "NC_001474.2")
                     combo.addItem("DENV3", "NC_001475.2")
                     combo.addItem("DENV4", "NC_002640.1")
+=======
+                    combo.addItem("DENV1 [NC_001477.1]", "NC_001477.1")
+                    combo.addItem("DENV2 [NC_001474.2]", "NC_001474.2")
+                    combo.addItem("DENV3 [NC_001475.2]", "NC_001475.2")
+                    combo.addItem("DENV4 [NC_002640.1]", "NC_002640.1")
+>>>>>>> develop
                     combo.currentIndexChanged.connect(self.on_refseq_changed)
                     row_layout.addWidget(combo)
                     self.entries[field_name] = combo
                 elif self.virus.upper() == "CHIKV":
-                    hidden_entry = QLineEdit()
-                    hidden_entry.setText("NC_004162.2")
-                    hidden_entry.setVisible(False)
-                    self.entries[field_name] = hidden_entry
+                    combo = QComboBox()
+                    combo.addItem("CHIKV [NC_004162.2]", "NC_004162.2")
+                    combo.setEnabled(False) # Desabilita, pois é a única opção
+                    row_layout.addWidget(combo)
+                    self.entries[field_name] = combo
 
             else:
                 entry = QLineEdit(self)
@@ -223,6 +230,34 @@ class ViralFlowGUI(QWidget):
             return result.stdout.strip()
         except subprocess.CalledProcessError:
             return "nextflow"
+            
+    def run_quality_monitors_only(self, message):
+        """
+        Executa apenas os relatórios de QC (Q_monitor e Q_monitor_interactive)
+        quando nenhum metadado é fornecido.
+        """
+        try:
+            print("Metadados ausentes → executando apenas Quality_monitor.")
+            output_folder = os.path.join(self.entries['outDir'].text(), "COMPILED_OUTPUT")
+            
+            # Define o threshold de 60% para Arbos
+            threshold = 60
+
+            # Carregar dados
+            reads, coverage, errors = data_processing(output_folder)
+            mod_pasta(output_folder)
+            
+            # Rodar monitores
+            Quality_monitor(coverage, reads, output_folder)
+            Quality_monitor_interactive(coverage, reads, errors, output_folder,
+                                        eligibility_threshold=threshold)
+            
+            print("\nRelatórios de qualidade (sem metadados) gerados com sucesso.")
+            QMessageBox.information(self, "Relatório", "Relatórios de qualidade (sem metadados) gerados com sucesso.")
+
+        except Exception as e:
+            print(f"Erro no Quality_monitor: {e}")
+            QMessageBox.critical(self, "Erro", f"Falha ao gerar relatórios de qualidade: {str(e)}")
 
     def run_command(self):
         params = {}
@@ -279,10 +314,20 @@ class ViralFlowGUI(QWidget):
         self.thread.process_finished.connect(self.update_status)
         
         if params.get('metadata'):
+<<<<<<< HEAD
             if hasattr(self, "report_generator") and callable(getattr(self, "report_generator")):
                 self.thread.process_finished.connect(self.report_generator)
         else:
              print("Aviso: metadata_path não foi definido, pulando a geração do relatório.")
+=======
+            print("Metadados detectados. Conectando pipeline de relatório completo.")
+            if hasattr(self, "report_generator") and callable(getattr(self, "report_generator")):
+                self.thread.process_finished.connect(self.report_generator)
+        else:
+            print("Metadados ausentes. Conectando pipeline de Quality Monitor (apenas).")
+            # Conecta o sinal de 'finalizado' à nova função de QC
+            self.thread.process_finished.connect(self.run_quality_monitors_only)
+>>>>>>> develop
 
         self.thread.start()
 
@@ -391,4 +436,3 @@ class ViralFlowGUI(QWidget):
                 self.entries["outDir"].setStyleSheet("background-color: #ffcccc;")
             else:
                 self.entries["outDir"].setStyleSheet("")
-

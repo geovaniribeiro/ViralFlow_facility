@@ -3,7 +3,11 @@
 import yaml
 from PySide6.QtWidgets import (
     QApplication, QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QRadioButton,
+<<<<<<< HEAD
     QDialog, QFormLayout, QLineEdit, QDialogButtonBox)
+=======
+    QDialog, QFormLayout, QLineEdit, QDialogButtonBox, QGroupBox)
+>>>>>>> develop
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QThread, Signal
 import subprocess
@@ -141,20 +145,24 @@ class MenuInicial(QWidget):
         self.setGeometry(200, 200, 600, 300)
         self.setWindowIcon(QIcon(os.path.expanduser("~/ViralFlow/docs/source/img/viralflow_logo.png")))
 
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Escolha uma opção:"))
+        main_layout = QVBoxLayout()
+        #main_layout.addWidget(QLabel("Escolha uma opção:"))
 
-        # Botões de atualização
+        # --- 1. Grupo de Utilitários ---
+        util_group = QGroupBox("Utilitários")
+        util_layout = QVBoxLayout()
+        
         update_button = QPushButton("Atualizar Interface")
         update_button.clicked.connect(self.atualizar_GUI)
-        layout.addWidget(update_button)
+        util_layout.addWidget(update_button)
 
         update_viralflow_btn = QPushButton("Atualizar ViralFlow")
         update_viralflow_btn.clicked.connect(self.atualizar_viralflow)
-        layout.addWidget(update_viralflow_btn)
+        util_layout.addWidget(update_viralflow_btn)
 
         db_update_button = QPushButton("Atualizar Banco de dados")
         db_update_button.clicked.connect(self.atualizar_banco_dados)
+<<<<<<< HEAD
         layout.addWidget(db_update_button)
 
         #Botão cadastrar informaçõe
@@ -163,23 +171,52 @@ class MenuInicial(QWidget):
         layout.addWidget(self.info_button)
 
         # Botões de seleção de vírus
+=======
+        util_layout.addWidget(db_update_button)
+        
+        util_group.setLayout(util_layout)
+        main_layout.addWidget(util_group)
+
+        # --- 2. Grupo de Cadastro ---
+        cadastro_group = QGroupBox("Cadastro")
+        cadastro_layout = QVBoxLayout()
+        
+        self.info_button = QPushButton("Cadastrar Informações do Submissor")
+        self.info_button.clicked.connect(self.abrir_info_dialog)
+        cadastro_layout.addWidget(self.info_button)
+        
+        cadastro_group.setLayout(cadastro_layout)
+        main_layout.addWidget(cadastro_group)
+
+        # --- 3. Grupo de Análises ---
+        analise_group = QGroupBox("Análises")
+        analise_layout = QVBoxLayout()
+        
+>>>>>>> develop
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_denv = QRadioButton("DENV")
         self.radio_chikv = QRadioButton("CHIKV")
-
-        layout.addWidget(self.radio_sc2)
-        layout.addWidget(self.radio_denv)
-        layout.addWidget(self.radio_chikv)
-
+        analise_layout.addWidget(self.radio_sc2)
+        analise_layout.addWidget(self.radio_denv)
+        analise_layout.addWidget(self.radio_chikv)
+        
+        # Iniciar Análise
         confirm_button = QPushButton("Iniciar Análise")
         confirm_button.clicked.connect(self.executar_analise)
-        layout.addWidget(confirm_button)
+        analise_layout.addWidget(confirm_button)
+        
+        analise_group.setLayout(analise_layout)
+        main_layout.addWidget(analise_group)
 
+        # Espaçador para empurrar o botão Sair para baixo
+        main_layout.addStretch(1) 
+
+        # Botão de Sair (fora dos grupos)
         exit_button = QPushButton("Sair")
         exit_button.clicked.connect(self.sair)
-        layout.addWidget(exit_button)
+        main_layout.addWidget(exit_button)
 
-        self.setLayout(layout)
+        self.setLayout(main_layout)
 
     def atualizar_GUI(self):
         if QMessageBox.question(self, "Confirmação", "Você deseja atualizar a interface?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
@@ -202,7 +239,10 @@ class MenuInicial(QWidget):
 
     def abrir_info_dialog(self):
         """Abre a janela de diálogo para editar o Submission_info.yaml."""
+<<<<<<< HEAD
         # SUBMISSION_INFO_PATH foi definido no topo do arquivo
+=======
+>>>>>>> develop
         dialog = SubmissionInfoDialog(SUBMISSION_INFO_PATH, self)
         dialog.exec()
 
@@ -219,6 +259,9 @@ class MenuInicial(QWidget):
             self.close()
             self.tela_assembly = ViralFlowCHIKV(self)
             self.tela_assembly.show()
+        else:
+            # Adicionado um aviso caso nada seja selecionado
+            QMessageBox.warning(self, "Seleção Inválida", "Por favor, selecione um vírus para iniciar a análise.")
 
     def sair(self):
         if QMessageBox.question(self, "Confirmação", "Deseja sair?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
