@@ -1,0 +1,11 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+##sequence-region OL689333.1 1 4371
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=3052429
+OL689333.1	Genbank	region	1	4371	.	+	.	ID=OL689333.1:1..4371;Dbxref=taxon:3052429;Name=M;collection-date=17-Sep-2020;country=French Guiana;gbkey=Src;genome=genomic;isolation-source=serum;mol_type=viral cRNA;nat-host=Homo sapiens;note=1 passage in Vero cells;old-name=Oropouche orthobunyavirus;segment=M;strain=OROV/Saul/17225/2020
+OL689333.1	Genbank	five_prime_UTR	1	20	.	+	.	ID=id-OL689333.1:1..20;gbkey=5'UTR
+OL689333.1	Genbank	gene	21	4283	.	+	.	ID=gene-M;Name=M;gbkey=Gene;gene=M;gene_biotype=protein_coding
+OL689333.1	Genbank	CDS	21	4283	.	+	0	ID=cds-UGL84924.1;Parent=gene-M;Dbxref=NCBI_GP:UGL84924.1;Name=UGL84924.1;gbkey=CDS;gene=M;product=membrane polyprotein;protein_id=UGL84924.1
+OL689333.1	Genbank	three_prime_UTR	4284	4371	.	+	.	ID=id-OL689333.1:4284..4371;gbkey=3'UTR
+

@@ -243,18 +243,21 @@ def mod_pasta(output_folder):
     output_path = os.path.join(nome_pasta, 'RNSG_REPORT')
     
     if os.path.exists(output_path):
+        # A remoção recursiva está correta
         shutil.rmtree(output_path)
     
-    # Cria a pasta 'RNSG_REPORT' dentro da pasta de saida do viralflow
-    os.mkdir(output_path)
+    # Cria a pasta 'RNSG_REPORT' e todos os diretórios pai necessários.
+    os.makedirs(output_path, exist_ok=True)
 
 
 #Função para criar um grafico com métricas gerais da corrida, para aferição de controle de qualidade
 def Quality_monitor(coverage, reads, output_folder):
 
     #print("QualityCheck")
+    coverage_local = coverage.copy()
+    reads_local = reads.copy()
 
-    coverage['coverage_breadth'] = coverage['coverage_breadth']*100
+    coverage_local['coverage_breadth'] = coverage_local['coverage_breadth']*100
 
     #Criar os subplots e os seus respec. eixos x
     fig = plt.figure()
@@ -268,14 +271,14 @@ def Quality_monitor(coverage, reads, output_folder):
 
 
     # Depth of Coverage (X)
-    sns.violinplot(y='mean_depth_coverage', data=coverage, 
+    sns.violinplot(y='mean_depth_coverage', data=coverage_local, 
                inner="points", ax=ax1, cut= 0)
     
-    sns.swarmplot(y='mean_depth_coverage', data=coverage, ax=ax1,
+    sns.swarmplot(y='mean_depth_coverage', data=coverage_local, ax=ax1,
                   color = 'black', size=3)
 
     # Pinte a linha com 'CN' de outra cor (neste caso, vermelho)
-    linha_cn = coverage[coverage['cod'] == 'CN']
+    linha_cn = coverage_local[coverage_local['cod'] == 'CN']
 
     if not linha_cn.empty:
             ax1.scatter(x=0, y=linha_cn['coverage_breadth'], color='red', 
@@ -285,19 +288,19 @@ def Quality_monitor(coverage, reads, output_folder):
                         marker='o', label='CN', s=20)
 
     # Coverage (%)
-    sns.violinplot(y='coverage_breadth', data=coverage, ax=ax2, cut= 0)
+    sns.violinplot(y='coverage_breadth', data=coverage_local, ax=ax2, cut= 0)
     
 
-    sns.swarmplot(y='coverage_breadth', data=coverage, ax=ax2,
+    sns.swarmplot(y='coverage_breadth', data=coverage_local, ax=ax2,
                   color = 'black', size=3)
 
 
     #Reads Mapeadas X reads unmapped
     #Calcular o numero de redas unmmapped
-    reads['unmapped'] = reads['total_reads'] - reads['mepf_reads_aligned']
+    reads_local['unmapped'] = reads_local['total_reads'] - reads_local['mepf_reads_aligned']
 
     #select reads columns
-    reads_df = reads[['cod','mepf_reads_aligned','unmapped']]
+    reads_df = reads_local[['cod','mepf_reads_aligned','unmapped']]
 
 
     # Define a color palette using Seaborn
@@ -434,21 +437,26 @@ def validate_negative_control(coverage_df, errors_df):
 def Quality_monitor_interactive(coverage, reads, errors, output_folder, 
                                 lineage_data=None, 
                                 custom_fig=None,
-                                eligibility_threshold=60):
+                                eligibility_threshold=60,
+                                report_title=None):
     """
     Gera um relatório HTML interativo de controle de qualidade usando Plotly.
     Agora inclui validação de CN, uma tabela de resumo e um resumo estatístico.
     """
+    
+    coverage_work = coverage.copy() 
+    reads_work = reads.copy()
+    
     #print("Gerando relatório de qualidade...")
     
     # --- 1. Validação do Controle Negativo (CN) ---
-    cn_validation_message, positive_samples_df = validate_negative_control(coverage, errors)
+    cn_validation_message, positive_samples_df = validate_negative_control(coverage_work, errors)
 
     # --- 2. Preparação dos Dados para Gráficos ---
     
     # Tabela Resumo (Req 1)
-    summary_df = pd.merge(coverage, reads[['cod', 'mepf_reads_aligned']], on='cod', how='left')
-    summary_df['coverage_breadth'] = summary_df['coverage_breadth'] # Converte para %
+    summary_df = pd.merge(coverage_work, reads_work[['cod', 'mepf_reads_aligned']], on='cod', how='left')
+    summary_df['coverage_breadth'] = summary_df['coverage_breadth'] * 100 # Converte para %
     
     eligibility_col_name = f'Elegível para Depósito (>={eligibility_threshold}%)'
 
@@ -464,7 +472,6 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
     
     summary_table_html = summary_df.to_html(index=False, classes='dataframe table table-striped table-hover', border=0, justify='center')
     
-    # --- INÍCIO DA NOVA ADIÇÃO ---
     # 1) Gerar estatísticas de resumo da tabela
     total_samples = len(summary_df)
     eligible_col = summary_df.columns[-1] # Pega a coluna de elegibilidade dinamicamente
@@ -480,7 +487,6 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
         )
     else:
         summary_stats_html = "<p style='text-align: center; font-size: 16px; margin-top: 10px; margin-bottom: 20px;'>Nenhuma amostra processada.</p>"
-    # --- FIM DA NOVA ADIÇÃO ---
     
     
     # Dados para Violinos (usa apenas amostras positivas)
@@ -488,7 +494,7 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
     positive_samples_df['Status'] = 'Amostra'
     
     # Dados para Gráfico de Barras (usa 'reads' completo)
-    reads_df = reads.copy()
+    reads_df = reads_work.copy()
     reads_df['unmapped'] = reads_df['total_reads'] - reads_df['mepf_reads_aligned']
 
     # --- 3. Criação dos Gráficos ---
@@ -507,8 +513,7 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
     # Gráfico 2: Violino da Cobertura Horizontal (APENAS AMOSTRAS POSITIVAS)
     
     # Multiplicando por 100 para exibir em porcentagem (ex: 90.5) e não em decimal (ex: 0.905)
-    positive_samples_df['coverage_breadth'] = positive_samples_df['coverage_breadth']
-    # --- FIM DA CORREÇÃO ---
+    positive_samples_df['coverage_breadth'] = positive_samples_df['coverage_breadth'] * 100
     
     fig_violin_coverage = px.violin(
         positive_samples_df, y='coverage_breadth', 
@@ -600,7 +605,8 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
         </style>
         """)
         f.write("</head><body>\n")
-        f.write("<h1>Relatório de Qualidade</h1>\n")
+        report_display_title = report_title if report_title else "Relatório de Qualidade"
+        f.write(f"<h1 style='text-align: center;'>{report_display_title}</h1>\n")
         
         # 1. Mensagem de Validação do CN
         f.write("<h2>Validação do Controle Negativo (CN)</h2>\n")

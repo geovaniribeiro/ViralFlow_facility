@@ -58,23 +58,6 @@ yes | micromamba install -c wallaulab singularityce --yes
 # Baixar imagem e construir os containers
 yes | viralflow -build_containers
 
-# Baixar o banco snpEff para os virus custom
-#DENV1
-viralflow -add_entry_to_snpeff --org_name DENV1 --genome_code NC_001477.1
-
-#DENV2
-viralflow -add_entry_to_snpeff --org_name DENV2 --genome_code NC_001474.2
-
-#DENV3
-viralflow -add_entry_to_snpeff --org_name DENV3 --genome_code NC_001475.2 
-
-#DENV4
-viralflow -add_entry_to_snpeff --org_name DENV4 --genome_code NC_002640.1
-
-#CHIKV
-viralflow -add_entry_to_snpeff --org_name CHIKV --genome_code NC_004162.2
-
-
 # Verificar se o comando anterior foi bem-sucedido (código de saída 0 significa sucesso)
 if [ $? -eq 0 ]; then
     # Se não houver erro, exibe a mensagem de sucesso

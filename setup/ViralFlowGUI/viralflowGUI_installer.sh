@@ -50,6 +50,32 @@ sudo apt-get install -y \
     libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
     libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa
 
+
+micromamba activate viralflow
+#Baixar o banco snpEff para os virus custom
+echo "Instalando bancos snpEff..."
+
+# Dicionário: ORG_NAME=GENOME_CODE
+declare -A VIRUS_DB=(
+  ["DENV1"]="NC_001477.1"
+  ["DENV2"]="NC_001474.2"
+  ["DENV3"]="NC_001475.2"
+  ["DENV4"]="NC_002640.1"
+  ["CHIKV"]="NC_004162.2"
+  ["OROV_L"]="OL689334.1"
+  ["OROV_S"]="OL689332.1"
+  ["OROV_M"]="OL689333.1"
+)
+
+for VIRUS in "${!VIRUS_DB[@]}"; do
+    GENOME="${VIRUS_DB[$VIRUS]}"
+    echo "→ Instalando banco para: $VIRUS (genoma $GENOME)..."
+    viralflow -add_entry_to_snpeff --org_name "$VIRUS" --genome_code "$GENOME"
+done
+
+echo "Instalação bancos snpEff Finalizado!"
+
+micromamba activate viralflow_gui
 # Tornar arquivos executáveis
 chmod +x "$code_path/../../viralflow_GUI" 2>/dev/null
 chmod +x "$code_path/../viralflow_GUI" 2>/dev/null

@@ -16,6 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from scripts.gui.AssemblerRun_SC2 import ViralFlowGUI_SC2  # Interface para SARS-CoV-2
 from scripts.gui.AssemblerRun_custom import ViralFlowGUI as ViralFlowGUI_custom  # Interface para vírus customizados
+from scripts.gui.AssemblerRun_OROV import ViralFlowOROV  # Interface para OROV
 from scripts.utilities.update_database import atualizar_banco_dados  # Função para atualizar banco de dados
 from scripts.utilities.update_viralflow import atualizar_viralflow  # Função para atualizar viralflow
 from scripts.utilities.update_GUI import atualizar_GUI  # Função para atualizar viralflow
@@ -181,9 +182,11 @@ class MenuInicial(QWidget):
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_denv = QRadioButton("DENV")
         self.radio_chikv = QRadioButton("CHIKV")
+        self.radio_orov = QRadioButton("OROV")
         analise_layout.addWidget(self.radio_sc2)
         analise_layout.addWidget(self.radio_denv)
         analise_layout.addWidget(self.radio_chikv)
+        analise_layout.addWidget(self.radio_orov)
         
         # Iniciar Análise
         confirm_button = QPushButton("Iniciar Análise")
@@ -240,9 +243,13 @@ class MenuInicial(QWidget):
             self.close()
             self.tela_assembly = ViralFlowCHIKV(self)
             self.tela_assembly.show()
+        elif self.radio_orov.isChecked(): # Se você adicionou um QRadioButton para OROV
+            self.close()
+            self.tela_assembly = ViralFlowOROV(self)
+            self.tela_assembly.show()
         else:
-            # Adicionado um aviso caso nada seja selecionado
-            QMessageBox.warning(self, "Seleção Inválida", "Por favor, selecione um vírus para iniciar a análise.")
+                # Adicionado um aviso caso nada seja selecionado
+                QMessageBox.warning(self, "Seleção Inválida", "Por favor, selecione um vírus para iniciar a análise.")
 
     def sair(self):
         if QMessageBox.question(self, "Confirmação", "Deseja sair?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
@@ -298,6 +305,11 @@ class ViralFlowDENV(ViralFlowVirusHandler):
 class ViralFlowCHIKV(ViralFlowVirusHandler):
     def __init__(self, menu_inicial=None):
         super().__init__(menu_inicial, virus="CHIKV")
+
+#class ViralFlowOROV(ViralFlowVirusHandler):
+    #def __init__(self, menu_inicial=None):
+        #super().__init__(menu_inicial, virus="OROV")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
