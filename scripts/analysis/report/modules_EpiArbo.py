@@ -29,7 +29,7 @@ def filter_depth(resultado_df, output_folder):
 # Função para formatar nomes de vírus no padrão
 def format_virus_name(s):
     return re.sub(
-        r'(DENV|CHIKV|ZIKV)',  # Padrões que deseja substituir
+        r'(DENV|CHIKV|ZIKV|OROV)',  # Padrões que deseja substituir
         lambda x: x.group(0)[0].upper() + x.group(0)[1:-1].lower() + x.group(0)[-1].upper(),
         s
     )

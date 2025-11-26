@@ -30,10 +30,11 @@ Este script contém diversas funções, afim de otimizar a manutenção e refato
 '''
 
 colunas_mapeadas = {
-    "Código_da_Amostra": [r"C[oó]digo\s*(?:da\s*)?Amostra"],
+    "Código_da_Amostra": [r"C[oó]digo[_ ]*Amostra", r"C[oó]digo[_ ]*(?:da[_ ])*Amostra", r"C[oó]digo\s*(?:da\s*)?Amostra"],
+    "Requisição": [r"^(Requisiç[ãa]o)$", r"^(Requisicao)$", r"^(Requisiç[ãa]o[_ ]*GAL)$", r"^(Requisicao[_ ]*GAL)$"],
     "Municipio_do_Solicitante": [r"Munic[ií]pio\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
     "Estado_do_Solicitante": [r"Estado\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
-    "CNES_Laboratório_responsável": [r"CNES\s*(?:do\s*)?Laboratório\s*[Rr]espons[aá]vel"]
+    "CNES_Laboratório_responsável": [r"CNES\s*(?:do\s*)?Laboratório\s*[Rr]espons[aá]vel" , r"CNES[_ ]*Laboratorio[_ ]*Responsavel"]
 }
 
 # Função para padronizar os nomes das colunas usando regex

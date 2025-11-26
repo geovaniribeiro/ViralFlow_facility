@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import sys
 import os
+from unidecode import unidecode
+import pandas as pd
+import csv
 import subprocess
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -9,9 +12,11 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Signal, QSettings
 from scripts.gui.AssemblerRun_custom import ViralFlowGUI, AssemblerRun_custom # Importa a base
-from scripts.analysis.report.modules_general import data_processing, mod_pasta, Quality_monitor, Quality_monitor_interactive
+from scripts.analysis.report.modules_general import padronizar_colunas,load_config, data_processing, \
+                                                    mod_pasta, Quality_monitor, Quality_monitor_interactive
 from scripts.analysis.report.report_generator_denv import gerar_arquivo_fasta, arquivo_epiarbo 
 from scripts.analysis.report.report_generator_orov import generate_compiled_report_orov
+from scripts.analysis.rename_fastq import rename_fastq_files
 
 # Assegura que o PYTHONPATH encontre os módulos necessários
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -26,6 +31,71 @@ SEGMENTS = [
     {"segment": "M", "accession": "OL689333.1"},
     {"segment": "S", "accession": "OL689332.1"},
 ]
+
+# =========================================================================
+COLUNAS_MAPEADAS = {
+    "Código_da_Amostra": [r"C[oó]digo[_ ]*Amostra", r"C[oó]digo[_ ]*(?:da[_ ])*Amostra", r"C[oó]digo\s*(?:da\s*)?Amostra"],
+    "Requisição": [r"^(Requisiç[ãa]o)$", r"^(Requisicao)$", r"^(Requisiç[ãa]o[_ ]*GAL)$", r"^(Requisicao[_ ]*GAL)$"],
+    "Municipio_do_Solicitante": [r"Munic[ií]pio\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
+    "Estado_do_Solicitante": [r"Estado\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
+    "CNES_Laboratório_responsável": [r"CNES\s*(?:do\s*)?Laboratório\s*[Rr]espons[aá]vel" , r"CNES[_ ]*Laboratorio[_ ]*Responsavel"]
+}
+
+def _prepare_and_rename_metadata(metadata_path, input_path):
+    """ 
+    Carrega, padroniza as colunas e executa a renomeação dos arquivos FASTQ
+    em memória, eliminando a dependência do script externo.
+    """
+    
+    # 1. Carrega o metadado bruto e detecta delimitador
+    with open(metadata_path, 'r', encoding='latin-1') as file:
+        sample = file.read(1024)
+        sniffer = csv.Sniffer()
+        delimiter = sniffer.sniff(sample).delimiter
+
+    metadata = pd.read_csv(metadata_path, sep=delimiter, encoding='latin-1', on_bad_lines='skip')
+    
+    # 2. Padroniza colunas
+    metadata.columns = metadata.columns.map(unidecode) # Limpa acentos
+    metadata.columns = metadata.columns.str.replace(' ', '_') # Limpa espaços
+    #print(metadata.columns)
+    padronizar_colunas(metadata, COLUNAS_MAPEADAS) # Aplica o RegEx
+    #print(metadata.columns)
+
+    # 3. Validação final
+    required_cols = ['Código_da_Amostra', 'Requisição']
+    if not set(required_cols).issubset(metadata.columns):
+        raise ValueError(
+            f"As colunas necessárias {required_cols} não foram encontradas no metadado após a padronização. "
+        )
+
+    # 4. Cria o dicionário de renomeação (Requisição -> Código Amostra)
+    metadata['Requisição'] = metadata['Requisição'].astype(str)
+    metadata['Código_da_Amostra'] = metadata['Código_da_Amostra'].astype(str)
+    requisicao_to_codigo = dict(zip(metadata['Requisição'], metadata['Código_da_Amostra']))
+    
+    # 5. Executa a renomeação (In-place)
+    renamed_count = 0
+    for filename in os.listdir(input_path):
+        if "fastq" in filename or "fq" in filename:
+            file_path = os.path.join(input_path, filename)
+            sample_name = filename.split("_")[0] 
+
+            if sample_name in metadata['Código_da_Amostra'].values:
+                continue
+
+            if sample_name in requisicao_to_codigo:
+                new_code = requisicao_to_codigo[sample_name]
+                new_name = new_code + filename[filename.index("_"):]
+                new_path = os.path.join(input_path, new_name)
+                
+                os.rename(file_path, new_path)
+                renamed_count += 1
+    
+    if renamed_count > 0:
+         print(f"Renomeação de arquivos FASTQ concluída ({renamed_count} arquivos renomeados).")
+    else:
+         print("Renomeação de arquivos FASTQ pulada (arquivos já renomeados ou sem correspondência).")
 
 class ViralFlowOROV(ViralFlowGUI):
     def __init__(self, menu_inicial):
@@ -206,7 +276,7 @@ class ViralFlowOROV(ViralFlowGUI):
                 report_title=f"Segmento OROV {segment_name}" # Passar o título customizado
             )
 
-            print(f"QC do Segmento OROV {segment_name} gerado em: {base_output}/RNSG_REPORT/Quality_check.html")
+            print(f"QC do Segmento OROV {segment_name} gerado!")
 
         except Exception as e:
             # Inclui o caminho no erro para debug
@@ -218,18 +288,24 @@ class ViralFlowOROV(ViralFlowGUI):
         """
         Função final que inicia o processo de compilação de dados OROV (L, M, S).
         """
+        # --- DEFINIÇÃO DOS PARÂMETROS ---
+        metadata_path = self.initial_params['metadata']
+        base_out_dir = self.initial_params['outDir']
+        config_path = self.initial_params['config_path']
+        
+        # Cria a pasta de saída compilada
+        COMPILED_DIR = os.path.join(base_out_dir, "OROV_COMPILED_OUT")
+        os.makedirs(COMPILED_DIR, exist_ok=True)
+        # --- FIM DA DEFINIÇÃO ---
+        
         try:
-            # O output_base_dir é a pasta que contém OROV_L, OROV_M, OROV_S
-            base_out_dir = self.initial_params['outDir']
-            
-            # Aqui chamamos o novo script que faz toda a agregação
-            compiled_coverage, compiled_reads = generate_compiled_report_orov(
-                base_out_dir,
-                self.initial_params['config_path']
-            )
+            print(f"\nDisparando relatório final OROV, compilando dados em: {COMPILED_DIR}...")
 
-            # ATENÇÃO: Os DataFrames compilados (compiled_coverage, compiled_reads)
-            # agora estão disponíveis aqui para uso futuro na geração do FASTA e Excel Compilados.
+            compiled_coverage, compiled_reads = generate_compiled_report_orov(
+                metadata_path,
+                base_out_dir,
+                config_path
+            )
 
             print("\nPipeline OROV completo. Relatório Compilado de QC gerado.")
             QMessageBox.information(self, "Relatório OROV", "Pipeline OROV (L, M, S) concluído. Relatório Compilado Gerado.")
@@ -260,6 +336,33 @@ class ViralFlowOROV(ViralFlowGUI):
         }
         self.current_segment_index = 0
         
+        # PADRONIZAÇÃO E RENOMEAÇÃO INICIAL
+        metadata_path = self.initial_params['metadata']
+        input_path = self.initial_params['input_path']
+
+        if metadata_path and input_path:
+            try:
+                # 1. Carrega e Padroniza o metadado
+                # (Assumindo que você importou/copiou padronizar_colunas e colunas_mapeadas)
+                # Você deve incluir um bloco try/except robusto aqui que detecte o delimitador
+                # Como não temos a função aqui, vou usar um placeholder:
+                _prepare_and_rename_metadata(metadata_path, input_path)
+
+                #print("Iniciando pré-processamento e renomeação de arquivos FASTQ...")
+                
+                # CHAME A FUNÇÃO DE PADRONIZAÇÃO DE COLUNAS AQUI!
+                # Exemplo: padronizar_metadata_e_salvar(metadata_path, self.colunas_mapeadas)
+
+                # 2. Renomeia os arquivos FASTQ
+                # Este é o comando que você precisa garantir que funcione com o metadado padronizado
+                #rename_fastq_files(metadata_path, input_path) 
+                #print("Renomeação de arquivos FASTQ concluída!")
+                
+            except Exception as e:
+                QMessageBox.critical(self, "Erro de Metadados", 
+                    f"Falha ao pré-processar metadados ou renomear FASTQ. Erro: {str(e)}")
+                return # Interrompe a execução
+
         # Desconecta qualquer sinal anterior que possa ter sido conectado.
         if self.thread and self.thread.isRunning():
             self.thread.process_finished.disconnect()
