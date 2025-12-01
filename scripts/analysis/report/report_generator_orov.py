@@ -181,7 +181,7 @@ def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, cn
     df_combine_sequence['ANO_SEMANA_EPIDEMIOLOGICA'] = df_combine_sequence['Data_da_Coleta'].dt.strftime('%Y').fillna('ND')
     
     # 3. Escrita do FASTA no padrão OROV (com PIPE e Segmento)
-    fasta_output_dir = os.path.join(output_folder, 'RNSG_REPORT')
+    fasta_output_dir = os.path.join(output_folder)
     fasta_output_path = os.path.join(fasta_output_dir, 'LACEN_seq_OROV.fasta')
     
     with open(fasta_output_path, 'w') as outfile:
@@ -193,14 +193,12 @@ def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, cn
                 #is_eligible = True # Não verificamos Coverage >= 60% aqui
                 
                 #if is_eligible: 
-                    print(f"DEBUG {index}: Tentando Amostra {row['Código_da_Amostra']} / Segmento {row['segment']}")
 
                     seq = row['sequence']
                     
                     # --- NOVO BLOCO DE DEBUG CRÍTICO ---
                     codigo_amostra = str(row['Código_da_Amostra'])
                     if not seq or seq.strip() == "":
-                        print(f"DEBUG VAZIO: Amostra {codigo_amostra} | Segmento {row['segment']} | Sequência é VAZIA.")
                         continue # Pula a escrita
                     
                     # Verifica se a sequência é apenas 'N's (o que indicaria falha na montagem)
@@ -231,69 +229,247 @@ def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, cn
 
 # ... (Funções planilha_resultado_orov e arquivo_epiarbo_orov - devem ser implementadas com lógica de agrupamento) ...
 
+# Em report_generator_orov.py
+
+def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
+    """ Gera o arquivo EpiArbo para OROV com desduplicação de amostras. """
+    print("Gerando arquivo EpiArbo OROV...")
+
+    # 1. Carrega Info Usuário
+    submitter = config['user_info']['submitter']
+    arbo_authors = config['user_info']['authors']
+    arbo_orig_lab = config['user_info']['subm_lab']
+    arbo_orig_lab_addr = config['user_info']['subm_lab_addr']
+    arbo_subm_lab = config['user_info']['subm_lab']
+    arbo_subm_lab_addr = config['user_info']['subm_lab_addr']
+
+    # 2. Desduplicação (1 linha por amostra)
+    # Agrupa e pega o primeiro registro (pois dados demográficos são iguais para os 3 segmentos)
+    df_unique = df_combine_sequence.groupby('Código_da_Amostra').first().reset_index()
+
+    df_unique = df_unique.loc[:, ~df_unique.columns.duplicated()]
+
+    df_unique = df_unique.rename(columns={'Código_da_Amostra': 'id'})
+
+    # 3. Preparação Demográfica
+    arbo_patient_age = df_unique[['id', 'Data_de_Nascimento', 'Data_da_Coleta']].copy()
+    arbo_patient_age['Data_de_Nascimento'] = arbo_patient_age['Data_de_Nascimento'].astype(str).replace(to_replace=' .*', value='', regex=True)
+    arbo_patient_age['Data_da_Coleta'] = pd.to_datetime(arbo_patient_age['Data_da_Coleta'], errors='coerce')
+    arbo_patient_age['Data_de_Nascimento'] = pd.to_datetime(arbo_patient_age['Data_de_Nascimento'], errors='coerce', dayfirst=True)
+    
+    # Cálculo de Idade
+    arbo_patient_age['arbo_patient_age'] = ((arbo_patient_age['Data_da_Coleta'] - arbo_patient_age['Data_de_Nascimento']).dt.days / 365.25).round().astype('Int64')
+    arbo_patient_age = arbo_patient_age[['id', 'arbo_patient_age']]
+
+    # 4. Construção do Nome do Vírus
+    arbo_virus_name = df_unique[['Estado_do_Solicitante', 'CNES_Laboratório_responsável', 'id', 'ANO_SEMANA_EPIDEMIOLOGICA']].astype(str)
+    
+    # Nome do vírus base
+    arbo_virus_name['arbo_virus_name'] = "hOROV/Brazil/" + \
+        arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + \
+        arbo_virus_name['CNES_Laboratório_responsável'] + "-" + \
+        arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
+    
+    arbo_virus_name['arbo_virus_name'] = arbo_virus_name['arbo_virus_name'].apply(format_virus_name)
+    arbo_virus_name = arbo_virus_name[['id', 'arbo_virus_name']]
+
+    # Inserção de Colunas Fixas
+    arbo_virus_name.insert(0, 'submitter', submitter)
+    arbo_virus_name.insert(1, 'fn', 'LACEN_seq_OROV.fasta')
+    arbo_virus_name.insert(3, 'arbo_type', 'Oropouche virus')
+    arbo_virus_name.insert(4, 'arbo_host', 'Human')
+    arbo_virus_name.insert(5, 'arbo_passage', 'Original')
+
+    # 5. Merges Finais
+    arbo_collection_date = df_unique[['id', 'Data_da_Coleta']].copy()
+    arbo_collection_date['Data_da_Coleta'] = pd.to_datetime(arbo_collection_date['Data_da_Coleta']).dt.strftime('%Y-%m-%d')
+    arbo_collection_date.rename(columns={'Data_da_Coleta': 'arbo_collection_date'}, inplace=True)
+    gisaid_temp = pd.merge(arbo_virus_name, arbo_collection_date, on='id')
+
+    # Location (Estados)
+    states = {
+        'AC': 'Acre', 'AL': 'Alagoas', 'AP': 'Amapá', 'AM': 'Amazonas', 'BA': 'Bahia', 'CE': 'Ceará',
+        'DF': 'Distrito Federal', 'ES': 'Espírito Santo', 'GO': 'Goiás', 'MA': 'Maranhão', 'MT': 'Mato Grosso',
+        'MS': 'Mato Grosso do Sul', 'MG': 'Minas Gerais', 'PA': 'Pará', 'PB': 'Paraíba', 'PR': 'Paraná',
+        'PE': 'Pernambuco', 'PI': 'Piauí', 'RJ': 'Rio de Janeiro', 'RN': 'Rio Grande do Norte',
+        'RS': 'Rio Grande do Sul', 'RO': 'Rondônia', 'RR': 'Roraima', 'SC': 'Santa Catarina',
+        'SP': 'São Paulo', 'SE': 'Sergipe', 'TO': 'Tocantins'
+    }
+    
+    # Preparação de Location
+    arbo_location = df_unique[['id', 'Estado_do_Solicitante', 'Municipio_do_Solicitante']].copy()
+    arbo_location['Estado_do_Solicitante'] = arbo_location['Estado_do_Solicitante'].replace(states)
+    
+    # --- CORREÇÃO AQUI (Uso de .str.capitalize() em vez de .apply(str.capitalize)) ---
+    arbo_location['Municipio_do_Solicitante'] = arbo_location['Municipio_do_Solicitante'].astype(str).str.capitalize().apply(unidecode)
+    arbo_location['Estado_do_Solicitante'] = arbo_location['Estado_do_Solicitante'].astype(str).str.capitalize().apply(unidecode)
+    # ---------------------------------------------------------------------------------
+    
+    arbo_location['arbo_location'] = "South America / Brazil / " + arbo_location['Estado_do_Solicitante'] + " / " + arbo_location['Municipio_do_Solicitante']
+    gisaid_temp = pd.merge(gisaid_temp, arbo_location[['id', 'arbo_location']], on='id')
+
+    # Insere colunas vazias padrão
+    gisaid_temp.insert(8, 'arbo_add_location', '')
+
+    gisaid_temp.insert(10, 'arbo_add_host_info', '')
+    gisaid_temp.insert(11, 'arbo_sampling_strategy', '')
+
+    # Gender
+    gender_map = {
+        'MASCULINO': 'Male', 'FEMININO': 'Female', 'M': 'Male', 'F': 'Female',
+        'Masculino': 'Male', 'Feminino': 'Female'
+    }
+    arbo_gender = df_unique[['id', 'Sexo']].copy()
+    arbo_gender['Sexo'] = arbo_gender['Sexo'].replace(gender_map)
+    gisaid_temp = pd.merge(gisaid_temp, arbo_gender.rename(columns={'Sexo': 'arbo_gender'}), on='id')
+
+    # Merge Age
+    gisaid_temp = pd.merge(gisaid_temp, arbo_patient_age, on='id')
+    
+    # Status
+    gisaid_temp['arbo_patient_status'] = 'Unknown'
+    gisaid_temp['arbo_clinical_symptoms'] = ''
+
+    # Specimen
+    bio_material_translation = {
+        "Soro": "Serum", "Sangue": "Blood", "Urina": "Urine", "Liquor": "Cerebrospinal fluid (CSF)",
+        "Plasma": "Plasma", "Swab": "Swab"
+    }
+    arbo_specimen = df_unique[['id', 'Material_Biológico']].copy()
+    arbo_specimen['arbo_specimen'] = arbo_specimen['Material_Biológico'].map(bio_material_translation).fillna('Unknown')
+    gisaid_temp = pd.merge(gisaid_temp, arbo_specimen[['id', 'arbo_specimen']], on='id')
+
+    # Outras colunas fixas
+    gisaid_temp['arbo_outbreak'] = ''
+    gisaid_temp['arbo_last_vaccination_date'] = ''
+    gisaid_temp['arbo_treatment'] = ''
+    gisaid_temp['arbo_seq_technology'] = 'Illumina MiSeq'
+    gisaid_temp['arbo_assembly_method'] = 'Viralflow'
+
+    # Coverage
+    arbo_coverage = df_unique[['id', 'Depth of Coverage']].copy()
+    gisaid_temp = pd.merge(gisaid_temp, arbo_coverage.rename(columns={'Depth of Coverage': 'arbo_coverage'}), on='id')
+
+    # Labs
+    gisaid_temp['arbo_publications'] = ''
+    gisaid_temp['arbo_orig_lab'] = arbo_orig_lab
+    gisaid_temp['arbo_orig_lab_addr'] = arbo_orig_lab_addr
+    gisaid_temp['arbo_provider_sample_id'] = ''
+    gisaid_temp['arbo_subm_lab'] = arbo_subm_lab
+    gisaid_temp['arbo_subm_lab_addr'] = arbo_subm_lab_addr
+    gisaid_temp['arbo_subm_sample_id'] = ''
+    gisaid_temp['arbo_authors'] = arbo_authors
+
+    gisaid_temp = gisaid_temp.drop('id', axis=1)
+
+    # Ordenação Final
+    final_cols = ['submitter', 'fn', 'arbo_virus_name', 'arbo_type', 'arbo_passage', 'arbo_collection_date',
+            'arbo_location', 'arbo_add_location', 'arbo_host', 'arbo_add_host_info', 'arbo_sampling_strategy',
+            'arbo_gender', 'arbo_patient_age', 'arbo_patient_status',  'arbo_clinical_symptoms',
+            'arbo_specimen', 'arbo_outbreak', 'arbo_last_vaccination_date', 'arbo_treatment',
+            'arbo_seq_technology', 'arbo_assembly_method', 'arbo_coverage', 'arbo_publications', 'arbo_orig_lab', 'arbo_orig_lab_addr',
+            'arbo_provider_sample_id', 'arbo_subm_lab', 'arbo_subm_lab_addr',
+            'arbo_subm_sample_id', 'arbo_authors']
+    
+    # Header descritivo EpiArbo
+    columns_desc = ['Submitter', 'FASTA filename', 'Virus name', 'Type', 'Passage details/history', 'Collection date',
+            'Location', 'Additional location information', 'Host', 'Additional host information', 'Sampling Strategy',
+            'Gender', 'Patient age', 'Patient status',  'Specific clinical symptoms',
+            'Specimen source', 'Outbreak', 'Vaccination History', 'Treatment',
+            'Sequencing technology', 'Assembly method', 'Depth of coverage', 'Publications', 'Originating lab', 'Address',
+            'Sample ID given by the sample provider', 'Submitting lab', 'Address',
+            'Sample ID given by the submitting laboratory', 'Authors']
+
+    # Garante a ordem e cria o DF final
+    gisaid_temp = gisaid_temp[final_cols]
+    
+    header_df = pd.DataFrame([columns_desc], columns=final_cols)
+    final_epiarbo = pd.concat([header_df, gisaid_temp], ignore_index=True)
+    
+    # Salvar
+    output_path = os.path.join(output_folder, 'EpiArbo.csv')
+    final_epiarbo.to_csv(output_path, index=False)
+    print(f"Arquivo EpiArbo OROV gerado com sucesso em: {output_path}")
 
 # --- FUNÇÃO ORQUESTRADORA (Principal) ---
 def generate_compiled_report_orov(metadata_path, base_out_dir, config_path):
     print("Iniciando compilação de dados OROV (L, M, S)...")
     
     COMPILED_DIR = os.path.join(base_out_dir, "OROV_COMPILED_OUT")
-    mod_pasta(COMPILED_DIR)
+    #mod_pasta(COMPILED_DIR)
     
     LAST_SEGMENT_DIR = os.path.join(base_out_dir, f"OROV_{SEGMENTS[-1]['segment']}", "COMPILED_OUTPUT")
     
-    # 1. Carga de QC
-    compiled_coverage, compiled_reads = load_and_compile_segment_qc(base_out_dir, SEGMENTS)
-    
-    if compiled_coverage.empty:
-        raise ValueError("Nenhum dado de cobertura válido encontrado.")
-
-    # 2. Carga de Metadados e Sequências
     try:
+        # Carrega Config
+        config = load_config(config_path)
+        
+        # 1. Carga e Agregação de QC
+        compiled_coverage, compiled_reads = load_and_compile_segment_qc(base_out_dir, SEGMENTS)
+        
+        if compiled_coverage.empty:
+            raise ValueError("Nenhum dado de cobertura válido encontrado para a compilação OROV.")
+
+        # 2. Carregar Metadados e Errors
         metadata, _, records, _, _, errors = input_folder(LAST_SEGMENT_DIR, metadata_path)
-        print(f"DEBUG: Metadados carregados. Linhas: {len(metadata)}")
-    except Exception as e:
-        raise RuntimeError(f"Falha na carga de dados essenciais: {e}") 
-
-    sequences_df = load_segment_consensus(base_out_dir, SEGMENTS)
-    print(f"DEBUG: Sequências carregadas. Linhas: {len(sequences_df)}")
     
-    if sequences_df.empty:
-        print("CRÍTICO: sequences_df está vazio! O arquivo FASTA não será gerado.")
+    except Exception as e:
+        print(f"ERRO CRÍTICO: {e}")
+        # Retorna DFs vazios ou levanta erro
+        raise RuntimeError(f"Falha crítica no pipeline OROV: {e}")
 
-    # 3. Validação CN
+    # 3. Validação do CN
     cn_message, compiled_positive_coverage = validate_negative_control(compiled_coverage, errors)
 
-    # 4. Preparação para FASTA (O erro pode estar aqui)
-    try:
-        print("DEBUG: Preparando filtro de cobertura...")
-        temp_coverage_filter = compiled_coverage.groupby('cod')['coverage_breadth'].max().reset_index(name='Coverage')
-        temp_coverage_filter['Coverage'] = temp_coverage_filter['Coverage'].multiply(100).round(2)
-        temp_coverage_filter.rename(columns={'cod': 'Código_da_Amostra'}, inplace=True) 
-        print(f"DEBUG: Filtro de cobertura pronto. Linhas: {len(temp_coverage_filter)}")
-    except Exception as e:
-        print(f"ERRO FATAL ao preparar filtro de cobertura: {e}")
-        return None, None
+    # 4. Geração do FASTA (e DataFrame Mestre)
+    sequences_df = load_segment_consensus(base_out_dir, SEGMENTS)
+    
+    temp_coverage_filter = compiled_coverage.groupby('cod').agg({
+        'coverage_breadth': 'max',       # Pega a melhor cobertura entre os segmentos
+        'mean_depth_coverage': 'mean'    # Pega a profundidade média dos segmentos
+    }).reset_index()
 
-    # --- CHAMADA DA FUNÇÃO (AQUI É ONDE ESTAVA O MISTÉRIO) ---
-    print("DEBUG: Chamando gerar_arquivo_fasta_orov agora...")
+    # Ajusta os valores
+    temp_coverage_filter['coverage_breadth'] = temp_coverage_filter['coverage_breadth'].multiply(100).round(2)
+    temp_coverage_filter['mean_depth_coverage'] = temp_coverage_filter['mean_depth_coverage'].round(2)
+
+    # Renomeia para os nomes esperados pelas funções de relatório (EpiArbo/Fasta)
+    temp_coverage_filter.rename(columns={
+        'cod': 'Código_da_Amostra',
+        'coverage_breadth': 'Coverage',
+        'mean_depth_coverage': 'Depth of Coverage'
+    }, inplace=True)
+
+    # Gera FASTA e obtém o DF combinado
+    df_combine_sequence = gerar_arquivo_fasta_orov(sequences_df, metadata, temp_coverage_filter, COMPILED_DIR)
+
+    # 5. Geração dos relatórios finais (EpiArbo)
     try:
-        df_combine_sequence = gerar_arquivo_fasta_orov(sequences_df, metadata, temp_coverage_filter, COMPILED_DIR)
-        print(f"DEBUG: Retornou de gerar_arquivo_fasta_orov. Linhas combinadas: {len(df_combine_sequence)}")
+        arquivo_epiarbo_orov(config, metadata, df_combine_sequence, COMPILED_DIR)
+        # planilha_resultado_orov(...) # Chame se implementado
     except Exception as e:
-        print(f"ERRO FATAL DENTRO de gerar_arquivo_fasta_orov: {e}")
-        # Importante: imprimir o traceback completo se possível, ou pelo menos o erro
+        print(f"Erro ao gerar EpiArbo: {e}")
         import traceback
         traceback.print_exc()
-    # ---------------------------------------------------------
 
-    # 5. Geração dos relatórios finais
-    # (Placeholder para planilha/epiarbo)
-    
-    # 6. QC HTML
-    # ... (Código do Plotly omitido para brevidade, mantenha o que você já tem) ...
-    # Apenas para garantir que o script não quebre aqui se o anterior falhar:
-    if not compiled_coverage.empty:
-        # ... (Lógica do Plotly) ...
-        pass # Substitua pelo seu código Plotly real
+    # 6. Geração do Relatório de QC HTML (Plotly)
+    # 6. Geração do Relatório de QC HTML (Plotly) - Versão OROV Compilada
+    try:
+        # Passamos os DataFrames compilados. A função detectará a coluna 'Segmento' 
+        # e gerará os gráficos comparativos automaticamente.
+        Quality_monitor_interactive(
+            coverage=compiled_coverage,
+            reads=compiled_reads,
+            errors=errors,
+            output_folder=COMPILED_DIR,
+            eligibility_threshold=60,
+            report_title="Relatório de Qualidade Compilado OROV (L, M, S)"
+        )
+        print(f"Relatório QC Compilado gerado em: {COMPILED_DIR}/RNSG_REPORT/Quality_check.html")
+        
+    except Exception as e:
+        print(f"Erro ao gerar QC Plotly Compilado: {e}")
+        import traceback
+        traceback.print_exc()
     
     return compiled_coverage, compiled_reads

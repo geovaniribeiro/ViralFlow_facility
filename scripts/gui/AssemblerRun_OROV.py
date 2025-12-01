@@ -135,14 +135,14 @@ class ViralFlowOROV(ViralFlowGUI):
             reads, coverage, errors = data_processing(LAST_SEGMENT_OUTPUT_DIR) 
             
             # 2. Criar a pasta RNSG_REPORT no novo local centralizado
-            mod_pasta(COMPILED_DIR)
+            #mod_pasta(COMPILED_DIR)
 
             # 3. Gerar o relatório de QC final (HTML) no diretório COMPILADO
             Quality_monitor_interactive(
                 coverage, 
                 reads, 
                 errors, 
-                COMPILED_DIR, # <-- NOVO ALVO DE SAÍDA
+                COMPILED_DIR,
                 eligibility_threshold=60,
                 report_title="Relatório Final OROV (Amostras Positivas - QC Consolidado)"
             )
