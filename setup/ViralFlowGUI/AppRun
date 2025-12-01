@@ -4,18 +4,28 @@ HERE="$(dirname "$(readlink -f "$0")")"
 
 # Detectar terminal disponível e construir o comando correto
 if command -v gnome-terminal > /dev/null; then
-    gnome-terminal -- bash -c "$HERE/viralflowGUI_installer.sh; read -p 'Pressione ENTER para sair...'"
+    # ADICIONADO: --wait para impedir que o AppImage desmonte antes da hora
+    gnome-terminal --wait -- bash -c "$HERE/viralflowGUI_installer.sh; read -p 'Pressione ENTER para sair...'"
+    
 elif command -v konsole > /dev/null; then
-    konsole --noclose -e bash "$HERE/viralflowGUI_installer.sh"
-elif command -v x-terminal-emulator > /dev/null; then
-    x-terminal-emulator -e bash "$HERE/viralflowGUI_installer.sh"
-elif command -v xterm > /dev/null; then
-    xterm -hold -e bash "$HERE/viralflowGUI_installer.sh"
+    # Konsole geralmente precisa de --nofork para bloquear, mas nem todas versões suportam.
+    # Se falhar, o comportamento padrão do konsole pode ainda causar erro.
+    konsole --noclose --nofork -e bash "$HERE/viralflowGUI_installer.sh"
+    
 elif command -v xfce4-terminal > /dev/null; then
-    xfce4-terminal --hold -e bash "$HERE/viralflowGUI_installer.sh"
+    # ADICIONADO: --disable-server garante que rode na instância atual e espere
+    xfce4-terminal --disable-server --hold -e bash "$HERE/viralflowGUI_installer.sh"
+    
+elif command -v xterm > /dev/null; then
+    # xterm por padrão já costuma segurar o processo filho
+    xterm -hold -e bash "$HERE/viralflowGUI_installer.sh"
+    
 elif command -v lxterminal > /dev/null; then
-    lxterminal -e bash "$HERE/viralflowGUI_installer.sh"
+    # lxterminal infelizmente não tem flag de wait fácil, mas tente:
+    lxterminal -e bash -c "$HERE/viralflowGUI_installer.sh; read line"
+    
 else
-    echo "Nenhum terminal suportado encontrado!"
-    read -p "Pressione ENTER para sair..."
+    # Fallback se não achar terminal gráfico (ex: rodando via terminal)
+    echo "Nenhum terminal suportado encontrado ou executando diretamente!"
+    bash "$HERE/viralflowGUI_installer.sh"
 fi
