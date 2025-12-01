@@ -58,9 +58,7 @@ def _prepare_and_rename_metadata(metadata_path, input_path):
     # 2. Padroniza colunas
     metadata.columns = metadata.columns.map(unidecode) # Limpa acentos
     metadata.columns = metadata.columns.str.replace(' ', '_') # Limpa espaços
-    #print(metadata.columns)
     padronizar_colunas(metadata, COLUNAS_MAPEADAS) # Aplica o RegEx
-    #print(metadata.columns)
 
     # 3. Validação final
     required_cols = ['Código_da_Amostra', 'Requisição']
@@ -108,6 +106,13 @@ class ViralFlowOROV(ViralFlowGUI):
         
         # O self.thread da classe base será reescrito a cada segmento
 
+        try:
+            self.run_button.clicked.disconnect()
+        except Exception:
+            pass # Ignora se não houver conexão anterior
+            
+        self.run_button.clicked.connect(self.run_command)
+
     def report_generator_OROV(self, message):
         """
         Gera o relatório OROV após as 3 execuções.
@@ -128,10 +133,8 @@ class ViralFlowOROV(ViralFlowGUI):
         )
 
         try:
-            print(f"\nDisparando relatório final OROV, compilando dados em: {COMPILED_DIR}...")
 
             # ATENÇÃO: Carregamos os dados do ÚLTIMO SEGMENTO. 
-            # ESTA LINHA DEVE SER SUBSTITUÍDA PELA LÓGICA DE AGREGAÇÃO DE L, M, S.
             reads, coverage, errors = data_processing(LAST_SEGMENT_OUTPUT_DIR) 
             
             # 2. Criar a pasta RNSG_REPORT no novo local centralizado
@@ -147,7 +150,7 @@ class ViralFlowOROV(ViralFlowGUI):
                 report_title="Relatório Final OROV (Amostras Positivas - QC Consolidado)"
             )
             
-            print("\nPipeline OROV completo. Relatório de QC gerado.")
+            print("\nPipeline OROV completo!")
             QMessageBox.information(self, "Relatório OROV", "Pipeline OROV (L, M, S) concluído com sucesso.")
             
         except Exception as e:
@@ -299,8 +302,6 @@ class ViralFlowOROV(ViralFlowGUI):
         # --- FIM DA DEFINIÇÃO ---
         
         try:
-            print(f"\nDisparando relatório final OROV, compilando dados em: {COMPILED_DIR}...")
-
             compiled_coverage, compiled_reads = generate_compiled_report_orov(
                 metadata_path,
                 base_out_dir,

@@ -131,7 +131,6 @@ def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, cn
     
     A função retorna o DataFrame combinado (df_combine_sequence) para uso no EpiArbo/Planilha.
     """
-    print("Gerando arquivo fasta OROV compilado em memória...")
 
     # --- LÓGICA DE PREPARAÇÃO DE METADADOS (Copied from DENV/CHIKV flow) ---
     
@@ -224,12 +223,9 @@ def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, cn
              #   print(f"ERRO DE ESCRITA: Falha ao processar a amostra no índice {index}. Motivo: {type(e).__name__} - {e}.")
               #  continue 
 
-    print(f"\nArquivo FASTA OROV compilado gerado com sucesso em: {fasta_output_path}")
     return df_combine_sequence
 
 # ... (Funções planilha_resultado_orov e arquivo_epiarbo_orov - devem ser implementadas com lógica de agrupamento) ...
-
-# Em report_generator_orov.py
 
 def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
     """ Gera o arquivo EpiArbo para OROV com desduplicação de amostras. """
@@ -389,11 +385,11 @@ def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
     # Salvar
     output_path = os.path.join(output_folder, 'EpiArbo.csv')
     final_epiarbo.to_csv(output_path, index=False)
-    print(f"Arquivo EpiArbo OROV gerado com sucesso em: {output_path}")
 
 # --- FUNÇÃO ORQUESTRADORA (Principal) ---
 def generate_compiled_report_orov(metadata_path, base_out_dir, config_path):
     print("Iniciando compilação de dados OROV (L, M, S)...")
+    print("")
     
     COMPILED_DIR = os.path.join(base_out_dir, "OROV_COMPILED_OUT")
     #mod_pasta(COMPILED_DIR)
@@ -465,7 +461,7 @@ def generate_compiled_report_orov(metadata_path, base_out_dir, config_path):
             eligibility_threshold=60,
             report_title="Relatório de Qualidade Compilado OROV (L, M, S)"
         )
-        print(f"Relatório QC Compilado gerado em: {COMPILED_DIR}/RNSG_REPORT/Quality_check.html")
+        print(f"Relatório QC Compilado gerado com sucesso!")
         
     except Exception as e:
         print(f"Erro ao gerar QC Plotly Compilado: {e}")

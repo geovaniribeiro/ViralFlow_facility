@@ -39,13 +39,27 @@ colunas_mapeadas = {
 
 # Função para padronizar os nomes das colunas usando regex
 def padronizar_colunas(df, mapeamento):
+    """
+    Padroniza os nomes das colunas do DataFrame baseando-se em padrões RegEx.
+    Usa o módulo 're' nativo para evitar warnings do Pandas e melhorar performance.
+    """
     novo_nomes = {}
+    
     for padrao_padronizado, regex_variacoes in mapeamento.items():
         for regex in regex_variacoes:
             for coluna in df.columns:
-                if pd.Series(coluna).str.contains(regex, regex=True, case=False).any():
-                    novo_nomes[coluna] = padrao_padronizado  # Mapeia para o nome padronizado
-    df.rename(columns=novo_nomes, inplace=True)
+                # Verifica se a coluna já foi mapeada para evitar sobrescrita desnecessária
+                if coluna in novo_nomes:
+                    continue
+                
+                # Usa re.search para buscar o padrão (equivalente a contains)
+                # re.IGNORECASE equivale a case=False
+                if re.search(regex, coluna, re.IGNORECASE):
+                    novo_nomes[coluna] = padrao_padronizado
+                    
+    # Aplica a renomeação
+    if novo_nomes:
+        df.rename(columns=novo_nomes, inplace=True)
 
 
 ## Função que carrega o arquivo yaml e armazena em um dicionario

@@ -243,7 +243,7 @@ class MenuInicial(QWidget):
             self.close()
             self.tela_assembly = ViralFlowCHIKV(self)
             self.tela_assembly.show()
-        elif self.radio_orov.isChecked(): # Se você adicionou um QRadioButton para OROV
+        elif self.radio_orov.isChecked():
             self.close()
             self.tela_assembly = ViralFlowOROV(self)
             self.tela_assembly.show()
@@ -264,7 +264,8 @@ class ViralFlowVirusHandler(ViralFlowGUI_custom):
         # Dicionário de configuração para cada vírus
         self.virus_config = {
             "DENV": {"processor": DenvNextclade, "report_func": generate_report_denv},
-            "CHIKV": {"processor": ChikvNextclade, "report_func": generate_report_chikv}
+            "CHIKV": {"processor": ChikvNextclade, "report_func": generate_report_chikv},
+            "OROV": {"processor": None, "report_func": None}
         }
 
     def report_generator(self, message):
@@ -307,8 +308,8 @@ class ViralFlowCHIKV(ViralFlowVirusHandler):
         super().__init__(menu_inicial, virus="CHIKV")
 
 #class ViralFlowOROV(ViralFlowVirusHandler):
-    #def __init__(self, menu_inicial=None):
-        #super().__init__(menu_inicial, virus="OROV")
+ #   def __init__(self, menu_inicial=None):
+  #      super().__init__(menu_inicial, virus="OROV")
 
 
 if __name__ == "__main__":
