@@ -48,8 +48,7 @@ micromamba activate viralflow_gui
 # Instalar dependências PyQt (interface gráfica)
 sudo apt-get install -y \
     libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-    libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa
-
+    libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa libxcb-cursor0
 
 micromamba activate viralflow
 #Baixar o banco snpEff para os virus custom

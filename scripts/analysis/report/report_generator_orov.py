@@ -396,70 +396,74 @@ def generate_compiled_report_orov(metadata_path, base_out_dir, config_path):
     
     LAST_SEGMENT_DIR = os.path.join(base_out_dir, f"OROV_{SEGMENTS[-1]['segment']}", "COMPILED_OUTPUT")
     
-    try:
-        # Carrega Config
-        config = load_config(config_path)
-        
-        # 1. Carga e Agregação de QC
-        compiled_coverage, compiled_reads = load_and_compile_segment_qc(base_out_dir, SEGMENTS)
-        
-        if compiled_coverage.empty:
-            raise ValueError("Nenhum dado de cobertura válido encontrado para a compilação OROV.")
+    compiled_coverage, compiled_reads = load_and_compile_segment_qc(base_out_dir, SEGMENTS)
 
-        # 2. Carregar Metadados e Errors
-        metadata, _, records, _, _, errors = input_folder(LAST_SEGMENT_DIR, metadata_path)
-    
-    except Exception as e:
-        print(f"ERRO CRÍTICO: {e}")
-        # Retorna DFs vazios ou levanta erro
-        raise RuntimeError(f"Falha crítica no pipeline OROV: {e}")
+    if compiled_coverage.empty:
+        raise ValueError("Nenhum dado de cobertura válido encontrado para a compilação OROV.")
+# Inicializa variáveis que dependem de metadados como None
+    metadata = None
+    errors = pd.DataFrame(columns=['cod']) # DataFrame vazio por padrão
+    config = None
+
+    # --- LÓGICA CONDICIONAL: COM vs SEM METADADOS ---
+    if metadata_path:
+        print("Metadados fornecidos. Executando pipeline completo (Fasta + EpiArbo + QC).")
+        try:
+            # Carrega Config
+            config = load_config(config_path)
+            
+            # Carrega Metadados e Errors via input_folder
+            metadata, _, records, _, _, errors = input_folder(LAST_SEGMENT_DIR, metadata_path)
+            
+            # --- GERAÇÃO DE ARQUIVOS (FASTA/EPIARBO) ---
+            sequences_df = load_segment_consensus(base_out_dir, SEGMENTS)
+            
+            # Filtro para FASTA
+            temp_coverage_filter = compiled_coverage.groupby('cod')['coverage_breadth'].max().reset_index(name='Coverage')
+            temp_coverage_filter['Coverage'] = temp_coverage_filter['Coverage'].multiply(100).round(2)
+            temp_coverage_filter.rename(columns={'cod': 'Código_da_Amostra'}, inplace=True) 
+
+            # Gera FASTA
+            df_combine_sequence = gerar_arquivo_fasta_orov(sequences_df, metadata, temp_coverage_filter, COMPILED_DIR)
+
+            # Gera EpiArbo
+            arquivo_epiarbo_orov(config, metadata, df_combine_sequence, COMPILED_DIR)
+            
+        except Exception as e:
+            print(f"ERRO ao processar metadados/arquivos finais: {e}")
+            # Se falhar aqui, não paramos o script, tentamos gerar pelo menos o QC
+            import traceback
+            traceback.print_exc()
+    else:
+        print("Metadados NÃO fornecidos. Executando apenas Relatório de Qualidade Compilado.")
+        # Sem metadados, precisamos carregar o 'errors_detected.csv' manualmente para o QC
+        try:
+            errors_path = os.path.join(LAST_SEGMENT_DIR, 'errors_detected.csv')
+            if os.path.exists(errors_path) and os.path.getsize(errors_path) > 0:
+                errors = pd.read_csv(errors_path, sep=',')
+                # Limpa a coluna cod se necessário
+                if 'cod' in errors.columns:
+                    errors['cod'] = errors['cod'].replace(to_replace='_.*', value='', regex=True)
+            else:
+                print("Aviso: Arquivo de erros não encontrado ou vazio.")
+        except Exception as e:
+            print(f"Aviso: Falha ao carregar arquivo de erros manualmente: {e}")
 
     # 3. Validação do CN
     cn_message, compiled_positive_coverage = validate_negative_control(compiled_coverage, errors)
 
-    # 4. Geração do FASTA (e DataFrame Mestre)
-    sequences_df = load_segment_consensus(base_out_dir, SEGMENTS)
-    
-    temp_coverage_filter = compiled_coverage.groupby('cod').agg({
-        'coverage_breadth': 'max',       # Pega a melhor cobertura entre os segmentos
-        'mean_depth_coverage': 'mean'    # Pega a profundidade média dos segmentos
-    }).reset_index()
-
-    # Ajusta os valores
-    temp_coverage_filter['coverage_breadth'] = temp_coverage_filter['coverage_breadth'].multiply(100).round(2)
-    temp_coverage_filter['mean_depth_coverage'] = temp_coverage_filter['mean_depth_coverage'].round(2)
-
-    # Renomeia para os nomes esperados pelas funções de relatório (EpiArbo/Fasta)
-    temp_coverage_filter.rename(columns={
-        'cod': 'Código_da_Amostra',
-        'coverage_breadth': 'Coverage',
-        'mean_depth_coverage': 'Depth of Coverage'
-    }, inplace=True)
-
-    # Gera FASTA e obtém o DF combinado
-    df_combine_sequence = gerar_arquivo_fasta_orov(sequences_df, metadata, temp_coverage_filter, COMPILED_DIR)
-
-    # 5. Geração dos relatórios finais (EpiArbo)
+# 3. Geração do Relatório de QC HTML (Plotly) - SEMPRE EXECUTA
     try:
-        arquivo_epiarbo_orov(config, metadata, df_combine_sequence, COMPILED_DIR)
-        # planilha_resultado_orov(...) # Chame se implementado
-    except Exception as e:
-        print(f"Erro ao gerar EpiArbo: {e}")
-        import traceback
-        traceback.print_exc()
+        # Define o título baseado no modo de execução
+        titulo_relatorio = "Relatório de Qualidade OROV (Completo)" if metadata_path else "Relatório de Qualidade OROV (Sem Metadados)"
 
-    # 6. Geração do Relatório de QC HTML (Plotly)
-    # 6. Geração do Relatório de QC HTML (Plotly) - Versão OROV Compilada
-    try:
-        # Passamos os DataFrames compilados. A função detectará a coluna 'Segmento' 
-        # e gerará os gráficos comparativos automaticamente.
         Quality_monitor_interactive(
             coverage=compiled_coverage,
             reads=compiled_reads,
             errors=errors,
             output_folder=COMPILED_DIR,
             eligibility_threshold=60,
-            report_title="Relatório de Qualidade Compilado OROV (L, M, S)"
+            report_title=titulo_relatorio
         )
         print(f"Relatório QC Compilado gerado com sucesso!")
         
@@ -469,3 +473,4 @@ def generate_compiled_report_orov(metadata_path, base_out_dir, config_path):
         traceback.print_exc()
     
     return compiled_coverage, compiled_reads
+    
