@@ -125,6 +125,100 @@ def load_and_compile_segment_qc(base_out_dir, segments_list):
 
 # --- FUNÇÕES DE GERAÇÃO DE ARQUIVOS (ADAPTAÇÃO OROV) ---
 
+def planilha_resultado_orov(df_combine_sequence, output_folder):
+    """ 
+    Gera a Planilha de Resultado (Excel) para OROV. 
+    Baseada no modelo DENV, mas com Genotipagem em branco.
+    """
+    print("Gerando Planilha de Resultado OROV...")
+
+    # 1. Desduplicação (1 linha por amostra)
+    # Agrupa por código da amostra para ter uma linha única para o relatório
+    df_unique = df_combine_sequence.groupby('Código_da_Amostra').first().reset_index()
+    
+    # --- CORREÇÃO CRÍTICA: Remover colunas duplicadas ---
+    # Isso impede que colunas repetidas causem o erro "Cannot set a DataFrame..."
+    df_unique = df_unique.loc[:, ~df_unique.columns.duplicated()]
+    # ----------------------------------------------------
+    
+    # 2. Inicializa o DataFrame de Resultado
+    result_table = pd.DataFrame()
+
+    # 3. Mapeamento de Colunas
+    # IDs
+    result_table['Gal Sequenciamento'] = df_unique['Requisição']
+    result_table['Código Amostra'] = df_unique['Código_da_Amostra']
+    
+    # Construção do Nome da Sequência (hOROV/Brazil/...)
+    virus_name_raw = "hOROV/Brazil/" + \
+        df_unique['Estado_do_Solicitante'].astype(str) + "-LACEN" + \
+        df_unique['CNES_Laboratório_responsável'].astype(str) + "-" + \
+        df_unique['Código_da_Amostra'].astype(str) + "/" + \
+        df_unique['ANO_SEMANA_EPIDEMIOLOGICA'].astype(str)
+    
+    result_table['Nome da Sequencia'] = virus_name_raw.apply(format_virus_name)
+
+    # Dados Demográficos
+    result_table['Município'] = df_unique['Municipio_do_Solicitante']
+    result_table['UF município solicitante'] = df_unique['Estado_do_Solicitante']
+    
+    # Formata data
+    result_table['Data Coleta'] = df_unique['Data_da_Coleta'].dt.strftime('%d/%m/%Y')
+    
+    result_table['Tipo Amostra'] = df_unique['Material_Biológico']
+    result_table['Idade'] = df_unique['Idade']
+    result_table['Tipo Idade'] = df_unique['Tipo_Idade']
+    result_table['Sexo'] = df_unique['Sexo']
+
+    # Métricas (Agora com Depth of Coverage garantido)
+    result_table['Reads'] = df_unique['Reads']
+    
+    # Verifica se Depth of Coverage existe antes de atribuir (Segurança extra)
+    if 'Depth of Coverage' in df_unique.columns:
+        result_table['Profundiade Média'] = df_unique['Depth of Coverage']
+    else:
+        result_table['Profundiade Média'] = ""
+        
+    result_table['Cobertura'] = df_unique['Coverage']
+
+    # Colunas Fixas / Vazias
+    result_table["LACEN Executor"] = ""
+    result_table["Unidade Federativa (UF)"] = "" 
+    result_table["Responsável envio dos dados"] = ""
+    result_table["Data sequenciamento"] = ""
+    result_table["Vírus"] = "Oropouche"
+    result_table["CT"] = "" 
+    result_table["Software Montagem"] = "ViralFlow"
+    result_table["Versão software"] = "1.0"
+    result_table["Versão primer"] = "OROV_Naveca2023" 
+    result_table["Versão Pangolin"] = ""
+    
+    # Genotipagem em Branco
+    result_table["Genótipo"] = "" 
+    result_table["Linhagem"] = ""
+
+    # 4. Ordenação e Seleção Final das Colunas
+    cols_order = [
+        "LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
+        "Vírus", 'Código Amostra', 'Gal Sequenciamento', "CT", 'Município', 'UF município solicitante',
+        'Data Coleta', 'Tipo Amostra', 'Idade', "Tipo Idade", 'Sexo', 'Software Montagem', 
+        "Versão software", "Versão primer", "Versão Pangolin", 'Reads','Profundiade Média', 'Cobertura', 
+        'Genótipo', 'Nome da Sequencia'
+    ]
+    
+    # Garante que todas as colunas existam
+    for c in cols_order:
+        if c not in result_table.columns:
+            result_table[c] = ""
+            
+    result_table = result_table[cols_order]
+
+    # 5. Salvar
+    output_path = os.path.join(output_folder, 'Planilha_de_Resultado.xlsx')
+    result_table.to_excel(output_path, index=False)
+    print(f"Planilha de Resultados OROV gerada com sucesso!")
+
+
 def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, cnes_codes='cnes_lacen.csv'):
     """
     Gera o arquivo FASTA compilado (multi-segmento) para submissão, com header no padrão PIPE (|).
@@ -224,8 +318,6 @@ def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, cn
               #  continue 
 
     return df_combine_sequence
-
-# ... (Funções planilha_resultado_orov e arquivo_epiarbo_orov - devem ser implementadas com lógica de agrupamento) ...
 
 def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
     """ Gera o arquivo EpiArbo para OROV com desduplicação de amostras. """
@@ -400,6 +492,7 @@ def generate_compiled_report_orov(metadata_path, base_out_dir, config_path):
 
     if compiled_coverage.empty:
         raise ValueError("Nenhum dado de cobertura válido encontrado para a compilação OROV.")
+    
 # Inicializa variáveis que dependem de metadados como None
     metadata = None
     errors = pd.DataFrame(columns=['cod']) # DataFrame vazio por padrão
@@ -418,17 +511,39 @@ def generate_compiled_report_orov(metadata_path, base_out_dir, config_path):
             # --- GERAÇÃO DE ARQUIVOS (FASTA/EPIARBO) ---
             sequences_df = load_segment_consensus(base_out_dir, SEGMENTS)
             
-            # Filtro para FASTA
-            temp_coverage_filter = compiled_coverage.groupby('cod')['coverage_breadth'].max().reset_index(name='Coverage')
-            temp_coverage_filter['Coverage'] = temp_coverage_filter['Coverage'].multiply(100).round(2)
-            temp_coverage_filter.rename(columns={'cod': 'Código_da_Amostra'}, inplace=True) 
+            # Agrupa Cobertura e Profundidade
+            temp_coverage_filter = compiled_coverage.groupby('cod').agg({
+                'coverage_breadth': 'max',       
+                'mean_depth_coverage': 'mean'    
+            }).reset_index()
 
+            # --- CORREÇÃO AQUI: Agrega Reads e faz o Merge ---
+            # Soma as reads dos 3 segmentos para ter o total da amostra
+            temp_reads_filter = compiled_reads.groupby('cod')['mepf_reads_aligned'].sum().reset_index(name='Reads')
+            
+            # Junta as Reads no dataframe de métricas
+            temp_coverage_filter = pd.merge(temp_coverage_filter, temp_reads_filter, on='cod', how='left')
+            # -------------------------------------------------
+
+            # Ajusta valores
+            temp_coverage_filter['coverage_breadth'] = temp_coverage_filter['coverage_breadth'].multiply(100).round(2)
+            temp_coverage_filter['mean_depth_coverage'] = temp_coverage_filter['mean_depth_coverage'].round(2)
+
+            # Renomeia para os nomes esperados (Agora incluindo Reads)
+            temp_coverage_filter.rename(columns={
+                'cod': 'Código_da_Amostra',
+                'coverage_breadth': 'Coverage',
+                'mean_depth_coverage': 'Depth of Coverage'
+                # 'Reads' já está com o nome correto
+            }, inplace=True)
             # Gera FASTA
             df_combine_sequence = gerar_arquivo_fasta_orov(sequences_df, metadata, temp_coverage_filter, COMPILED_DIR)
 
             # Gera EpiArbo
             arquivo_epiarbo_orov(config, metadata, df_combine_sequence, COMPILED_DIR)
             
+            planilha_resultado_orov(df_combine_sequence, COMPILED_DIR)
+
         except Exception as e:
             print(f"ERRO ao processar metadados/arquivos finais: {e}")
             # Se falhar aqui, não paramos o script, tentamos gerar pelo menos o QC
