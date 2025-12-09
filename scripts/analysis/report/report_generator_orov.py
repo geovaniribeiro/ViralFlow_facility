@@ -14,40 +14,22 @@ import re
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from scripts.analysis.report.modules_general import load_config, mod_pasta, Quality_monitor, \
     Quality_monitor_interactive, remover_csv, input_folder, process_and_combine_data, validate_negative_control
-from scripts.analysis.report.modules_EpiArbo import filter_depth, format_virus_name # Importa lógica de filtro/formato
+from scripts.analysis.report.modules_EpiArbo import filter_depth, format_virus_name
 
-# Define as colunas do dataframe a serem renomeadas (Contexto para outras funções)
-RENAME_COLUMNS_OROV = {'cod': 'Código Amostra',
-                       'mepf_reads_aligned': 'Reads',
-                       'coverage_breadth': 'Coverage',
-                       'mean_depth_coverage_x': 'Depth of Coverage',
-                       'mean_depth_coverage': 'Depth of Coverage',
-                       'Requisição': 'Requisição',
-                       'Material_Biológico': 'Tipo Amostra',
-                       'Municipio_do_Solicitante': 'Município',
-                       'Data_da_Coleta': 'Data Coleta',
-                       'Sexo': 'Sexo',
-                       'lineage': 'Linhagem'} # Aqui 'lineage' é o nome da coluna de linhagem/genótipo
-
-
-# Mapeamento de segmentos (Deve ser idêntico ao de AssemblerRun_OROV.py)
+# Mapeamento de segmentos
 SEGMENTS = [
     {"segment": "L", "accession": "OL689334.1"},
     {"segment": "M", "accession": "OL689333.1"},
     {"segment": "S", "accession": "OL689332.1"},
 ]
 
-# --- FUNÇÕES DE CARGA E AGREGAÇÃO (Núcleo da Compilação) ---
-
-# Em report_generator_orov.py
+# --- FUNÇÕES DE CARGA E AGREGAÇÃO ---
 
 def load_segment_consensus(base_out_dir, segments_list):
     """ 
-    Carrega os arquivos de consenso (seqbatch.fa) de cada segmento, 
-    criando a coluna com o nome final 'Código_da_Amostra'. 
+    Carrega os arquivos de consenso (seqbatch.fa) de cada segmento.
     """
     all_sequences = []
-    # Usamos o padrão de limpeza de IDconc
     id_cleaner = re.compile(r'(\|.*|_.*)')
     
     for info in segments_list:
@@ -59,26 +41,21 @@ def load_segment_consensus(base_out_dir, segments_list):
                 records = list(SeqIO.parse(path, "fasta"))
                 for r in records:
                     cod_raw = id_cleaner.sub('', r.id.split("|")[0])
-                    
-                    # --- CORREÇÃO: Usamos o nome final da coluna aqui ---
                     all_sequences.append({
-                        'Código_da_Amostra': cod_raw, # <-- O DataFrame é criado com a chave correta
+                        'Código_da_Amostra': cod_raw,
                         'sequence': str(r.seq),
                         'segment': segment_name 
                     })
-                    # -----------------------------------------------------
             except Exception as e:
                 print(f"Aviso: Falha ao ler FASTA em {path}. Erro: {e}")
                 continue
 
     sequences_df = pd.DataFrame(all_sequences)
     
-    # Retorna o DataFrame, que agora tem a chave de merge correta
     if 'Código_da_Amostra' not in sequences_df.columns:
         return pd.DataFrame(columns=['Código_da_Amostra', 'sequence', 'segment']) 
         
     return sequences_df
-
 
 
 def load_and_compile_segment_qc(base_out_dir, segments_list):
@@ -111,7 +88,6 @@ def load_and_compile_segment_qc(base_out_dir, segments_list):
             all_reads_data.append(reads_df)
 
         except Exception as e:
-            # Em caso de falha de leitura (ex: arquivo faltando), continua, mas reporta
             print(f"Erro ao processar dados do segmento OROV_{segment_name}: {e}")
             continue 
 
@@ -125,110 +101,23 @@ def load_and_compile_segment_qc(base_out_dir, segments_list):
 
 # --- FUNÇÕES DE GERAÇÃO DE ARQUIVOS (ADAPTAÇÃO OROV) ---
 
-def planilha_resultado_orov(df_combine_sequence, output_folder):
-    """ 
-    Gera a Planilha de Resultado (Excel) para OROV. 
-    Baseada no modelo DENV, mas com Genotipagem em branco.
+def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, run_codes, cnes_codes='cnes_lacen.csv'):
     """
-    print("Gerando Planilha de Resultado OROV...")
-
-    # 1. Desduplicação (1 linha por amostra)
-    # Agrupa por código da amostra para ter uma linha única para o relatório
-    df_unique = df_combine_sequence.groupby('Código_da_Amostra').first().reset_index()
-    
-    # --- CORREÇÃO CRÍTICA: Remover colunas duplicadas ---
-    # Isso impede que colunas repetidas causem o erro "Cannot set a DataFrame..."
-    df_unique = df_unique.loc[:, ~df_unique.columns.duplicated()]
-    # ----------------------------------------------------
-    
-    # 2. Inicializa o DataFrame de Resultado
-    result_table = pd.DataFrame()
-
-    # 3. Mapeamento de Colunas
-    # IDs
-    result_table['Gal Sequenciamento'] = df_unique['Requisição']
-    result_table['Código Amostra'] = df_unique['Código_da_Amostra']
-    
-    # Construção do Nome da Sequência (hOROV/Brazil/...)
-    virus_name_raw = "hOROV/Brazil/" + \
-        df_unique['Estado_do_Solicitante'].astype(str) + "-LACEN" + \
-        df_unique['CNES_Laboratório_responsável'].astype(str) + "-" + \
-        df_unique['Código_da_Amostra'].astype(str) + "/" + \
-        df_unique['ANO_SEMANA_EPIDEMIOLOGICA'].astype(str)
-    
-    result_table['Nome da Sequencia'] = virus_name_raw.apply(format_virus_name)
-
-    # Dados Demográficos
-    result_table['Município'] = df_unique['Municipio_do_Solicitante']
-    result_table['UF município solicitante'] = df_unique['Estado_do_Solicitante']
-    
-    # Formata data
-    result_table['Data Coleta'] = df_unique['Data_da_Coleta'].dt.strftime('%d/%m/%Y')
-    
-    result_table['Tipo Amostra'] = df_unique['Material_Biológico']
-    result_table['Idade'] = df_unique['Idade']
-    result_table['Tipo Idade'] = df_unique['Tipo_Idade']
-    result_table['Sexo'] = df_unique['Sexo']
-
-    # Métricas (Agora com Depth of Coverage garantido)
-    result_table['Reads'] = df_unique['Reads']
-    
-    # Verifica se Depth of Coverage existe antes de atribuir (Segurança extra)
-    if 'Depth of Coverage' in df_unique.columns:
-        result_table['Profundiade Média'] = df_unique['Depth of Coverage']
-    else:
-        result_table['Profundiade Média'] = ""
-        
-    result_table['Cobertura'] = df_unique['Coverage']
-
-    # Colunas Fixas / Vazias
-    result_table["LACEN Executor"] = ""
-    result_table["Unidade Federativa (UF)"] = "" 
-    result_table["Responsável envio dos dados"] = ""
-    result_table["Data sequenciamento"] = ""
-    result_table["Vírus"] = "Oropouche"
-    result_table["CT"] = "" 
-    result_table["Software Montagem"] = "ViralFlow"
-    result_table["Versão software"] = "1.0"
-    result_table["Versão primer"] = "OROV_Naveca2023" 
-    result_table["Versão Pangolin"] = ""
-    
-    # Genotipagem em Branco
-    result_table["Genótipo"] = "" 
-    result_table["Linhagem"] = ""
-
-    # 4. Ordenação e Seleção Final das Colunas
-    cols_order = [
-        "LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
-        "Vírus", 'Código Amostra', 'Gal Sequenciamento', "CT", 'Município', 'UF município solicitante',
-        'Data Coleta', 'Tipo Amostra', 'Idade', "Tipo Idade", 'Sexo', 'Software Montagem', 
-        "Versão software", "Versão primer", "Versão Pangolin", 'Reads','Profundiade Média', 'Cobertura', 
-        'Genótipo', 'Nome da Sequencia'
-    ]
-    
-    # Garante que todas as colunas existam
-    for c in cols_order:
-        if c not in result_table.columns:
-            result_table[c] = ""
-            
-    result_table = result_table[cols_order]
-
-    # 5. Salvar
-    output_path = os.path.join(output_folder, 'Planilha_de_Resultado.xlsx')
-    result_table.to_excel(output_path, index=False)
-    print(f"Planilha de Resultados OROV gerada com sucesso!")
-
-
-def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, cnes_codes='cnes_lacen.csv'):
+    Gera o arquivo FASTA compilado e retorna o DataFrame combinado mestre.
+    CORREÇÃO: Cria o DataFrame baseado estritamente nas amostras da corrida (run_codes),
+    trazendo o metadado via Left Join. Isso filtra o metadado excedente.
     """
-    Gera o arquivo FASTA compilado (multi-segmento) para submissão, com header no padrão PIPE (|).
     
-    A função retorna o DataFrame combinado (df_combine_sequence) para uso no EpiArbo/Planilha.
-    """
+    # --- 1. PREPARAÇÃO DOS DADOS ---
+    
+    # Garante que run_codes é uma lista de strings limpas
+    run_codes = [str(c).strip() for c in run_codes if str(c).strip()]
+    
+    # Cria o DataFrame MESTRE apenas com as amostras da corrida
+    df_combine_sequence = pd.DataFrame({'Código_da_Amostra': run_codes})
+    df_combine_sequence['Código_da_Amostra'] = df_combine_sequence['Código_da_Amostra'].astype(str)
 
-    # --- LÓGICA DE PREPARAÇÃO DE METADADOS (Copied from DENV/CHIKV flow) ---
-    
-    # Dictionary to change the Name of the state to SIGLA
+    # Prepara Metadados (Estados e CNES)
     states = {
         'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM', 'Bahia': 'BA', 'Ceará': 'CE',
         'Distrito Federal': 'DF', 'Espírito Santo': 'ES', 'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 
@@ -241,89 +130,175 @@ def gerar_arquivo_fasta_orov(sequences_df, metadata, final_df, output_folder, cn
     script_dir = os.path.dirname(os.path.abspath(__file__))
     cnes_path = os.path.join(script_dir, cnes_codes)
 
-    cnes_codes_df = pd.read_csv(cnes_path, dtype={'CNES': str, 'SIGLA': str})
-    metadata['CNES_Laboratório_responsável'] = metadata['CNES_Laboratório_responsável'].astype(str)
-    cnes_codes_df['CNES'] = cnes_codes_df['CNES'].astype(str)
+    if os.path.exists(cnes_path):
+        cnes_codes_df = pd.read_csv(cnes_path, dtype={'CNES': str, 'SIGLA': str})
+        metadata['CNES_Laboratório_responsável'] = metadata['CNES_Laboratório_responsável'].astype(str)
+        cnes_codes_df['CNES'] = cnes_codes_df['CNES'].astype(str)
+        metadata = metadata.merge(cnes_codes_df, how='left', left_on='CNES_Laboratório_responsável', right_on='CNES')
+        metadata['CNES_Laboratório_responsável'] = metadata['SIGLA'].fillna('NA_LAB')
+        metadata.drop(columns=['CNES', 'SIGLA'], inplace=True)
 
-    # Merge para obter a SIGLA do Laboratório (CNES -> SIGLA)
-    metadata = metadata.merge(cnes_codes_df, how='left', left_on='CNES_Laboratório_responsável', right_on='CNES')
-    metadata['CNES_Laboratório_responsável'] = metadata['SIGLA'].fillna('NA_LAB') # Trata NaNs da SIGLA
-    metadata.drop(columns=['CNES', 'SIGLA'], inplace=True)
-
-    sequences_df = sequences_df.rename(columns={'id': 'Código_da_Amostra'})
-    sequences_df['Código_da_Amostra'] = sequences_df['Código_da_Amostra'].astype(str)
-
-    # Filtro de cobertura
-    #final_df = final_df.loc[final_df['Coverage'].astype(float) >= 60]
-    final_df = final_df.astype(str)
+    # Conversão de tipos
+    if 'id' in sequences_df.columns:
+        sequences_df = sequences_df.rename(columns={'id': 'Código_da_Amostra'})
     
+    sequences_df['Código_da_Amostra'] = sequences_df['Código_da_Amostra'].astype(str)
     metadata['Código_da_Amostra'] = metadata['Código_da_Amostra'].astype(str)
     final_df['Código_da_Amostra'] = final_df['Código_da_Amostra'].astype(str)
-    
-    
-# 2. Merge de Sequences com Metadados
-    df_combine_sequence = pd.merge(sequences_df, metadata, left_on="Código_da_Amostra", right_on="Código_da_Amostra", suffixes=('', '_dup'))
 
-    # Merge 2: Junta com o filtro de elegibilidade (final_df)
-    df_combine_sequence = pd.merge(df_combine_sequence, final_df, on="Código_da_Amostra", suffixes=('', '_dup'))
+    # --- 2. MERGES ESTRATÉGICOS (LEFT JOIN no Mestre) ---
+    
+    # Merge 1: Mestre (Run Codes) + Metadata
+    # Isso garante que só fiquem as linhas do metadado que estão na corrida.
+    # Se uma amostra da corrida não tiver metadado, ela fica com campos NaN (o que é correto para alertar).
+    df_combine_sequence = pd.merge(df_combine_sequence, metadata, on="Código_da_Amostra", how='left', suffixes=('', '_dup'))
 
-    # Processamento Final das Colunas de Data/Ano
+    # Merge 2: + Sequências (Consenso)
+    df_combine_sequence = pd.merge(df_combine_sequence, sequences_df, on="Código_da_Amostra", how='left', suffixes=('', '_dup'))
+
+    # Merge 3: + Métricas (Coverage/Reads)
+    df_combine_sequence = pd.merge(df_combine_sequence, final_df, on="Código_da_Amostra", how='left', suffixes=('', '_dup'))
+
+    # --------------------------------------------------------
+
     df_combine_sequence['Data_da_Coleta'] = pd.to_datetime(df_combine_sequence['Data_da_Coleta'], dayfirst=True, errors='coerce')
     df_combine_sequence['ANO_SEMANA_EPIDEMIOLOGICA'] = df_combine_sequence['Data_da_Coleta'].dt.strftime('%Y').fillna('ND')
 
-    df_combine_sequence['ANO_SEMANA_EPIDEMIOLOGICA'] = df_combine_sequence['Data_da_Coleta'].dt.strftime('%Y').fillna('ND')
-    
-    # 3. Escrita do FASTA no padrão OROV (com PIPE e Segmento)
+    # Escrita do FASTA (Apenas para amostras com sequência válida)
     fasta_output_dir = os.path.join(output_folder)
     fasta_output_path = os.path.join(fasta_output_dir, 'LACEN_seq_OROV.fasta')
     
     with open(fasta_output_path, 'w') as outfile:
-        
         for index, row in df_combine_sequence.iterrows():
+            seq = row['sequence']
+            
+            # Validações de sequência
+            if pd.isna(seq) or not isinstance(seq, str) or not seq.strip():
+                continue
+            if len(seq) > 10 and seq.upper().count('N') / len(seq) > 0.9:
+                continue
 
-            #try:
-                # Condição de escrita simplificada (sem filtro de elegibilidade)
-                #is_eligible = True # Não verificamos Coverage >= 60% aqui
-                
-                #if is_eligible: 
-
-                    seq = row['sequence']
-                    
-                    # --- NOVO BLOCO DE DEBUG CRÍTICO ---
-                    codigo_amostra = str(row['Código_da_Amostra'])
-                    if not seq or seq.strip() == "":
-                        continue # Pula a escrita
-                    
-                    # Verifica se a sequência é apenas 'N's (o que indicaria falha na montagem)
-                    elif len(seq) > 10 and seq.upper().count('N') / len(seq) > 0.9: 
-                        print(f"DEBUG AVISO: Amostra {codigo_amostra} | Segmento {row['segment']} | Sequência é quase só 'N's ({len(seq)}pb).")
-                        # Opcional: Você pode optar por pular aqui tbm se 90% for N.
-                        
-                    # ------------------------------------
-
-                    # --- Lógica de escrita (Executada se a sequência não for vazia) ---
-                    estado = str(row['Estado_do_Solicitante'])
-                    cnes = str(row['CNES_Laboratório_responsável'])
-                    ano = str(row['ANO_SEMANA_EPIDEMIOLOGICA'])
-
-                    base_header = f"hOROV/Brazil/{estado}-LACEN{cnes}-{codigo_amostra}/{ano}"
-                    seq_id = f">{base_header}|{row['segment']}"
-                    
-                    seq_id = format_virus_name(seq_id) 
-                    
-                    outfile.write(f"{seq_id}\n{seq}\n")
-                    
-            #except Exception as e:
-             #   print(f"ERRO DE ESCRITA: Falha ao processar a amostra no índice {index}. Motivo: {type(e).__name__} - {e}.")
-              #  continue 
+            # Garante strings para evitar erro de concatenação com NaN
+            estado = str(row['Estado_do_Solicitante']) if pd.notna(row['Estado_do_Solicitante']) else "Unknown"
+            cnes = str(row['CNES_Laboratório_responsável']) if pd.notna(row['CNES_Laboratório_responsável']) else "Unknown"
+            codigo_amostra = str(row['Código_da_Amostra'])
+            ano = str(row['ANO_SEMANA_EPIDEMIOLOGICA'])
+            segmento = str(row['segment']) if pd.notna(row['segment']) else "Unknown"
+            
+            base_header = f"hOROV/Brazil/{estado}-LACEN{cnes}-{codigo_amostra}/{ano}"
+            seq_id = f">{base_header}|{segmento}"
+            seq_id = format_virus_name(seq_id)
+            
+            outfile.write(f"{seq_id}\n{seq}\n")
 
     return df_combine_sequence
 
+
+def planilha_resultado_orov(df_combine_sequence, output_folder):
+    """ 
+    Gera a Planilha de Resultado (Excel) para OROV. 
+    Inclui lógica para lidar com falhas parciais e deixa Nome da Sequência vazio se falhou.
+    """
+    print("Gerando Planilha de Resultado OROV...")
+
+    # 1. Identificar quais segmentos foram recuperados
+    # Agrupa segmentos não-nulos
+    segmentos_recuperados = df_combine_sequence.dropna(subset=['segment']).groupby('Código_da_Amostra')['segment'].apply(lambda x: ', '.join(sorted(x.unique()))).reset_index(name='Segmentos Recuperados')
+
+    # 2. Desduplicação (1 linha por amostra)
+    df_unique = df_combine_sequence.groupby('Código_da_Amostra').first().reset_index()
+    
+    # Remover colunas duplicadas
+    df_unique = df_unique.loc[:, ~df_unique.columns.duplicated()]
+    
+    # Merge com a info dos segmentos
+    df_unique = pd.merge(df_unique, segmentos_recuperados, on='Código_da_Amostra', how='left')
+    df_unique['Segmentos Recuperados'] = df_unique['Segmentos Recuperados'].fillna("Nenhum")
+
+    # Tratamento de NaNs (Falhas totais)
+    df_unique['Reads'] = df_unique['Reads'].fillna(0)
+    df_unique['Depth of Coverage'] = df_unique['Depth of Coverage'].fillna(0)
+    df_unique['Coverage'] = df_unique['Coverage'].fillna(0)
+
+    # 3. Montagem da Tabela
+    result_table = pd.DataFrame()
+    result_table['Gal Sequenciamento'] = df_unique['Requisição']
+    result_table['Código Amostra'] = df_unique['Código_da_Amostra']
+    
+    # --- LÓGICA CONDICIONAL PARA O NOME DA SEQUÊNCIA ---
+    # Gera o nome base para todos
+    virus_name_raw = "hOROV/Brazil/" + \
+        df_unique['Estado_do_Solicitante'].astype(str) + "-LACEN" + \
+        df_unique['CNES_Laboratório_responsável'].astype(str) + "-" + \
+        df_unique['Código_da_Amostra'].astype(str) + "/" + \
+        df_unique['ANO_SEMANA_EPIDEMIOLOGICA'].astype(str)
+    
+    formatted_names = virus_name_raw.apply(format_virus_name)
+    
+    # Aplica a condição: Se "Segmentos Recuperados" for "Nenhum", deixa vazio.
+    # Caso contrário, usa o nome formatado.
+    result_table['Nome da Sequencia'] = np.where(
+        (df_unique['Segmentos Recuperados'] == "Nenhum") | (df_unique['Segmentos Recuperados'] == ""), 
+        "", 
+        formatted_names
+    )
+    # ---------------------------------------------------
+
+    result_table['Município'] = df_unique['Municipio_do_Solicitante']
+    result_table['UF município solicitante'] = df_unique['Estado_do_Solicitante']
+    result_table['Data Coleta'] = df_unique['Data_da_Coleta'].dt.strftime('%d/%m/%Y')
+    result_table['Tipo Amostra'] = df_unique['Material_Biológico']
+    result_table['Idade'] = df_unique['Idade']
+    result_table['Tipo Idade'] = df_unique['Tipo_Idade']
+    result_table['Sexo'] = df_unique['Sexo']
+
+    result_table['Reads'] = df_unique['Reads']
+    result_table['Profundiade Média'] = df_unique['Depth of Coverage']
+    result_table['Cobertura'] = df_unique['Coverage']
+    
+    result_table['Segmentos Recuperados'] = df_unique['Segmentos Recuperados']
+
+    # Colunas Fixas
+    result_table["LACEN Executor"] = ""
+    result_table["Unidade Federativa (UF)"] = "" 
+    result_table["Responsável envio dos dados"] = ""
+    result_table["Data sequenciamento"] = ""
+    result_table["Vírus"] = "Oropouche"
+    result_table["CT"] = "" 
+    result_table["Software Montagem"] = "ViralFlow"
+    result_table["Versão software"] = "1.0"
+    result_table["Versão primer"] = "OROV_Naveca2023" 
+    result_table["Versão Pangolin"] = ""
+    result_table["Genótipo"] = "" 
+    result_table["Linhagem"] = ""
+
+    # Ordenação
+    cols_order = [
+        "LACEN Executor", "Unidade Federativa (UF)", "Responsável envio dos dados", "Data sequenciamento",
+        "Vírus", 'Código Amostra', 'Gal Sequenciamento', "CT", 'Município', 'UF município solicitante',
+        'Data Coleta', 'Tipo Amostra', 'Idade', "Tipo Idade", 'Sexo', 'Software Montagem', 
+        "Versão software", "Versão primer", "Versão Pangolin", 'Reads','Profundiade Média', 'Cobertura', 
+        'Segmentos Recuperados', 'Genótipo', 'Nome da Sequencia'
+    ]
+    
+    # Garante colunas
+    for c in cols_order:
+        if c not in result_table.columns:
+            result_table[c] = ""
+            
+    result_table = result_table[cols_order]
+
+    # Salvar
+    output_path = os.path.join(output_folder, 'Planilha_de_Resultado.xlsx')
+    result_table.to_excel(output_path, index=False)
+    print(f"Planilha de Resultados OROV gerada com sucesso!")
+
+
 def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
-    """ Gera o arquivo EpiArbo para OROV com desduplicação de amostras. """
+    """ Gera o arquivo EpiArbo para OROV. """
     print("Gerando arquivo EpiArbo OROV...")
 
-    # 1. Carrega Info Usuário
+    # Info Usuário
     submitter = config['user_info']['submitter']
     arbo_authors = config['user_info']['authors']
     arbo_orig_lab = config['user_info']['subm_lab']
@@ -331,114 +306,88 @@ def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
     arbo_subm_lab = config['user_info']['subm_lab']
     arbo_subm_lab_addr = config['user_info']['subm_lab_addr']
 
-    # 2. Desduplicação (1 linha por amostra)
-    # Agrupa e pega o primeiro registro (pois dados demográficos são iguais para os 3 segmentos)
+    # Desduplicação
     df_unique = df_combine_sequence.groupby('Código_da_Amostra').first().reset_index()
-
     df_unique = df_unique.loc[:, ~df_unique.columns.duplicated()]
+    
+    # IMPORTANTE: Filtrar apenas as amostras que geraram sequências para o EpiArbo?
+    # Geralmente EpiArbo/GISAID só aceita se tiver fasta.
+    # Verifica se tem sequence válida antes de incluir no CSV de submissão
+    df_unique_valid = df_unique.dropna(subset=['sequence']).copy()
+    
+    if df_unique_valid.empty:
+        print("Aviso: Nenhuma amostra gerou sequência válida para o EpiArbo.")
+        return
 
-    df_unique = df_unique.rename(columns={'Código_da_Amostra': 'id'})
+    df_unique_valid = df_unique_valid.rename(columns={'Código_da_Amostra': 'id'})
 
-    # 3. Preparação Demográfica
-    arbo_patient_age = df_unique[['id', 'Data_de_Nascimento', 'Data_da_Coleta']].copy()
+    # Demografia
+    arbo_patient_age = df_unique_valid[['id', 'Data_de_Nascimento', 'Data_da_Coleta']].copy()
     arbo_patient_age['Data_de_Nascimento'] = arbo_patient_age['Data_de_Nascimento'].astype(str).replace(to_replace=' .*', value='', regex=True)
     arbo_patient_age['Data_da_Coleta'] = pd.to_datetime(arbo_patient_age['Data_da_Coleta'], errors='coerce')
     arbo_patient_age['Data_de_Nascimento'] = pd.to_datetime(arbo_patient_age['Data_de_Nascimento'], errors='coerce', dayfirst=True)
-    
-    # Cálculo de Idade
     arbo_patient_age['arbo_patient_age'] = ((arbo_patient_age['Data_da_Coleta'] - arbo_patient_age['Data_de_Nascimento']).dt.days / 365.25).round().astype('Int64')
     arbo_patient_age = arbo_patient_age[['id', 'arbo_patient_age']]
 
-    # 4. Construção do Nome do Vírus
-    arbo_virus_name = df_unique[['Estado_do_Solicitante', 'CNES_Laboratório_responsável', 'id', 'ANO_SEMANA_EPIDEMIOLOGICA']].astype(str)
-    
-    # Nome do vírus base
+    # Nome Vírus
+    arbo_virus_name = df_unique_valid[['Estado_do_Solicitante', 'CNES_Laboratório_responsável', 'id', 'ANO_SEMANA_EPIDEMIOLOGICA']].astype(str)
     arbo_virus_name['arbo_virus_name'] = "hOROV/Brazil/" + \
         arbo_virus_name['Estado_do_Solicitante'] + "-LACEN" + \
         arbo_virus_name['CNES_Laboratório_responsável'] + "-" + \
         arbo_virus_name['id'] + "/" + arbo_virus_name['ANO_SEMANA_EPIDEMIOLOGICA']
-    
     arbo_virus_name['arbo_virus_name'] = arbo_virus_name['arbo_virus_name'].apply(format_virus_name)
     arbo_virus_name = arbo_virus_name[['id', 'arbo_virus_name']]
 
-    # Inserção de Colunas Fixas
+    # Colunas Fixas
     arbo_virus_name.insert(0, 'submitter', submitter)
     arbo_virus_name.insert(1, 'fn', 'LACEN_seq_OROV.fasta')
     arbo_virus_name.insert(3, 'arbo_type', 'Oropouche virus')
     arbo_virus_name.insert(4, 'arbo_host', 'Human')
     arbo_virus_name.insert(5, 'arbo_passage', 'Original')
 
-    # 5. Merges Finais
-    arbo_collection_date = df_unique[['id', 'Data_da_Coleta']].copy()
+    # Merges
+    arbo_collection_date = df_unique_valid[['id', 'Data_da_Coleta']].copy()
     arbo_collection_date['Data_da_Coleta'] = pd.to_datetime(arbo_collection_date['Data_da_Coleta']).dt.strftime('%Y-%m-%d')
     arbo_collection_date.rename(columns={'Data_da_Coleta': 'arbo_collection_date'}, inplace=True)
     gisaid_temp = pd.merge(arbo_virus_name, arbo_collection_date, on='id')
 
-    # Location (Estados)
-    states = {
-        'AC': 'Acre', 'AL': 'Alagoas', 'AP': 'Amapá', 'AM': 'Amazonas', 'BA': 'Bahia', 'CE': 'Ceará',
-        'DF': 'Distrito Federal', 'ES': 'Espírito Santo', 'GO': 'Goiás', 'MA': 'Maranhão', 'MT': 'Mato Grosso',
-        'MS': 'Mato Grosso do Sul', 'MG': 'Minas Gerais', 'PA': 'Pará', 'PB': 'Paraíba', 'PR': 'Paraná',
-        'PE': 'Pernambuco', 'PI': 'Piauí', 'RJ': 'Rio de Janeiro', 'RN': 'Rio Grande do Norte',
-        'RS': 'Rio Grande do Sul', 'RO': 'Rondônia', 'RR': 'Roraima', 'SC': 'Santa Catarina',
-        'SP': 'São Paulo', 'SE': 'Sergipe', 'TO': 'Tocantins'
-    }
-    
-    # Preparação de Location
-    arbo_location = df_unique[['id', 'Estado_do_Solicitante', 'Municipio_do_Solicitante']].copy()
+    # Location
+    states = {'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM', 'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF', 'Espírito Santo': 'ES', 'Goiás': 'GO', 'Maranhão': 'MA', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Minas Gerais': 'MG', 'Pará': 'PA', 'Paraíba': 'PB', 'Paraná': 'PR', 'Pernambuco': 'PE', 'Piauí': 'PI', 'Rio de Janeiro': 'RJ', 'Rio Grande do Norte': 'RN', 'Rio Grande do Sul': 'RS', 'Rondônia': 'RO', 'Roraima': 'RR', 'Santa Catarina': 'SC', 'São Paulo': 'SP', 'Sergipe': 'SE', 'Tocantins': 'TO'}
+    arbo_location = df_unique_valid[['id', 'Estado_do_Solicitante', 'Municipio_do_Solicitante']].copy()
     arbo_location['Estado_do_Solicitante'] = arbo_location['Estado_do_Solicitante'].replace(states)
-    
-    # --- CORREÇÃO AQUI (Uso de .str.capitalize() em vez de .apply(str.capitalize)) ---
     arbo_location['Municipio_do_Solicitante'] = arbo_location['Municipio_do_Solicitante'].astype(str).str.capitalize().apply(unidecode)
     arbo_location['Estado_do_Solicitante'] = arbo_location['Estado_do_Solicitante'].astype(str).str.capitalize().apply(unidecode)
-    # ---------------------------------------------------------------------------------
-    
     arbo_location['arbo_location'] = "South America / Brazil / " + arbo_location['Estado_do_Solicitante'] + " / " + arbo_location['Municipio_do_Solicitante']
     gisaid_temp = pd.merge(gisaid_temp, arbo_location[['id', 'arbo_location']], on='id')
 
-    # Insere colunas vazias padrão
     gisaid_temp.insert(8, 'arbo_add_location', '')
-
     gisaid_temp.insert(10, 'arbo_add_host_info', '')
     gisaid_temp.insert(11, 'arbo_sampling_strategy', '')
 
     # Gender
-    gender_map = {
-        'MASCULINO': 'Male', 'FEMININO': 'Female', 'M': 'Male', 'F': 'Female',
-        'Masculino': 'Male', 'Feminino': 'Female'
-    }
-    arbo_gender = df_unique[['id', 'Sexo']].copy()
+    gender_map = {'MASCULINO': 'Male', 'FEMININO': 'Female', 'M': 'Male', 'F': 'Female', 'Masculino': 'Male', 'Feminino': 'Female'}
+    arbo_gender = df_unique_valid[['id', 'Sexo']].copy()
     arbo_gender['Sexo'] = arbo_gender['Sexo'].replace(gender_map)
     gisaid_temp = pd.merge(gisaid_temp, arbo_gender.rename(columns={'Sexo': 'arbo_gender'}), on='id')
 
-    # Merge Age
     gisaid_temp = pd.merge(gisaid_temp, arbo_patient_age, on='id')
-    
-    # Status
     gisaid_temp['arbo_patient_status'] = 'Unknown'
     gisaid_temp['arbo_clinical_symptoms'] = ''
 
-    # Specimen
-    bio_material_translation = {
-        "Soro": "Serum", "Sangue": "Blood", "Urina": "Urine", "Liquor": "Cerebrospinal fluid (CSF)",
-        "Plasma": "Plasma", "Swab": "Swab"
-    }
-    arbo_specimen = df_unique[['id', 'Material_Biológico']].copy()
+    bio_material_translation = {"Soro": "Serum", "Sangue": "Blood", "Urina": "Urine", "Liquor": "Cerebrospinal fluid (CSF)", "Plasma": "Plasma", "Swab": "Swab"}
+    arbo_specimen = df_unique_valid[['id', 'Material_Biológico']].copy()
     arbo_specimen['arbo_specimen'] = arbo_specimen['Material_Biológico'].map(bio_material_translation).fillna('Unknown')
     gisaid_temp = pd.merge(gisaid_temp, arbo_specimen[['id', 'arbo_specimen']], on='id')
 
-    # Outras colunas fixas
     gisaid_temp['arbo_outbreak'] = ''
     gisaid_temp['arbo_last_vaccination_date'] = ''
     gisaid_temp['arbo_treatment'] = ''
     gisaid_temp['arbo_seq_technology'] = 'Illumina MiSeq'
     gisaid_temp['arbo_assembly_method'] = 'Viralflow'
 
-    # Coverage
-    arbo_coverage = df_unique[['id', 'Depth of Coverage']].copy()
+    arbo_coverage = df_unique_valid[['id', 'Depth of Coverage']].copy()
     gisaid_temp = pd.merge(gisaid_temp, arbo_coverage.rename(columns={'Depth of Coverage': 'arbo_coverage'}), on='id')
 
-    # Labs
     gisaid_temp['arbo_publications'] = ''
     gisaid_temp['arbo_orig_lab'] = arbo_orig_lab
     gisaid_temp['arbo_orig_lab_addr'] = arbo_orig_lab_addr
@@ -450,7 +399,6 @@ def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
 
     gisaid_temp = gisaid_temp.drop('id', axis=1)
 
-    # Ordenação Final
     final_cols = ['submitter', 'fn', 'arbo_virus_name', 'arbo_type', 'arbo_passage', 'arbo_collection_date',
             'arbo_location', 'arbo_add_location', 'arbo_host', 'arbo_add_host_info', 'arbo_sampling_strategy',
             'arbo_gender', 'arbo_patient_age', 'arbo_patient_status',  'arbo_clinical_symptoms',
@@ -459,7 +407,6 @@ def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
             'arbo_provider_sample_id', 'arbo_subm_lab', 'arbo_subm_lab_addr',
             'arbo_subm_sample_id', 'arbo_authors']
     
-    # Header descritivo EpiArbo
     columns_desc = ['Submitter', 'FASTA filename', 'Virus name', 'Type', 'Passage details/history', 'Collection date',
             'Location', 'Additional location information', 'Host', 'Additional host information', 'Sampling Strategy',
             'Gender', 'Patient age', 'Patient status',  'Specific clinical symptoms',
@@ -468,117 +415,117 @@ def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
             'Sample ID given by the sample provider', 'Submitting lab', 'Address',
             'Sample ID given by the submitting laboratory', 'Authors']
 
-    # Garante a ordem e cria o DF final
     gisaid_temp = gisaid_temp[final_cols]
-    
     header_df = pd.DataFrame([columns_desc], columns=final_cols)
     final_epiarbo = pd.concat([header_df, gisaid_temp], ignore_index=True)
     
-    # Salvar
     output_path = os.path.join(output_folder, 'EpiArbo.csv')
     final_epiarbo.to_csv(output_path, index=False)
 
+
 # --- FUNÇÃO ORQUESTRADORA (Principal) ---
+# Em report_generator_orov.py
+
 def generate_compiled_report_orov(metadata_path, base_out_dir, config_path):
     print("Iniciando compilação de dados OROV (L, M, S)...")
-    print("")
     
     COMPILED_DIR = os.path.join(base_out_dir, "OROV_COMPILED_OUT")
-    #mod_pasta(COMPILED_DIR)
+    mod_pasta(COMPILED_DIR)
     
     LAST_SEGMENT_DIR = os.path.join(base_out_dir, f"OROV_{SEGMENTS[-1]['segment']}", "COMPILED_OUTPUT")
     
+    # 1. Carga de QC e Erros (Base para definir quem foi sequenciado)
     compiled_coverage, compiled_reads = load_and_compile_segment_qc(base_out_dir, SEGMENTS)
-
-    if compiled_coverage.empty:
-        raise ValueError("Nenhum dado de cobertura válido encontrado para a compilação OROV.")
     
-# Inicializa variáveis que dependem de metadados como None
+    # Tenta carregar erros (necessário para listar amostras que falharam totalmente)
+    errors = pd.DataFrame(columns=['cod'])
+    try:
+        errors_path = os.path.join(LAST_SEGMENT_DIR, 'errors_detected.csv')
+        if os.path.exists(errors_path) and os.path.getsize(errors_path) > 0:
+            errors = pd.read_csv(errors_path, sep=',')
+            if 'cod' in errors.columns:
+                errors['cod'] = errors['cod'].replace(to_replace='_.*', value='', regex=True)
+    except Exception:
+        pass # Erros não críticos aqui
+
+    if compiled_coverage.empty and errors.empty:
+        raise ValueError("Nenhum dado de cobertura ou erro encontrado. A pasta de saída parece vazia.")
+
+    # --- DEFINIÇÃO DO UNIVERSO DE AMOSTRAS DA CORRIDA ---
+    # Une códigos que tiveram sucesso (coverage) com códigos que falharam (errors)
+    codes_success = set(compiled_coverage['cod'].unique()) if not compiled_coverage.empty else set()
+    codes_failed = set(errors['cod'].unique()) if not errors.empty else set()
+    run_codes = list(codes_success.union(codes_failed))
+    # ----------------------------------------------------
+
+    # Inicializa variáveis
     metadata = None
-    errors = pd.DataFrame(columns=['cod']) # DataFrame vazio por padrão
     config = None
 
-    # --- LÓGICA CONDICIONAL: COM vs SEM METADADOS ---
     if metadata_path:
-        print("Metadados fornecidos. Executando pipeline completo (Fasta + EpiArbo + QC).")
+        print(f"Metadados fornecidos. Filtrando para {len(run_codes)} amostras da corrida atual.")
         try:
-            # Carrega Config
             config = load_config(config_path)
+            # Carrega metadados brutos (pode ter erros_df vindo daqui tbm, mas já carregamos acima)
+            metadata, _, records, _, _, _ = input_folder(LAST_SEGMENT_DIR, metadata_path)
             
-            # Carrega Metadados e Errors via input_folder
-            metadata, _, records, _, _, errors = input_folder(LAST_SEGMENT_DIR, metadata_path)
-            
-            # --- GERAÇÃO DE ARQUIVOS (FASTA/EPIARBO) ---
+            # --- AGREGAR MÉTRICAS ---
+            if not compiled_coverage.empty:
+                temp_coverage_filter = compiled_coverage.groupby('cod').agg({
+                    'coverage_breadth': 'max',       
+                    'mean_depth_coverage': 'mean'    
+                }).reset_index()
+                
+                temp_reads_filter = compiled_reads.groupby('cod')['mepf_reads_aligned'].sum().reset_index(name='Reads')
+                
+                temp_coverage_filter = pd.merge(temp_coverage_filter, temp_reads_filter, on='cod', how='left')
+                temp_coverage_filter['coverage_breadth'] = temp_coverage_filter['coverage_breadth'].multiply(100).round(2)
+                temp_coverage_filter['mean_depth_coverage'] = temp_coverage_filter['mean_depth_coverage'].round(2)
+                
+                temp_coverage_filter.rename(columns={
+                    'cod': 'Código_da_Amostra',
+                    'coverage_breadth': 'Coverage',
+                    'mean_depth_coverage': 'Depth of Coverage'
+                }, inplace=True)
+            else:
+                temp_coverage_filter = pd.DataFrame(columns=['Código_da_Amostra', 'Coverage', 'Depth of Coverage', 'Reads'])
+
+            # Carregar sequências
             sequences_df = load_segment_consensus(base_out_dir, SEGMENTS)
             
-            # Agrupa Cobertura e Profundidade
-            temp_coverage_filter = compiled_coverage.groupby('cod').agg({
-                'coverage_breadth': 'max',       
-                'mean_depth_coverage': 'mean'    
-            }).reset_index()
+            # --- GERAÇÃO DO DATAFRAME MESTRE ---
+            # Passamos run_codes para filtrar o metadado dentro da função
+            df_combine_sequence = gerar_arquivo_fasta_orov(
+                sequences_df, 
+                metadata, 
+                temp_coverage_filter, 
+                COMPILED_DIR, 
+                run_codes=run_codes # <--- Novo argumento
+            )
 
-            # --- CORREÇÃO AQUI: Agrega Reads e faz o Merge ---
-            # Soma as reads dos 3 segmentos para ter o total da amostra
-            temp_reads_filter = compiled_reads.groupby('cod')['mepf_reads_aligned'].sum().reset_index(name='Reads')
-            
-            # Junta as Reads no dataframe de métricas
-            temp_coverage_filter = pd.merge(temp_coverage_filter, temp_reads_filter, on='cod', how='left')
-            # -------------------------------------------------
-
-            # Ajusta valores
-            temp_coverage_filter['coverage_breadth'] = temp_coverage_filter['coverage_breadth'].multiply(100).round(2)
-            temp_coverage_filter['mean_depth_coverage'] = temp_coverage_filter['mean_depth_coverage'].round(2)
-
-            # Renomeia para os nomes esperados (Agora incluindo Reads)
-            temp_coverage_filter.rename(columns={
-                'cod': 'Código_da_Amostra',
-                'coverage_breadth': 'Coverage',
-                'mean_depth_coverage': 'Depth of Coverage'
-                # 'Reads' já está com o nome correto
-            }, inplace=True)
-            # Gera FASTA
-            df_combine_sequence = gerar_arquivo_fasta_orov(sequences_df, metadata, temp_coverage_filter, COMPILED_DIR)
-
-            # Gera EpiArbo
+            # Gera Relatórios
             arquivo_epiarbo_orov(config, metadata, df_combine_sequence, COMPILED_DIR)
-            
             planilha_resultado_orov(df_combine_sequence, COMPILED_DIR)
 
         except Exception as e:
             print(f"ERRO ao processar metadados/arquivos finais: {e}")
-            # Se falhar aqui, não paramos o script, tentamos gerar pelo menos o QC
             import traceback
             traceback.print_exc()
     else:
         print("Metadados NÃO fornecidos. Executando apenas Relatório de Qualidade Compilado.")
-        # Sem metadados, precisamos carregar o 'errors_detected.csv' manualmente para o QC
-        try:
-            errors_path = os.path.join(LAST_SEGMENT_DIR, 'errors_detected.csv')
-            if os.path.exists(errors_path) and os.path.getsize(errors_path) > 0:
-                errors = pd.read_csv(errors_path, sep=',')
-                # Limpa a coluna cod se necessário
-                if 'cod' in errors.columns:
-                    errors['cod'] = errors['cod'].replace(to_replace='_.*', value='', regex=True)
-            else:
-                print("Aviso: Arquivo de erros não encontrado ou vazio.")
-        except Exception as e:
-            print(f"Aviso: Falha ao carregar arquivo de erros manualmente: {e}")
 
-    # 3. Validação do CN
+    # Validação e QC Gráfico
     cn_message, compiled_positive_coverage = validate_negative_control(compiled_coverage, errors)
-
-# 3. Geração do Relatório de QC HTML (Plotly) - SEMPRE EXECUTA
+    
     try:
-        # Define o título baseado no modo de execução
-        titulo_relatorio = "Relatório de Qualidade OROV (Completo)" if metadata_path else "Relatório de Qualidade OROV (Sem Metadados)"
-
+        titulo = "Relatório de Qualidade OROV (Completo)" if metadata_path else "Relatório de Qualidade OROV (Sem Metadados)"
         Quality_monitor_interactive(
             coverage=compiled_coverage,
             reads=compiled_reads,
             errors=errors,
             output_folder=COMPILED_DIR,
             eligibility_threshold=60,
-            report_title=titulo_relatorio
+            report_title=titulo
         )
         print(f"Relatório QC Compilado gerado com sucesso!")
         
@@ -588,4 +535,3 @@ def generate_compiled_report_orov(metadata_path, base_out_dir, config_path):
         traceback.print_exc()
     
     return compiled_coverage, compiled_reads
-    

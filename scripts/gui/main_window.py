@@ -182,7 +182,7 @@ class MenuInicial(QWidget):
         self.radio_sc2 = QRadioButton("SARS-CoV-2")
         self.radio_denv = QRadioButton("DENV")
         self.radio_chikv = QRadioButton("CHIKV")
-        self.radio_orov = QRadioButton("OROV")
+        self.radio_orov = QRadioButton("OROV [Em testes]")
         analise_layout.addWidget(self.radio_sc2)
         analise_layout.addWidget(self.radio_denv)
         analise_layout.addWidget(self.radio_chikv)
