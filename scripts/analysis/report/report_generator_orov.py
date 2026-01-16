@@ -199,8 +199,8 @@ def planilha_resultado_orov(df_combine_sequence, output_folder):
     Gera a Planilha de Resultado (Excel) para OROV. 
     Inclui lógica para lidar com falhas parciais e deixa Nome da Sequência vazio se falhou.
     """
-    print("Gerando Planilha de Resultado OROV...")
-
+    print("2. Gerando Planilha de Resultado OROV...")
+    print("")
     # 1. Identificar quais segmentos foram recuperados
     # Agrupa segmentos não-nulos
     segmentos_recuperados = df_combine_sequence.dropna(subset=['segment']).groupby('Código_da_Amostra')['segment'].apply(lambda x: ', '.join(sorted(x.unique()))).reset_index(name='Segmentos Recuperados')
@@ -296,7 +296,7 @@ def planilha_resultado_orov(df_combine_sequence, output_folder):
 
 def arquivo_epiarbo_orov(config, metadata, df_combine_sequence, output_folder):
     """ Gera o arquivo EpiArbo para OROV. """
-    print("Gerando arquivo EpiArbo OROV...")
+    print("1. Gerando arquivo EpiArbo OROV...")
 
     # Info Usuário
     submitter = config['user_info']['submitter']

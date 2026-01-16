@@ -184,6 +184,7 @@ class ViralFlowOROV(ViralFlowGUI):
         
         if self.current_segment_index >= len(SEGMENTS):
             print("Todos os segmentos concluídos. Disparando relatório final...")
+            print("")
             # Chama a função que será desenvolvida para agregação de dados e relatório final
             self.report_generator_OROV("Execução Multi-Segmento Concluída.")
             return
