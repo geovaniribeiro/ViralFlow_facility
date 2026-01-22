@@ -26,12 +26,12 @@
 ### Baixar e Extrair o ZIP do GitHub
 Para obter a ferramenta diretamente do repositório, você pode baixar o arquivo ZIP da versão mais recente e extrair seu conteúdo.
 
-1.  Acesse a página de Lançamento (Release) e clique no link para a versão v0.3.0-beta no GitHub: [https://github.com/geovaniribeiro/ViralFlow_facility/releases/tag/v0.3.0-beta]
-2.  Na seção Assets (Ativos) da página de release, localize e clique em `ViralFlow_facility-0.3.0-beta.zip` para iniciar o download.
-3.  Descompacte o arquivo `ViralFlow_facility-0.2.0-beta.zip` para uma pasta de sua preferência (exemplo: ~/Documentos).
+1.  Acesse a página de Lançamento (Release) e clique no link para a versão v0.3.1-beta no GitHub: [https://github.com/geovaniribeiro/ViralFlow_facility/archive/refs/tags/v0.3.1-beta.zip]
+2.  Na seção Assets (Ativos) da página de release, localize e clique em `ViralFlow_facility-0.3.1-beta.zip` para iniciar o download.
+3.  Descompacte o arquivo `ViralFlow_facility-0.3.1-beta.zip` para uma pasta de sua preferência (exemplo: ~/Documentos).
 
 > [!NOTE]
-> Certifique-se de que a estrutura de pastas extraída contenha o diretório `ViralFlow_facility-0.3.0-beta/setup` para prosseguir com os próximos passos de instalação.
+> Certifique-se de que a estrutura de pastas extraída contenha o diretório `ViralFlow_facility-0.3.1-beta/setup` para prosseguir com os próximos passos de instalação.
 
 ---
 
