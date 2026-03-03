@@ -1,0 +1,13 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+##sequence-region OL689332.1 1 944
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=3052429
+OL689332.1	Genbank	region	1	944	.	+	.	ID=OL689332.1:1..944;Dbxref=taxon:3052429;Name=S;collection-date=17-Sep-2020;country=French Guiana;gbkey=Src;genome=genomic;isolation-source=serum;mol_type=viral cRNA;nat-host=Homo sapiens;note=1 passage in Vero cells;old-name=Oropouche orthobunyavirus;segment=S;strain=OROV/Saul/17225/2020
+OL689332.1	Genbank	five_prime_UTR	1	43	.	+	.	ID=id-OL689332.1:1..43;gbkey=5'UTR
+OL689332.1	Genbank	gene	44	739	.	+	.	ID=gene-N;Name=N;gbkey=Gene;gene=N;gene_biotype=protein_coding
+OL689332.1	Genbank	CDS	44	739	.	+	0	ID=cds-UGL84922.1;Parent=gene-N;Dbxref=NCBI_GP:UGL84922.1;Name=UGL84922.1;gbkey=CDS;gene=N;product=nucleoprotein;protein_id=UGL84922.1
+OL689332.1	Genbank	gene	66	341	.	+	.	ID=gene-NSs;Name=NSs;gbkey=Gene;gene=NSs;gene_biotype=protein_coding
+OL689332.1	Genbank	CDS	66	341	.	+	0	ID=cds-UGL84923.1;Parent=gene-NSs;Dbxref=NCBI_GP:UGL84923.1;Name=UGL84923.1;gbkey=CDS;gene=NSs;product=nonstructrural protein;protein_id=UGL84923.1
+OL689332.1	Genbank	three_prime_UTR	740	944	.	+	.	ID=id-OL689332.1:740..944;gbkey=3'UTR
+

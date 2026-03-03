@@ -70,8 +70,9 @@ micromamba activate viralflow_gui
 # Instalar dependências PyQt (interface gráfica)
 sudo apt-get install -y \
     libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-    libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa
+    libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa libxcb-cursor0
 
+<<<<<<< HEAD
 
 micromamba activate viralflow
 #Baixar o banco snpEff para os virus custom
@@ -81,6 +82,12 @@ echo ""
 echo "Instalando bancos snpEff..."
 echo ""
 echo ""
+=======
+micromamba activate viralflow
+#Baixar o banco snpEff para os virus custom
+echo "Instalando bancos snpEff..."
+
+>>>>>>> develop
 # Dicionário: ORG_NAME=GENOME_CODE
 declare -A VIRUS_DB=(
   ["DENV1"]="NC_001477.1"
@@ -99,6 +106,7 @@ for VIRUS in "${!VIRUS_DB[@]}"; do
     viralflow -add_entry_to_snpeff --org_name "$VIRUS" --genome_code "$GENOME"
 done
 
+<<<<<<< HEAD
 echo ""
 echo ""
 echo "Instalação bancos snpEff Finalizado!"
@@ -109,6 +117,12 @@ micromamba activate viralflow_gui
 # Ajuste de permissões para executáveis (tentativa, pode falhar se for read-only, ignorando erro)
 # Nota: Num AppImage, chmod dentro do code_path não funciona e não é necessário
 # pois o AppImage já deve ter permissões. O erro é suprimido.
+=======
+echo "Instalação bancos snpEff Finalizado!"
+
+micromamba activate viralflow_gui
+# Tornar arquivos executáveis
+>>>>>>> develop
 chmod +x "$code_path/../../viralflow_GUI" 2>/dev/null
 chmod +x "$code_path/../viralflow_GUI" 2>/dev/null
 chmod +x "$code_path/viralflow_GUI" 2>/dev/null

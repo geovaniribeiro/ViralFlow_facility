@@ -30,21 +30,36 @@ Este script contém diversas funções, afim de otimizar a manutenção e refato
 '''
 
 colunas_mapeadas = {
-    "Código_da_Amostra": [r"C[oó]digo\s*(?:da\s*)?Amostra"],
+    "Código_da_Amostra": [r"C[oó]digo[_ ]*Amostra", r"C[oó]digo[_ ]*(?:da[_ ])*Amostra", r"C[oó]digo\s*(?:da\s*)?Amostra"],
+    "Requisição": [r"^(Requisiç[ãa]o)$", r"^(Requisicao)$", r"^(Requisiç[ãa]o[_ ]*GAL)$", r"^(Requisicao[_ ]*GAL)$"],
     "Municipio_do_Solicitante": [r"Munic[ií]pio\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
     "Estado_do_Solicitante": [r"Estado\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
-    "CNES_Laboratório_responsável": [r"CNES\s*(?:do\s*)?Laboratório\s*[Rr]espons[aá]vel"]
+    "CNES_Laboratório_responsável": [r"CNES\s*(?:do\s*)?Laboratório\s*[Rr]espons[aá]vel" , r"CNES[_ ]*Laboratorio[_ ]*Responsavel"]
 }
 
 # Função para padronizar os nomes das colunas usando regex
 def padronizar_colunas(df, mapeamento):
+    """
+    Padroniza os nomes das colunas do DataFrame baseando-se em padrões RegEx.
+    Usa o módulo 're' nativo para evitar warnings do Pandas e melhorar performance.
+    """
     novo_nomes = {}
+    
     for padrao_padronizado, regex_variacoes in mapeamento.items():
         for regex in regex_variacoes:
             for coluna in df.columns:
-                if pd.Series(coluna).str.contains(regex, regex=True, case=False).any():
-                    novo_nomes[coluna] = padrao_padronizado  # Mapeia para o nome padronizado
-    df.rename(columns=novo_nomes, inplace=True)
+                # Verifica se a coluna já foi mapeada para evitar sobrescrita desnecessária
+                if coluna in novo_nomes:
+                    continue
+                
+                # Usa re.search para buscar o padrão (equivalente a contains)
+                # re.IGNORECASE equivale a case=False
+                if re.search(regex, coluna, re.IGNORECASE):
+                    novo_nomes[coluna] = padrao_padronizado
+                    
+    # Aplica a renomeação
+    if novo_nomes:
+        df.rename(columns=novo_nomes, inplace=True)
 
 
 ## Função que carrega o arquivo yaml e armazena em um dicionario
@@ -243,18 +258,21 @@ def mod_pasta(output_folder):
     output_path = os.path.join(nome_pasta, 'RNSG_REPORT')
     
     if os.path.exists(output_path):
+        # A remoção recursiva está correta
         shutil.rmtree(output_path)
     
-    # Cria a pasta 'RNSG_REPORT' dentro da pasta de saida do viralflow
-    os.mkdir(output_path)
+    # Cria a pasta 'RNSG_REPORT' e todos os diretórios pai necessários.
+    os.makedirs(output_path, exist_ok=True)
 
 
 #Função para criar um grafico com métricas gerais da corrida, para aferição de controle de qualidade
 def Quality_monitor(coverage, reads, output_folder):
 
     #print("QualityCheck")
+    coverage_local = coverage.copy()
+    reads_local = reads.copy()
 
-    coverage['coverage_breadth'] = coverage['coverage_breadth']*100
+    coverage_local['coverage_breadth'] = coverage_local['coverage_breadth']*100
 
     #Criar os subplots e os seus respec. eixos x
     fig = plt.figure()
@@ -268,14 +286,14 @@ def Quality_monitor(coverage, reads, output_folder):
 
 
     # Depth of Coverage (X)
-    sns.violinplot(y='mean_depth_coverage', data=coverage, 
+    sns.violinplot(y='mean_depth_coverage', data=coverage_local, 
                inner="points", ax=ax1, cut= 0)
     
-    sns.swarmplot(y='mean_depth_coverage', data=coverage, ax=ax1,
+    sns.swarmplot(y='mean_depth_coverage', data=coverage_local, ax=ax1,
                   color = 'black', size=3)
 
     # Pinte a linha com 'CN' de outra cor (neste caso, vermelho)
-    linha_cn = coverage[coverage['cod'] == 'CN']
+    linha_cn = coverage_local[coverage_local['cod'] == 'CN']
 
     if not linha_cn.empty:
             ax1.scatter(x=0, y=linha_cn['coverage_breadth'], color='red', 
@@ -285,19 +303,19 @@ def Quality_monitor(coverage, reads, output_folder):
                         marker='o', label='CN', s=20)
 
     # Coverage (%)
-    sns.violinplot(y='coverage_breadth', data=coverage, ax=ax2, cut= 0)
+    sns.violinplot(y='coverage_breadth', data=coverage_local, ax=ax2, cut= 0)
     
 
-    sns.swarmplot(y='coverage_breadth', data=coverage, ax=ax2,
+    sns.swarmplot(y='coverage_breadth', data=coverage_local, ax=ax2,
                   color = 'black', size=3)
 
 
     #Reads Mapeadas X reads unmapped
     #Calcular o numero de redas unmmapped
-    reads['unmapped'] = reads['total_reads'] - reads['mepf_reads_aligned']
+    reads_local['unmapped'] = reads_local['total_reads'] - reads_local['mepf_reads_aligned']
 
     #select reads columns
-    reads_df = reads[['cod','mepf_reads_aligned','unmapped']]
+    reads_df = reads_local[['cod','mepf_reads_aligned','unmapped']]
 
 
     # Define a color palette using Seaborn
@@ -434,92 +452,166 @@ def validate_negative_control(coverage_df, errors_df):
 def Quality_monitor_interactive(coverage, reads, errors, output_folder, 
                                 lineage_data=None, 
                                 custom_fig=None,
-                                eligibility_threshold=60):
+                                eligibility_threshold=60,
+                                report_title=None):
     """
     Gera um relatório HTML interativo de controle de qualidade usando Plotly.
-    Agora inclui validação de CN, uma tabela de resumo e um resumo estatístico.
+    Detecta automaticamente se os dados são segmentados (OROV) ou não.
     """
-    #print("Gerando relatório de qualidade...")
+    
+    coverage_work = coverage.copy() 
+    reads_work = reads.copy()
     
     # --- 1. Validação do Controle Negativo (CN) ---
-    cn_validation_message, positive_samples_df = validate_negative_control(coverage, errors)
+    # Nota: positive_samples_df é criado aqui com dados originais (0-1)
+    cn_validation_message, positive_samples_df = validate_negative_control(coverage_work, errors)
 
-    # --- 2. Preparação dos Dados para Gráficos ---
+    # --- 2. Preparação da Tabela Resumo ---
     
-    # Tabela Resumo (Req 1)
-    summary_df = pd.merge(coverage, reads[['cod', 'mepf_reads_aligned']], on='cod', how='left')
-    summary_df['coverage_breadth'] = summary_df['coverage_breadth'] # Converte para %
-    
-    eligibility_col_name = f'Elegível para Depósito (>={eligibility_threshold}%)'
+    is_segmented = 'Segmento' in coverage_work.columns and coverage_work['Segmento'].notna().any()
 
-    summary_df[eligibility_col_name] = summary_df['coverage_breadth'].apply(
-        lambda x: 'Sim' if x >= eligibility_threshold else 'Não'
-    )
-    
-    summary_df = summary_df[['cod', 'mepf_reads_aligned', 'coverage_breadth', 'mean_depth_coverage', eligibility_col_name]]
-    summary_df.columns = ['Amostra (cod)', 'Reads Mapeadas', 'Cobertura (%)', 'Profundidade Média', eligibility_col_name]
-    
-    summary_df['Cobertura (%)'] = summary_df['Cobertura (%)'].round(2)
-    summary_df['Profundidade Média'] = summary_df['Profundidade Média'].round(0)
-    
-    summary_table_html = summary_df.to_html(index=False, classes='dataframe table table-striped table-hover', border=0, justify='center')
-    
-    # --- INÍCIO DA NOVA ADIÇÃO ---
-    # 1) Gerar estatísticas de resumo da tabela
-    total_samples = len(summary_df)
-    eligible_col = summary_df.columns[-1] # Pega a coluna de elegibilidade dinamicamente
-    eligible_samples = (summary_df[eligible_col] == 'Sim').sum()
-    
-    if total_samples > 0:
-        percentage = (eligible_samples / total_samples) * 100
+    if is_segmented:
+        # --- MODO SEGMENTADO (OROV) ---
+        
+        # 1. Pivotar Cobertura (L, M, S)
+        # Multiplica a cópia de trabalho para a tabela
+        coverage_work['coverage_breadth'] = coverage_work['coverage_breadth'] * 100
+        pivot_cov = coverage_work.pivot(index='cod', columns='Segmento', values='coverage_breadth')
+        
+        # 2. Pivotar Profundidade (L, M, S)
+        pivot_depth = coverage_work.pivot(index='cod', columns='Segmento', values='mean_depth_coverage')
+        
+        # 3. Construir o DataFrame da Tabela
+        summary_df = pd.DataFrame(index=pivot_cov.index)
+        
+        segments = sorted(pivot_cov.columns)
+        
+        for seg in segments:
+            # Coluna Profundidade
+            col_dep = f"{seg} Profundidade (x)"
+            if seg in pivot_depth.columns:
+                summary_df[col_dep] = pivot_depth[seg].round(0).fillna(0)
+
+            # Coluna Cobertura
+            col_cov = f"{seg} Cobertura (%)"
+            summary_df[col_cov] = pivot_cov[seg].round(2).fillna(0)
+                        
+            # Coluna Elegibilidade
+            col_elig = f"{seg} Elegível (>={eligibility_threshold}%)?"
+            summary_df[col_elig] = summary_df[col_cov].apply(
+                lambda x: 'Sim' if x >= eligibility_threshold else 'Não'
+            )
+        
+        # 4. Adicionar Total de Reads
+        total_reads = reads_work.groupby('cod')['mepf_reads_aligned'].sum()
+        summary_df['Total Reads'] = total_reads.fillna(0).astype(int)
+        
+        summary_df = summary_df.reset_index().rename(columns={'cod': 'Amostra'})
+        
+        # Resumo estatístico segmentado
+        total_samples = len(summary_df)
+        full_genome_count = 0
+        for _, row in summary_df.iterrows():
+            if all(row[f"{s} Elegível (>={eligibility_threshold}%)?"] == 'Sim' for s in segments):
+                full_genome_count += 1
+                
+        pct_full = (full_genome_count / total_samples * 100) if total_samples > 0 else 0
+        
         summary_stats_html = (
             f"<p style='text-align: left; font-size: 16px; margin-top: 10px; margin-bottom: 20px; margin-left: 5%;'>"
-            f"&bull; <strong>{eligible_samples} de {total_samples}</strong> " # Usei &bull; para um bullet HTML
-            f"({percentage:.1f}%) das amostras estão elegíveis para depósito."
+            f"&bull; <strong>{full_genome_count} de {total_samples}</strong> "
+            f"({pct_full:.1f}%) das amostras possuem genoma completo elegível."
             f"</p>"
         )
+
     else:
-        summary_stats_html = "<p style='text-align: center; font-size: 16px; margin-top: 10px; margin-bottom: 20px;'>Nenhuma amostra processada.</p>"
-    # --- FIM DA NOVA ADIÇÃO ---
-    
-    
-    # Dados para Violinos (usa apenas amostras positivas)
-    positive_samples_df = positive_samples_df.copy() 
-    positive_samples_df['Status'] = 'Amostra'
-    
-    # Dados para Gráfico de Barras (usa 'reads' completo)
-    reads_df = reads.copy()
-    reads_df['unmapped'] = reads_df['total_reads'] - reads_df['mepf_reads_aligned']
+        # --- MODO NÃO-SEGMENTADO (DENV/SC2) ---
+        summary_df = pd.merge(coverage_work, reads_work[['cod', 'mepf_reads_aligned']], on='cod', how='left')
+        summary_df['coverage_breadth'] = summary_df['coverage_breadth'] * 100
+        
+        eligibility_col_name = f'Elegível (>={eligibility_threshold}%)'
+        summary_df[eligibility_col_name] = summary_df['coverage_breadth'].apply(
+            lambda x: 'Sim' if x >= eligibility_threshold else 'Não'
+        )
+        
+        summary_df = summary_df[['cod', 'mepf_reads_aligned', 'coverage_breadth', 'mean_depth_coverage', eligibility_col_name]]
+        summary_df.columns = ['Amostra', 'Reads Mapeadas', 'Cobertura (%)', 'Profundidade Média', eligibility_col_name]
+        
+        summary_df['Cobertura (%)'] = summary_df['Cobertura (%)'].round(2)
+        summary_df['Profundidade Média'] = summary_df['Profundidade Média'].round(0)
+        
+        total_samples = len(summary_df)
+        eligible_samples = (summary_df[eligibility_col_name] == 'Sim').sum()
+        pct_eligible = (eligible_samples / total_samples * 100) if total_samples > 0 else 0
+        
+        summary_stats_html = (
+            f"<p style='text-align: left; font-size: 16px; margin-top: 10px; margin-bottom: 20px; margin-left: 5%;'>"
+            f"&bull; <strong>{eligible_samples} de {total_samples}</strong> "
+            f"({pct_eligible:.1f}%) das amostras estão elegíveis para depósito."
+            f"</p>"
+        )
+
+    summary_table_html = summary_df.to_html(index=False, classes='dataframe table table-striped table-hover', border=0, justify='center')
 
     # --- 3. Criação dos Gráficos ---
-    color_discrete_map = {'Amostra': '#1f77b4'} # CN já foi filtrado, então só precisamos da cor 'Amostra'
-
-    # Gráfico 1: Violino da Profundidade Média (APENAS AMOSTRAS POSITIVAS)
-    fig_violin_depth = px.violin(
-        positive_samples_df, y='mean_depth_coverage', 
-        box=True, points='all', hover_data=['cod'], 
-        color='Status', color_discrete_map=color_discrete_map,
-        title='Distribuição da Profundidade Média (Amostras Positivas)'
-    )
-    fig_violin_depth.update_traces(pointpos=0, jitter=0.4, spanmode='hard')
-    fig_violin_depth.update_yaxes(title_text='Profundidade Média')
-
-    # Gráfico 2: Violino da Cobertura Horizontal (APENAS AMOSTRAS POSITIVAS)
     
-    # Multiplicando por 100 para exibir em porcentagem (ex: 90.5) e não em decimal (ex: 0.905)
-    positive_samples_df['coverage_breadth'] = positive_samples_df['coverage_breadth']
-    # --- FIM DA CORREÇÃO ---
+    positive_samples_df = positive_samples_df.copy()
+    positive_samples_df['Status'] = 'Amostra'
     
-    fig_violin_coverage = px.violin(
-        positive_samples_df, y='coverage_breadth', 
-        box=True, points='all', hover_data=['cod'], 
-        color='Status', color_discrete_map=color_discrete_map,
-        title='Distribuição da Cobertura Horizontal (Amostras Positivas)'
-    )
-    fig_violin_coverage.update_traces(pointpos=0, jitter=0.4, spanmode='hard')
-    fig_violin_coverage.update_yaxes(title_text='Cobertura (%)')
+    # --- CORREÇÃO AQUI: Ajuste de escala garantido para TODOS (Segmentado ou Não) ---
+    # O positive_samples_df veio do validate (0-1) e não foi tocado pelo bloco 'if is_segmented' acima.
+    # Verificamos se o máximo é <= 1.0 para evitar dupla multiplicação.
+    if positive_samples_df['coverage_breadth'].max() <= 1.0:
+        positive_samples_df['coverage_breadth'] = positive_samples_df['coverage_breadth'] * 100
+    # -------------------------------------------------------------------------------
 
-    # Gráfico 3: Hierarquia (Barra ou Sunburst)
+    color_discrete_map = {'Amostra': '#1f77b4'} 
+
+    if is_segmented:
+        # --- GRÁFICOS COMPARATIVOS (BOX PLOT por Segmento) ---
+        # Gráfico 1: Profundidade
+        fig_depth = px.box(
+            positive_samples_df, x='Segmento', y='mean_depth_coverage', 
+            color='Segmento', points='all', hover_data=['cod'],
+            title='Distribuição da Profundidade Média por Segmento'
+        )   
+        fig_depth.update_traces(pointpos=0, jitter=0.4)
+        fig_depth.update_yaxes(title_text='Profundidade Média (X)')
+
+        # Gráfico 2: Cobertura
+        fig_coverage = px.box(
+            positive_samples_df, x='Segmento', y='coverage_breadth', 
+            color='Segmento', points='all', hover_data=['cod'],
+            title='Distribuição da Cobertura Horizontal por Segmento (%)'
+        )
+
+        fig_coverage.update_traces(pointpos=0, jitter=0.4)
+        fig_coverage.update_yaxes(title_text='Cobertura (%)')
+
+    else:
+        # --- GRÁFICOS PADRÃO (VIOLIN PLOT Único) ---
+        # Gráfico 1: Profundidade
+        fig_depth = px.violin(
+            positive_samples_df, y='mean_depth_coverage', 
+            box=True, points='all', hover_data=['cod'], 
+            color='Status', color_discrete_map=color_discrete_map,
+            title='Distribuição da Profundidade Média (Amostras Positivas)'
+        )
+        fig_depth.update_traces(pointpos=0, jitter=0.4, spanmode='hard')
+        fig_depth.update_yaxes(title_text='Profundidade Média')
+
+        # Gráfico 2: Cobertura
+        fig_coverage = px.violin(
+            positive_samples_df, y='coverage_breadth', 
+            box=True, points='all', hover_data=['cod'], 
+            color='Status', color_discrete_map=color_discrete_map,
+            title='Distribuição da Cobertura Horizontal (Amostras Positivas)'
+        )
+
+        fig_coverage.update_traces(pointpos=0, jitter=0.4, spanmode='hard')
+        fig_coverage.update_yaxes(title_text='Cobertura (%)')
+
+    # Gráfico 3: Hierarquia (Barra ou Sunburst) - COMUM A TODOS
     fig_extra = None
     pie_title = "Proporção de Linhagens/Genótipos"
     
@@ -527,7 +619,6 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
         fig_extra = custom_fig
         if hasattr(custom_fig.layout, 'title') and custom_fig.layout.title.text:
              pie_title = custom_fig.layout.title.text
-    
     elif lineage_data is not None:
         try:
             if not lineage_data.empty:
@@ -548,84 +639,77 @@ def Quality_monitor_interactive(coverage, reads, errors, output_folder,
                 fig_extra.update_xaxes(title_text='Linhagem / Genótipo')
         except Exception as e:
             print(f"Aviso: Não foi possível construir o gráfico de barras. Erro: {e}")
-    #else:
-     #   print("Aviso: Nenhum dado de linhagem fornecido. Gráfico pulado.")
 
-    # Gráfico 4: Gráfico de Barras (Leituras Mapeadas - TODAS AMOSTRAS)
-    df_tidy_reads = reads_df.melt(id_vars=['cod'], var_name='Tipo de Leitura', value_name='Contagem')
-    df_tidy_reads['Tipo de Leitura'] = df_tidy_reads['Tipo de Leitura'].map({
-        'mepf_reads_aligned': 'Leituras Mapeadas',
-        'unmapped': 'Leituras Não Mapeadas'
-    })
-    fig_reads = px.bar(
-        df_tidy_reads, x='cod', y='Contagem', color='Tipo de Leitura',
-        title='Leituras Mapeadas vs. Não Mapeadas por Amostra',
-        barmode='stack', hover_data=['cod', 'Tipo de Leitura', 'Contagem']
-    )
+    # Gráfico 4: Reads - COMUM A TODOS (com ajuste se tiver segmento)
+    reads_plot = reads_work.copy()
+    reads_plot['unmapped'] = reads_plot['total_reads'] - reads_plot['mepf_reads_aligned']
+    
+    if is_segmented:
+        # Para OROV, barras empilhadas por segmento
+        fig_reads = px.bar(
+            reads_plot, x='cod', y='mepf_reads_aligned', color='Segmento', 
+            title='Reads Mapeadas por Amostra e Segmento', barmode='stack'
+        )
+    else:
+        # Para outros, Mapeadas vs Não Mapeadas
+        df_tidy_reads = reads_plot.melt(id_vars=['cod'], var_name='Tipo de Leitura', value_name='Contagem')
+        df_tidy_reads = df_tidy_reads[df_tidy_reads['Tipo de Leitura'].isin(['mepf_reads_aligned', 'unmapped'])]
+        df_tidy_reads['Tipo de Leitura'] = df_tidy_reads['Tipo de Leitura'].map({
+            'mepf_reads_aligned': 'Leituras Mapeadas', 'unmapped': 'Leituras Não Mapeadas'
+        })
+        fig_reads = px.bar(
+            df_tidy_reads, x='cod', y='Contagem', color='Tipo de Leitura',
+            title='Leituras Mapeadas vs. Não Mapeadas', barmode='stack'
+        )
+    
     fig_reads.update_layout(xaxis_title="Amostra", yaxis_title="Número de Leituras")
 
 
-    # --- 4. Salvar como um único arquivo HTML ---
-    
-    html_path = os.path.join(output_folder, "RNSG_REPORT/Quality_check.html")
+    # --- 4. Salvar HTML ---
+    report_display_title = report_title if report_title else "Relatório de Qualidade"
+    if is_segmented:
+        html_path = os.path.join(output_folder, "Quality_check.html")
+    else:
+        html_path = os.path.join(output_folder, "RNSG_REPORT/Quality_check.html")
 
     with open(html_path, 'w', encoding='utf-8') as f:
         f.write("<html><head><title>Relatório de Qualidade</title>")
-        # (CSS permanece o mesmo)
         f.write("""
         <style>
             body { font-family: sans-serif; margin: 20px; }
             h1 { text-align: center; }
             h2 { border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 40px; }
-            .dataframe {
-                border-collapse: collapse;
-                width: 90%;
-                margin: 20px auto;
-                font-size: 14px;
-                text-align: left;
-            }
-            .dataframe th, .dataframe td {
-                padding: 10px 12px;
-                border: 1px solid #ddd;
-            }
-            .dataframe th {
-                background-color: #f2f2f2;
-            }
-            .dataframe tr:nth-child(even) {
-                background-color: #f9f9f9;
-            }
-            .dataframe tr:hover {
-                background-color: #f1f1f1;
-            }
+            .dataframe { border-collapse: collapse; width: 95%; margin: 20px auto; font-size: 14px; text-align: center; }
+            .dataframe th, .dataframe td { padding: 10px 12px; border: 1px solid #ddd; }
+            .dataframe th { background-color: #f2f2f2; }
+            .dataframe tr:nth-child(even) { background-color: #f9f9f9; }
+            .dataframe tr:hover { background-color: #f1f1f1; }
         </style>
         """)
-        f.write("</head><body>\n")
-        f.write("<h1>Relatório de Qualidade</h1>\n")
+        f.write(f"</head><body>\n<h1 style='text-align: center;'>{report_display_title}</h1>\n")
         
         # 1. Mensagem de Validação do CN
         f.write("<h2>Validação do Controle Negativo (CN)</h2>\n")
         f.write(cn_validation_message)
 
-        # 2. Tabela Resumo e Novo Resumo Estatístico
+        # 2. Tabela Resumo
         f.write("<h2>Resumo da Corrida</h2>\n")
         f.write(summary_table_html)
-        f.write(summary_stats_html) # <-- ADICIONADO AQUI
+        f.write(summary_stats_html)
         
         # 3. Gráficos de Violino
         f.write("<h2>Métricas de Qualidade (Amostras Positivas)</h2>\n")
-        f.write(fig_violin_depth.to_html(full_html=False, include_plotlyjs='cdn'))
-        f.write(fig_violin_coverage.to_html(full_html=False, include_plotlyjs=False))
+        f.write(fig_depth.to_html(full_html=False, include_plotlyjs='cdn'))
+        f.write(fig_coverage.to_html(full_html=False, include_plotlyjs=False))
 
-
-        # 4. Gráfico de Leituras (Respeitando sua nova ordem)
-        f.write("<h2>Contagem de Leituras (Todas as Amostras)</h2>\n")
-        f.write(fig_reads.to_html(full_html=False, include_plotlyjs=False))
-
-        # 5. Gráfico de Linhagem/Genótipo (Respeitando sua nova ordem)
+        # 4. Gráfico de Linhagem/Genótipo
         if fig_extra:
             f.write(f"<h2>{pie_title}</h2>\n")
             f.write(fig_extra.to_html(full_html=False, include_plotlyjs=False))
 
+        # 5. Gráfico de Leituras
+        f.write("<h2>Contagem de Leituras (Todas as Amostras)</h2>\n")
+        f.write(fig_reads.to_html(full_html=False, include_plotlyjs=False))
         
         f.write("</body></html>\n")
 

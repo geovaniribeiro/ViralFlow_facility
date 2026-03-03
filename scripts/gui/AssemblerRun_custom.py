@@ -26,12 +26,12 @@ SUBMISSION_INFO_PATH = os.path.join(CONFIG_DIR, "submission_info.yaml")
 # -----------------------------
 class AssemblerRun_custom(AssemblerThread):
     def __init__(self, command_viralflow, output_folder, input_path, metadata_path, config_path):
-        if metadata_path and input_path:
-            try:
-                rename_fastq_files(metadata_path, input_path)
-                print("\nRenomeação de arquivos FASTQ concluída!\n")
-            except Exception as e:
-                print(f"Erro ao renomear arquivos FASTQ: {str(e)}\n")
+        #if metadata_path and input_path:
+         #   try:
+          #      rename_fastq_files(metadata_path, input_path)
+           #     print("\nRenomeação de arquivos FASTQ concluída!\n")
+           # except Exception as e:
+            #    print(f"Erro ao renomear arquivos FASTQ: {str(e)}\n")
 
         commands = [
             (command_viralflow, "Executando ViralFlow...")
