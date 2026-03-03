@@ -46,6 +46,12 @@ if [[ ! -f "$ICON_FULL_PATH" ]]; then
      ICON_FULL_PATH="$(getent passwd $SUDO_USER | cut -d: -f6)/ViralFlow/docs/source/img/viralflow_logo.png"
 fi
 
+# Verifica se o ícone existe, se não, tenta outros locais
+if [[ ! -f "$ICON_FULL_PATH" ]]; then
+     # Tenta o caminho relativo original que você usava
+     ICON_FULL_PATH="$(getent passwd $SUDO_USER | cut -d: -f6)/ViralFlow/docs/_static/images/viralflow_logo.png"
+fi
+
 if [[ ! -f "$ICON_FULL_PATH" ]]; then
     echo "Aviso: Ícone não encontrado. Usando genérico."
     ICON_FULL_PATH="utilities-terminal" 
