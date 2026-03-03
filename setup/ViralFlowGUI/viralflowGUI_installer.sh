@@ -37,6 +37,7 @@ unset __mamba_setup
 
 micromamba activate
 
+
 # Verifica onde está o env.yml original
 if [ -f "$code_path/usr/envs/env.yml" ]; then
     original_env_file="$code_path/usr/envs/env.yml"
@@ -58,7 +59,7 @@ cp "$original_env_file" "$temp_env_file"
 echo "Usando cópia temporária em: $temp_env_file"
 
 # Criar o ambiente usando o arquivo temporário
-yes | micromamba env create -f "$temp_env_file" --yes
+yes | micromamba env create -f "$temp_env_file" --channel-priority flexible --yes
 
 # Remove o arquivo temporário
 rm "$temp_env_file"
@@ -98,7 +99,6 @@ for VIRUS in "${!VIRUS_DB[@]}"; do
     viralflow -add_entry_to_snpeff --org_name "$VIRUS" --genome_code "$GENOME"
 done
 
-<<<<<<< HEAD
 echo ""
 echo ""
 echo "Instalação bancos snpEff Finalizado!"
@@ -109,12 +109,6 @@ micromamba activate viralflow_gui
 # Ajuste de permissões para executáveis (tentativa, pode falhar se for read-only, ignorando erro)
 # Nota: Num AppImage, chmod dentro do code_path não funciona e não é necessário
 # pois o AppImage já deve ter permissões. O erro é suprimido.
-=======
-echo "Instalação bancos snpEff Finalizado!"
-
-micromamba activate viralflow_gui
-# Tornar arquivos executáveis
->>>>>>> develop
 chmod +x "$code_path/../../viralflow_GUI" 2>/dev/null
 chmod +x "$code_path/../viralflow_GUI" 2>/dev/null
 chmod +x "$code_path/viralflow_GUI" 2>/dev/null
@@ -134,7 +128,7 @@ cp "$desktop_script" "$temp_desktop_script"
 chmod +x "$temp_desktop_script"
 
 echo "Executando configuração do atalho..."
-# AQUI ESTÁ O PULO DO GATO: Passamos $INSTALL_DIR como argumento
+# Passando $INSTALL_DIR como argumento
 sudo bash "$temp_desktop_script" "$INSTALL_DIR"
 
 rm "$temp_desktop_script"
