@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QPushButton, QFileDialog, QMessageBox, QComboBox, QGroupBox
 )
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QSettings
 
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -78,6 +78,7 @@ class ViralFlowGUI_SC2(QWidget):
 
     def __init__(self, menu_inicial):
         super().__init__()
+        self.settings = QSettings("ViralFlowGUI", "ViralFlow")
         self.menu_inicial = menu_inicial
 
         self.setWindowTitle("ViralFlow GUI - SARS-CoV-2")
