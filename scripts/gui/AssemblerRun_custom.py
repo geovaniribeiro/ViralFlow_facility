@@ -198,10 +198,19 @@ class ViralFlowGUI(QWidget):
 
     def select_folder(self, entry):
         start = entry.text() or self.settings.value("last_browse_dir", os.path.expanduser("~"))
-        folder_path = QFileDialog.getExistingDirectory(self, "Selecione uma pasta", start)
-        if folder_path:
-            entry.setText(folder_path)
-            self.settings.setValue("last_browse_dir", folder_path)
+        
+        dialog = QFileDialog(self)
+        dialog.setWindowTitle("Selecione uma pasta")
+        dialog.setDirectory(start)
+        
+        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setOption(QFileDialog.ShowDirsOnly, False) # <--- Garante que arquivos apareçam
+        
+        if dialog.exec():
+            folder_path = dialog.selectedFiles()[0]
+            if folder_path:
+                entry.setText(folder_path)
+                self.settings.setValue("last_browse_dir", folder_path)
 
     def configure_parameters(self):
         dialog = ParametersDialog(self.param_manager.parameters, self)
