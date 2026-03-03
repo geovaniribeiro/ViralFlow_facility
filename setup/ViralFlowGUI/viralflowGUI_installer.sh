@@ -37,7 +37,6 @@ unset __mamba_setup
 
 micromamba activate
 
-# --- CORREÇÃO AQUI ---
 # Verifica onde está o env.yml original
 if [ -f "$code_path/usr/envs/env.yml" ]; then
     original_env_file="$code_path/usr/envs/env.yml"
@@ -72,7 +71,6 @@ sudo apt-get install -y \
     libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
     libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libegl1-mesa libxcb-cursor0
 
-<<<<<<< HEAD
 
 micromamba activate viralflow
 #Baixar o banco snpEff para os virus custom
@@ -82,12 +80,6 @@ echo ""
 echo "Instalando bancos snpEff..."
 echo ""
 echo ""
-=======
-micromamba activate viralflow
-#Baixar o banco snpEff para os virus custom
-echo "Instalando bancos snpEff..."
-
->>>>>>> develop
 # Dicionário: ORG_NAME=GENOME_CODE
 declare -A VIRUS_DB=(
   ["DENV1"]="NC_001477.1"
