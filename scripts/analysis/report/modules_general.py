@@ -30,37 +30,42 @@ Este script contém diversas funções, afim de otimizar a manutenção e refato
 '''
 
 colunas_mapeadas = {
-    "Código_da_Amostra": [r"C[oó]digo[_ ]*Amostra", r"C[oó]digo[_ ]*(?:da[_ ])*Amostra", r"C[oó]digo\s*(?:da\s*)?Amostra"],
-    "Requisição": [r"^(Requisiç[ãa]o)$", r"^(Requisicao)$", r"^(Requisiç[ãa]o[_ ]*GAL)$", r"^(Requisicao[_ ]*GAL)$"],
-    "Municipio_do_Solicitante": [r"Munic[ií]pio\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
-    "Estado_do_Solicitante": [r"Estado\s*(?:do\s*)?(?:Requisitante|Solicitante)"],
-    "CNES_Laboratório_responsável": [r"CNES\s*(?:do\s*)?Laboratório\s*[Rr]espons[aá]vel" , r"CNES[_ ]*Laboratorio[_ ]*Responsavel"]
+    # 'C.*digo' ignora qualquer símbolo corrompido (Ã³, , etc)
+    "Código_da_Amostra": [r"C.*digo[_ ]*(?:da[_ ])*Amostra", r"^ID$", r"^Amostra$"],
+    "Requisição": [r"^Requisi.*o$", r"^Requisi.*o[_ ]*GAL$", r"^GAL$"],
+    "Municipio_do_Solicitante": [r"Munic.*pio\s*(?:do\s*)?(?:Requisitante|Solicitante)", r"^Munic.*pio$"],
+    "Estado_do_Solicitante": [r"Estado\s*(?:do\s*)?(?:Requisitante|Solicitante)", r"^Estado$", r"^UF$"],
+    "CNES_Laboratório_responsável": [r"CNES\s*(?:do\s*)?Laborat.*rio\s*[Rr]espons.*vel", r"CNES[_ ]*Laboratorio[_ ]*Responsavel", r"^CNES$"],
+    "Material_Biológico": [r"Material[_ ]*Biol.*gico", r"^Material$", r"^Tipo[_ ]*Amostra$"],
+    "Data_da_Coleta": [r"Data[_ ]*(?:da[_ ])?Coleta"],
+    "Data_de_Nascimento": [r"Data[_ ]*(?:de[_ ])?Nascimento"],
+    "Sexo": [r"^Sexo$", r"^G.*nero$"],
+    "Idade": [r"^Idade$"],
+    "Tipo_Idade": [r"^Tipo[_ ]*Idade$"]
 }
 
 # Função para padronizar os nomes das colunas usando regex
 def padronizar_colunas(df, mapeamento):
-    """
-    Padroniza os nomes das colunas do DataFrame baseando-se em padrões RegEx.
-    Usa o módulo 're' nativo para evitar warnings do Pandas e melhorar performance.
-    """
     novo_nomes = {}
+    padroes_encontrados = set() # NOVO: Rastreador de colunas já mapeadas
     
     for padrao_padronizado, regex_variacoes in mapeamento.items():
         for regex in regex_variacoes:
+            # Se já achamos a coluna oficial para este padrão, não procura mais
+            if padrao_padronizado in padroes_encontrados:
+                break 
+            
             for coluna in df.columns:
-                # Verifica se a coluna já foi mapeada para evitar sobrescrita desnecessária
                 if coluna in novo_nomes:
                     continue
                 
-                # Usa re.search para buscar o padrão (equivalente a contains)
-                # re.IGNORECASE equivale a case=False
                 if re.search(regex, coluna, re.IGNORECASE):
                     novo_nomes[coluna] = padrao_padronizado
-                    
-    # Aplica a renomeação
+                    padroes_encontrados.add(padrao_padronizado)
+                    break # Para de procurar nesta regex e vai para o próximo padrão oficial
+    
     if novo_nomes:
         df.rename(columns=novo_nomes, inplace=True)
-
 
 ## Função que carrega o arquivo yaml e armazena em um dicionario
 def load_config(config_path):
@@ -68,16 +73,16 @@ def load_config(config_path):
         return yaml.safe_load(file)
 
 
-#faz algumas mudancas em alguns nomes (deixar apenas o codigo de amostra)
 def input_folder(output_folder, metadata_path):
-
-
-    # Detecta o delimitador do arquivo
-    with open(metadata_path, 'r', encoding='latin-1') as file:
-        sample = file.read(1024)  # Lê uma amostra do arquivo
-        sniffer = csv.Sniffer()
-        delimiter = sniffer.sniff(sample).delimiter  # Detecta o delimitador
-
+    # 1. Detecção robusta do delimitador com fallback para arquivos manuais
+    try:
+        with open(metadata_path, 'r', encoding='latin-1') as file:
+            sample = file.read(1024)
+            sniffer = csv.Sniffer()
+            delimiter = sniffer.sniff(sample).delimiter
+    except Exception:
+        # Se a planilha manual for muito pequena ou irregular, assume vírgula (ou ponto e vírgula)
+        delimiter = ','
 
     # Carrega o arquivo usando o delimitador detectado
     metadata = pd.read_csv(metadata_path, sep=delimiter, encoding='latin-1', on_bad_lines='skip')
@@ -88,51 +93,49 @@ def input_folder(output_folder, metadata_path):
     # Substitui espaços por '_' nos nomes das colunas
     metadata.columns = metadata.columns.str.replace(' ', '_')
 
-    #Ler arquivo fasta
-    #Certificar se o cabelho das sequencias possuem apenas o codigo da amostra.
+    # 2. AUTO-PREENCHIMENTO DE COLUNAS FALTANTES
+    # Garante que todas as colunas que o ViralFlow usa existam, mesmo numa planilha manual incompleta
+    colunas_essenciais = [
+        'Código_da_Amostra', 'Requisição', 'Material_Biológico', 
+        'Municipio_do_Solicitante', 'Estado_do_Solicitante', 'Idade', 
+        'Tipo_Idade', 'Sexo', 'Data_da_Coleta', 'Data_de_Nascimento', 
+        'CNES_Laboratório_responsável'
+    ]
+    
+    for col in colunas_essenciais:
+        if col not in metadata.columns:
+            if col == 'Código_da_Amostra':
+                raise ValueError("ERRO CRÍTICO: A coluna 'Código da Amostra' não foi encontrada no arquivo de metadados!")
+            else:
+                # Preenche colunas ausentes com "N/A" para evitar KeyErrors
+                metadata[col] = 'N/A'
 
-    # Construct the file path for the CSV file
+
+    # --- Restante da sua função de leitura de arquivos ---
     sequence_path = os.path.join(output_folder, "seqbatch.fa")
-
-    sequence = open(sequence_path)
-
-    #converter fasta to dataframe
-    ## Load the FASTA file into a list of SeqRecord objects
     records = list(SeqIO.parse(sequence_path, "fasta"))
 
-    #Carregar os seguintes arquivos do ViralFlow
-
-    # Construct the file path for the CSV file
     reads_path = os.path.join(output_folder, "reads_count.csv")
+    reads = pd.read_csv(reads_path, sep=',')
+    reads['cod'] = reads['cod'].replace(to_replace='_.*', value='', regex=True)
 
-    reads = pd.read_csv(reads_path, sep =',')
-
-    reads['cod'] = reads['cod'].replace(to_replace ='_.*', value = '', regex = True)
-
-    #wgs
-    # Construct the file path for the CSV file
     coverage_path = os.path.join(output_folder, 'short_summary.csv')
-
-    coverage = pd.read_csv(coverage_path, sep =',')
-
-    # Remove linhas onde a coluna "taxon" contém "_minor"
+    coverage = pd.read_csv(coverage_path, sep=',')
     if 'taxon' in coverage.columns:
         coverage = coverage[~coverage['taxon'].str.contains('_minor', na=False)]
-    coverage['cod'] = coverage['cod'].replace(to_replace ='_.*', value = '', regex = True)
+    coverage['cod'] = coverage['cod'].replace(to_replace='_.*', value='', regex=True)
 
-    # Carregar errors_detected.csv somente se não estiver vazio
     errors_path = os.path.join(output_folder, 'errors_detected.csv')
-    # Verifica se o arquivo existe e não está vazio
     if os.path.isfile(errors_path) and os.path.getsize(errors_path) > 0:
         try:
             errors = pd.read_csv(errors_path, sep=',')
             errors['cod'] = errors['cod'].replace(to_replace='_.*', value='', regex=True)
         except pd.errors.EmptyDataError:
-            errors = pd.DataFrame(columns=['cod'])  # Cria DataFrame vazio com coluna esperada
+            errors = pd.DataFrame(columns=['cod'])
     else:
-        errors = pd.DataFrame(columns=['cod'])  # Cria DataFrame vazio se arquivo não existe ou está vazio
+        errors = pd.DataFrame(columns=['cod'])
 
-    return metadata, sequence, records, reads, coverage, errors
+    return metadata, None, records, reads, coverage, errors
 
 
 def data_processing(output_folder):

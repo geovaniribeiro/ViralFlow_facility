@@ -381,13 +381,23 @@ def arquivo_epicov(config, metadata, df_combine_sequence, output_folder):
     # Certifique-se de que as colunas estão no formato datetime
     covv_patient_age['Data_da_Coleta'] = pd.to_datetime(covv_patient_age['Data_da_Coleta'], errors='coerce')
     covv_patient_age['Data_de_Nascimento'] = pd.to_datetime(covv_patient_age['Data_de_Nascimento'], errors='coerce')
-    ##Subtrair a data da coleta e data de nascimento (em dias), converter para ano (dividindo por 365.25), e aredendar (remove decimal)
-    covv_patient_age['covv_patient_age'] = ((covv_patient_age['Data_da_Coleta'] - covv_patient_age['Data_de_Nascimento']).dt.days / 365.25).round().astype(int)
+    ## Subtrair a data da coleta e data de nascimento (em dias), converter para ano e arredondar
+    idades = ((covv_patient_age['Data_da_Coleta'] - covv_patient_age['Data_de_Nascimento']).dt.days / 365.25).round()
+    
+    ## Converte para Int64 (aceita vazio) e depois para string
+    covv_patient_age['covv_patient_age'] = idades.astype('Int64').astype(str)
+    
+    ## Substitui valores nulos/vazios por 'Unknown'
+    covv_patient_age['covv_patient_age'] = covv_patient_age['covv_patient_age'].replace(['<NA>', 'nan'], 'Unknown')
+
     covv_patient_age = covv_patient_age[['id','covv_patient_age']]
 
-    covv_patient_age = covv_patient_age.astype(str)
+    # ====================================================================
+    # A SOLUÇÃO: Forçar a coluna 'id' a ser texto antes de fazer o merge
+    covv_patient_age['id'] = covv_patient_age['id'].astype(str)
+    # ====================================================================
 
-    gisaid_temp = pd.merge(gisaid_temp,covv_patient_age,on='id')
+    gisaid_temp = pd.merge(gisaid_temp, covv_patient_age, on='id')
 
 
     #Insert covv_patient_status column
